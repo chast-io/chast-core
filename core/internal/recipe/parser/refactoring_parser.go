@@ -59,7 +59,7 @@ func convertRun(run Run) refactoring.Run {
 func convertCommand(command string) refactoring.Command {
 	return refactoring.Command{
 		Cmd:              strings.Fields(command),
-		WorkingDirectory: "/shared/home/rjenni/Projects/mse-repos/master-thesis/chast/chast-refactoring-antlr/refactorings/rearrange_class_members/chast/run",
+		WorkingDirectory: "", // TODO load working directory from file root
 	}
 }
 

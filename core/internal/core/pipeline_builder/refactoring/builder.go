@@ -10,8 +10,8 @@ func BuildRunPipeline(runModel *refactoring.RunModel) {
 	log.Printf("Refactoring BuildRunPipeline")
 	log.Printf("Run Command: %s", runModel.Run[0].Command.Cmd)
 
-	runModel.Run[0].Command.Cmd[3] = "/shared/home/rjenni/Projects/mse-repos/master-thesis/chast/chast-refactoring-antlr/base/src/main/java/CSharpLexerBase.java"
-	runModel.Run[0].Command.Cmd[4] = "/shared/home/rjenni/Projects/mse-repos/master-thesis/chast/chast-refactoring-antlr/refactorings/rearrange_class_members/src/test/resources/rearrange_class_members/default_config.yaml"
+	runModel.Run[0].Command.Cmd[3] = "" // TODO load params from cli arguments
+	runModel.Run[0].Command.Cmd[4] = "" // TODO load params from cli arguments
 
 	cmd := exec.Command(runModel.Run[0].Command.Cmd[0], runModel.Run[0].Command.Cmd[1:]...)
 	cmd.Dir = runModel.Run[0].Command.WorkingDirectory

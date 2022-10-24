@@ -1,0 +1,31 @@
+See https://unix.stackexchange.com/questions/721874/jail-sandbox-process-on-an-overlay-root-and-track-changes/ for details.
+
+Log:
+
+mkdir -p /tmp/overlay-test/{upper,workdir,mount}
+unshare -rnm
+mount.mergerfs / /tmp/overlay-test/view -o use_ino,posix_acl=true
+mount -t overlay overlay -o lowerdir=/tmp/overlay-test/view,upperdir=/tmp/overlay-test/upper,workdir=/tmp/overlay-test/workdir /tmp/overlay-test/mount
+mount --rbind /dev /tmp/overlay-test/mount/dev
+mount --rbind /proc /tmp/overlay-test/mount/proc
+chroot /tmp/overlay-test/mount /bin/bash
+
+----
+
+mount --rbind /dev /tmp/overlay-test/view/dev
+mount --rbind /etc /tmp/overlay-test/view/etc
+
+mount --rbind /proc /tmp/overlay-test/mount/proc
+mount --rbind /sys /tmp/overlay-test/mount/sys
+
+journalctl -b -f
+
+----
+
+mkdir -p /tmp/overlay-test/{upper,workdir,mount}
+fuse-overlayfs -o lowerdir=/,upperdir=/tmp/overlay-test/upper,workdir=/tmp/overlay-test/workdir /tmp/overlay-test/mount
+
+# unshare -rm chroot /tmp/overlay-test/mount ## not working - maybe because of the kernel
+sudo chroot /tmp/overlay-test/mount
+
+fusermount -u /tmp/overlay-test/mount
