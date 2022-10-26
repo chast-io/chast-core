@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -11,19 +12,17 @@ import (
 
 // refactoringCmd represents the refactoring command
 var refactoringCmd = &cobra.Command{
-	Use:   "refactoring",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Use:   "refactoring <chastConfigFile>",
+	Short: "A brief description of your command", // TODO
+	Long:  ``,                                    // TODO
+	Args:  cobra.MatchAll(cobra.MinimumNArgs(1)),
 	Run: func(cmd *cobra.Command, args []string) {
-		//println(fmt.Sprintf("%#v", cmd.Flags()))
-		//println(fmt.Sprintf("%#v", args))
+		recipeFileArg := args[0]
 
-		file := util.NewFile(args[0])
+		file := util.NewFile(recipeFileArg)
+		if !file.Exists() {
+			log.Fatalf("Recipe file \"%v\" does not exist.\n", file.AbsolutePath)
+		}
 		refactoring.Run(file)
 	},
 }
@@ -31,13 +30,24 @@ to quickly create a Cobra application.`,
 func init() {
 	runCmd.AddCommand(refactoringCmd)
 
+	defaultHelpFunction := refactoringCmd.HelpFunc()
+	refactoringCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) { helpFunction(cmd, args, defaultHelpFunction) })
+
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// refactoringCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only refactoring when this command
 	// is called directly, e.g.:
 	// refactoringCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func helpFunction(cmd *cobra.Command, args []string, defaultHelpFunction func(*cobra.Command, []string)) {
+	println("Custom help function")
+	if len(cmd.ValidArgs) > 0 {
+		helpFunction(cmd, args, defaultHelpFunction)
+	} else {
+		defaultHelpFunction(cmd, args)
+	}
 }

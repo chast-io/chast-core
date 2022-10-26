@@ -1,4 +1,4 @@
-package recipe_model
+package model
 
 type ChastOperationType int8
 

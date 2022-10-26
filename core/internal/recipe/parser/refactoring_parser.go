@@ -3,15 +3,12 @@ package parser
 import (
 	"chast.io/core/internal/model/run_models"
 	"chast.io/core/internal/model/run_models/refactoring"
+	. "chast.io/core/internal/recipe/model"
 	"chast.io/core/pkg/util/collection"
 	"errors"
 	"gopkg.in/yaml.v3"
 	"log"
 	"strings"
-)
-
-import (
-	. "chast.io/core/internal/recipe/recipe_model"
 )
 
 type RefactoringParser struct {
@@ -50,15 +47,15 @@ func (parser *RefactoringParser) VerifyRecipeAndBuildModel() (*run_models.RunMod
 
 func convertRun(run Run) refactoring.Run {
 	return refactoring.Run{
-		Command: convertCommand(run.Cmd),
+		Command: convertCommand(run.Script),
 		Docker:  convertDocker(run.Docker),
 		Local:   convertLocal(run.Local),
 	}
 }
 
-func convertCommand(command string) refactoring.Command {
+func convertCommand(commands []string) refactoring.Command {
 	return refactoring.Command{
-		Cmd:              strings.Fields(command),
+		Cmds:             collection.Map(commands, strings.Fields),
 		WorkingDirectory: "", // TODO load working directory from file root
 	}
 }
@@ -78,6 +75,6 @@ func convertLocal(local Local) refactoring.Local {
 func convertRequiredTool(requiredTool RequiredTool) refactoring.RequiredTool {
 	return refactoring.RequiredTool{
 		Description: requiredTool.Description,
-		Cmd:         requiredTool.Cmd,
+		CheckCmd:    requiredTool.CheckCmd,
 	}
 }

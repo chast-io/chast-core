@@ -9,8 +9,8 @@ import (
 type File struct {
 	FileName        string
 	ParentDirectory string
+	AbsolutePath    string
 	path            string
-	absolutePath    string
 	data            *[]byte
 }
 
@@ -30,12 +30,17 @@ func NewFile(path string) *File {
 	if err != nil {
 		panic(fmt.Sprintf("Could not load current directory"))
 	}
-	file.absolutePath = absolutePath
+	file.AbsolutePath = absolutePath
 
 	return &file
 }
 
-func (file File) Read() *[]byte {
+func (file *File) Exists() bool {
+	_, err := os.Stat(file.path)
+	return !os.IsNotExist(err)
+}
+
+func (file *File) Read() *[]byte {
 	if file.data == nil {
 		fileContent, err := os.ReadFile(file.path)
 		if err != nil {

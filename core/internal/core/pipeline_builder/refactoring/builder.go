@@ -1,26 +1,28 @@
 package refactoring
 
 import (
+	"chast.io/core/internal/core/version_control/overlay"
 	"chast.io/core/internal/model/run_models/refactoring"
 	"log"
-	"os/exec"
 )
 
 func BuildRunPipeline(runModel *refactoring.RunModel) {
 	log.Printf("Refactoring BuildRunPipeline")
-	log.Printf("Run Command: %s", runModel.Run[0].Command.Cmd)
+	log.Printf("Run Command: %s", runModel.Run[0].Command.Cmds)
 
-	runModel.Run[0].Command.Cmd[3] = "" // TODO load params from cli arguments
-	runModel.Run[0].Command.Cmd[4] = "" // TODO load params from cli arguments
+	runModel.Run[0].Command.Cmds[0][3] = "" // TODO load params from cli arguments
+	runModel.Run[0].Command.Cmds[0][4] = "" // TODO load params from cli arguments
 
-	cmd := exec.Command(runModel.Run[0].Command.Cmd[0], runModel.Run[0].Command.Cmd[1:]...)
-	cmd.Dir = runModel.Run[0].Command.WorkingDirectory
+	var nsContext = overlay.NewNamespaceContext(
+		"/",                            // This will be defined by the versioning system
+		"/tmp/overlay-auto-test/upper", // This will be defined by the versioning system
+		"/tmp/overlay-auto-test/operationDirectory", // This will be defined by the versioning system
+		runModel.Run[0].Command.WorkingDirectory,
+		runModel.Run[0].Command.Cmds[0]..., // TODO support multiple commands
+	)
 
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		log.Fatalf("Failed with %s. \n%s", err, string(out))
-	} else {
-		log.Printf(string(out))
+	if err := overlay.RunCommandInIsolatedEnvironment(nsContext); err != nil {
+		log.Fatalf("Error running command in isolated environment - %s", err)
 	}
 }
 

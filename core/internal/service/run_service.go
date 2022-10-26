@@ -10,13 +10,13 @@ import (
 	"chast.io/core/internal/recipe/parser"
 )
 
-func BuildPipeline(recipe util.FileReader) Pipeline {
+func Run(recipe util.FileReader, args ...string) Pipeline {
 	//var model generalRunModel.RunModel
 	model, err := parser.ParseRecipe(recipe)
 	if err != nil {
 		panic(err)
 	}
-	log.Printf("Parsed recipe_model: %v", model)
+	log.Printf("Parsed model: %v", model)
 
 	switch m := (*model).(type) {
 	case refactoringRunModel.RunModel:

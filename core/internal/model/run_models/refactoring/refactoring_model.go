@@ -24,10 +24,10 @@ type Local struct {
 
 type RequiredTool struct {
 	Description string
-	Cmd         string
+	CheckCmd    string
 }
 
 type Command struct {
-	Cmd              []string
+	Cmds             [][]string
 	WorkingDirectory string
 }

@@ -1,4 +1,4 @@
-package recipe_model
+package model
 
 type RecipeInfo struct {
 	Version string `yaml:"version"`
