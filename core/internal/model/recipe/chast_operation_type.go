@@ -1,4 +1,4 @@
-package model
+package recipe
 
 type ChastOperationType int8
 

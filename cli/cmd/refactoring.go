@@ -23,7 +23,7 @@ var refactoringCmd = &cobra.Command{
 		if !file.Exists() {
 			log.Fatalf("Recipe file \"%v\" does not exist.\n", file.AbsolutePath)
 		}
-		refactoring.Run(file)
+		refactoring.Run(file, args[1:]...)
 	},
 }
 

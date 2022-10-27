@@ -1,4 +1,8 @@
-package model
+package recipe
+
+type Recipe interface {
+	GetRecipeType() ChastOperationType
+}
 
 type RecipeInfo struct {
 	Version string `yaml:"version"`
@@ -6,14 +10,19 @@ type RecipeInfo struct {
 }
 
 type BaseRecipe struct {
+	Recipe
 	RecipeInfo    `yaml:",inline"`
-	Maintainer    string `yaml:"maintainer"`
-	Name          string `yaml:"name"`
-	Args          []Args `yaml:"args"`
-	Documentation string `yaml:"documentation"` // placeholder for documentation
+	Maintainer    string     `yaml:"maintainer"`
+	Name          string     `yaml:"name"`
+	Arguments     []Argument `yaml:"args"`
+	Documentation string     `yaml:"documentation"` // placeholder for documentation
 }
 
-type Args struct {
+func (recipe *BaseRecipe) GetRecipeType() ChastOperationType {
+	return Unknown
+}
+
+type Argument struct {
 	ID               string `yaml:"id"`
 	Type             string `yaml:"type,omitempty"`
 	ShortDescription string `yaml:"shortDescription"`

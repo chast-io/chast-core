@@ -10,9 +10,6 @@ func BuildRunPipeline(runModel *refactoring.RunModel) {
 	log.Printf("Refactoring BuildRunPipeline")
 	log.Printf("Run Command: %s", runModel.Run[0].Command.Cmds)
 
-	runModel.Run[0].Command.Cmds[0][3] = "" // TODO load params from cli arguments
-	runModel.Run[0].Command.Cmds[0][4] = "" // TODO load params from cli arguments
-
 	var nsContext = overlay.NewNamespaceContext(
 		"/",                            // This will be defined by the versioning system
 		"/tmp/overlay-auto-test/upper", // This will be defined by the versioning system

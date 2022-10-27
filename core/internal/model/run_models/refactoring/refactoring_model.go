@@ -1,9 +1,6 @@
 package refactoring
 
-import "chast.io/core/internal/model/run_models"
-
 type RunModel struct {
-	run_models.RunModel
 	SupportedLanguages []string
 	Run                []Run
 }

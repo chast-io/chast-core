@@ -2,32 +2,39 @@ package service
 
 import (
 	refactoringPipelineBuilder "chast.io/core/internal/core/pipeline_builder/refactoring"
-	refactoringRunModel "chast.io/core/internal/model/run_models/refactoring"
+	"chast.io/core/internal/model/run_models/refactoring"
+	"chast.io/core/internal/recipe/run_model_builder"
 	util "chast.io/core/pkg/util"
+	"github.com/pkg/errors"
 	"log"
 )
 import (
 	"chast.io/core/internal/recipe/parser"
 )
 
-func Run(recipe util.FileReader, args ...string) Pipeline {
+func Run(recipeFile *util.File, args ...string) (*Pipeline, error) {
 	//var model generalRunModel.RunModel
-	model, err := parser.ParseRecipe(recipe)
+	parsedRecipe, err := parser.ParseRecipe(recipeFile)
 	if err != nil {
 		panic(err)
 	}
-	log.Printf("Parsed model: %v", model)
+	log.Printf("Parsed recipe: %v", parsedRecipe)
 
-	switch m := (*model).(type) {
-	case refactoringRunModel.RunModel:
-		refactoringPipelineBuilder.BuildRunPipeline(&m)
-	default:
-		panic("unknown run model")
+	runModel, err := run_model_builder.BuildRunModel(parsedRecipe, args, recipeFile.ParentDirectory)
+	if err != nil {
+		return nil, err
 	}
 
-	//	Build Pipeline
+	switch m := (*runModel).(type) {
+	case refactoring.RunModel:
+		refactoringPipelineBuilder.BuildRunPipeline(&m)
+	default:
+		return nil, errors.Errorf("No pipline builder for provided run model")
+	}
 
-	return Pipeline{}
+	println(runModel)
+
+	return &Pipeline{}, nil
 }
 
 // TODO

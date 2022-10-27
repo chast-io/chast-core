@@ -48,3 +48,13 @@ func Map[S interface{}, T interface{}](source []S, f func(S) T) []T {
 	}
 	return mappedArray
 }
+
+func Count[S interface{}](source []S, f func(S) bool) int {
+	count := 0
+	for _, v := range source {
+		if f(v) {
+			count++
+		}
+	}
+	return count
+}

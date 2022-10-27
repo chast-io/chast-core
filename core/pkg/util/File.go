@@ -7,6 +7,8 @@ import (
 )
 
 type File struct {
+	FileReader
+
 	FileName        string
 	ParentDirectory string
 	AbsolutePath    string

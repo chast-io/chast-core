@@ -1,10 +1,14 @@
-package model
+package recipe
 
 type RefactoringRecipe struct {
 	BaseRecipe         `yaml:",inline"`
 	SupportedLanguages []string `yaml:"supportedLanguages"`
 	Run                []Run    `yaml:"run"`
 	Tests              []string `yaml:"tests"` // TODO placeholder for tests
+}
+
+func (recipe *RefactoringRecipe) GetRecipeType() ChastOperationType {
+	return Refactoring
 }
 
 type Run struct {

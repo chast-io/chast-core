@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"chast.io/core/internal/recipe/model"
+	"chast.io/core/internal/model/recipe"
 	util "chast.io/core/pkg/util"
 	"errors"
 	"gopkg.in/yaml.v3"
@@ -9,23 +9,17 @@ import (
 	"strings"
 )
 
-import (
-	"chast.io/core/internal/model/run_models"
-)
-
 type RecipeParser interface {
-	ParseRecipe(data *[]byte)
-	VerifyRecipeAndBuildModel() (*run_models.RunModel, error)
+	ParseRecipe(data *[]byte) (*recipe.Recipe, error)
 }
 
-func ParseRecipe(file util.FileReader) (*run_models.RunModel, error) {
+func ParseRecipe(file util.FileReader) (*recipe.Recipe, error) {
 	fileData := file.Read()
 	parser, err := getParser(fileData)
 	if err != nil {
 		return nil, err
 	}
-	parser.ParseRecipe(fileData)
-	return parser.VerifyRecipeAndBuildModel()
+	return parser.ParseRecipe(fileData)
 }
 
 func getParser(fileData *[]byte) (RecipeParser, error) {
@@ -34,15 +28,15 @@ func getParser(fileData *[]byte) (RecipeParser, error) {
 		return nil, err
 	}
 	switch recipeType {
-	case model.Refactoring:
+	case recipe.Refactoring:
 		return &RefactoringParser{}, nil
 	default:
 		return nil, errors.New("unknown config type - available types: refactoring")
 	}
 }
 
-func getRecipeType(data *[]byte) (model.ChastOperationType, error) {
-	var plainConfigRoot model.RecipeInfo
+func getRecipeType(data *[]byte) (recipe.ChastOperationType, error) {
+	var plainConfigRoot recipe.RecipeInfo
 	err := yaml.Unmarshal(*data, &plainConfigRoot)
 	if err != nil {
 		log.Fatalf("error: %v", err)
@@ -51,10 +45,10 @@ func getRecipeType(data *[]byte) (model.ChastOperationType, error) {
 	switch strings.ToLower(plainConfigRoot.Type) {
 	case "refactoring":
 		if plainConfigRoot.Version == "1" || plainConfigRoot.Version == "1.0" {
-			return model.Refactoring, nil
+			return recipe.Refactoring, nil
 		}
-		return model.Refactoring, errors.New("unknown refactoring version - only version 1.0 is supported")
+		return recipe.Refactoring, errors.New("unknown refactoring version - only version 1.0 is supported")
 	default:
-		return model.Unknown, nil
+		return recipe.Unknown, nil
 	}
 }
