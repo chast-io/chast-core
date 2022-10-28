@@ -1,25 +1,29 @@
 package version_control
 
 import (
+	"github.com/google/uuid"
 	"hash/fnv"
 	"io/fs"
 	"log"
 	"os"
 	"strconv"
-	"time"
 )
 
 type Version struct {
-	source string
-	target string
+	UUID            string
+	PreviousVersion *Version
+	source          string
+	target          string
 }
 
 func NewVersion(basePath string, source string, versionTag string) *Version {
-	now := time.Now()
-	timeStamp := strconv.FormatInt(now.UnixMilli(), 10)
-	versionTagHash := hash(versionTag)
-	target := basePath + timeStamp + versionTagHash
-	return &Version{source: source, target: target}
+	extendedUuid := versionTag + "-" + uuid.New().String()
+
+	return &Version{
+		UUID:   extendedUuid,
+		source: source,
+		//target: target,
+	}
 }
 
 func (v *Version) CreateTargetFolder() {

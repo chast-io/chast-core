@@ -1,4 +1,4 @@
-package refactoring
+package refactoring_run_model_builder
 
 import (
 	"chast.io/core/internal/model/recipe"
@@ -34,23 +34,60 @@ func (parser *RunModelBuilder) buildRunModel(
 	arguments *run_models.ParsedArguments) (*run_models.RunModel, error) {
 	// TODO hande additional arguments
 	var runModel run_models.RunModel
+
+	namedRuns := make(map[string]*refactoring.Run)
 	mappedRun := collection.Map(recipeModel.Run,
-		func(run recipe.Run) refactoring.Run { return convertRun(run, arguments) },
+		func(run recipe.Run) *refactoring.Run { return convertRun(run, arguments, namedRuns) },
 	)
+
 	runModel = refactoring.RunModel{
-		SupportedLanguages: recipeModel.SupportedLanguages,
-		Run:                mappedRun,
+		Run: mappedRun,
 	}
 
 	return &runModel, nil
 }
 
-func convertRun(run recipe.Run, arguments *run_models.ParsedArguments) refactoring.Run {
-	return refactoring.Run{
-		Command: convertCommand(run.Script, arguments),
-		Docker:  convertDocker(run.Docker),
-		Local:   convertLocal(run.Local),
+func convertRun(run recipe.Run, arguments *run_models.ParsedArguments, namedRuns map[string]*refactoring.Run) *refactoring.Run {
+	dependencies := convertDependencies(run.Dependencies, namedRuns)
+	newRun := getOrComputeRunFromNamedRuns(run.Id, namedRuns)
+
+	newRun.Id = run.Id
+	newRun.Dependencies = dependencies
+	newRun.SupportedLanguages = run.SupportedLanguages
+	newRun.Command = convertCommand(run.Script, arguments)
+	newRun.Docker = convertDocker(run.Docker)
+	newRun.Local = convertLocal(run.Local)
+
+	return newRun
+}
+
+func convertDependencies(dependencies []string, namedRuns map[string]*refactoring.Run) []*refactoring.Run {
+	convertDependencies := make([]*refactoring.Run, len(dependencies))
+	if dependencies != nil {
+		for i, dependency := range dependencies {
+			if _, ok := namedRuns[dependency]; !ok {
+				namedRuns[dependency] = &refactoring.Run{}
+			}
+			convertDependencies[i] = namedRuns[dependency]
+		}
 	}
+
+	return convertDependencies
+}
+
+func getOrComputeRunFromNamedRuns(runId string, namedRuns map[string]*refactoring.Run) *refactoring.Run {
+	var newRun *refactoring.Run
+	if runId != "" {
+		if _, ok := namedRuns[runId]; !ok {
+			newRun = &refactoring.Run{}
+			namedRuns[runId] = newRun
+		} else {
+			newRun = namedRuns[runId]
+		}
+	} else {
+		newRun = &refactoring.Run{}
+	}
+	return newRun
 }
 
 func convertCommand(commands []string, arguments *run_models.ParsedArguments) refactoring.Command {

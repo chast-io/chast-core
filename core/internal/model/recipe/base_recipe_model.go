@@ -12,8 +12,9 @@ type RecipeInfo struct {
 type BaseRecipe struct {
 	Recipe
 	RecipeInfo    `yaml:",inline"`
-	Maintainer    string     `yaml:"maintainer"`
 	Name          string     `yaml:"name"`
+	Maintainer    string     `yaml:"maintainer,omitempty"`
+	Repository    string     `yaml:"repository,omitempty"`
 	Arguments     []Argument `yaml:"args"`
 	Documentation string     `yaml:"documentation"` // placeholder for documentation
 }

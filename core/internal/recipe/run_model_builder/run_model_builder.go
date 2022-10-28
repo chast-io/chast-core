@@ -34,7 +34,7 @@ func BuildRunModel(parsedRecipe *recipe.Recipe, arguments []string, workingDirec
 func getBuilder(parsedRecipe *recipe.Recipe) (RunModelBuilder, *recipe.BaseRecipe, error) {
 	switch m := (*parsedRecipe).(type) {
 	case *recipe.RefactoringRecipe:
-		var runModelBuilder RunModelBuilder = refactoring.NewRunModelBuilder()
+		var runModelBuilder RunModelBuilder = refactoring_run_model_builder.NewRunModelBuilder()
 		return runModelBuilder, &m.BaseRecipe, nil
 	default:
 		return nil, nil, errors.Errorf("No run model builder for recipe of type %T", m.GetRecipeType())

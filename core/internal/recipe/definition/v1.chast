@@ -1,0 +1,47 @@
+version: 1.0
+maintainer: Raphael Jenni
+repository: github.com/RaphaelJenni/chast-refactoring-tool
+
+refactoring RearrangeClassMembers{
+	arg inputFile Path {
+		required: true,
+		shortDescription: "The file that should be rearranged",
+		longDescription: ref(./inputFileArg.md),
+	}
+	arg configFile Path {
+		required: true,
+		shortDescription: "The file that should be rearranged",
+	}
+	
+	stages [main, cleanup]
+	
+	import ./preMainScriptActions
+	
+	run:main mainScript {
+		supportedLanguages [java, c#, FileEnding(.js)]
+		script [
+			runCommandOutput@{ 
+				java -jar ./rearrange_class_members-1.0-SNAPSHOT-all.jar $inputFile $configFile > ${inputFile}.out 
+			},
+			{ ls -la}
+		]
+		changeLocations [
+			inputFile,
+			Path(/tmp)
+		]
+	}
+	
+	run -> mainScript {
+		supportedLanguages [java]
+		script [
+			{ cleanupJavaSpecificFiles() }
+		]
+	}
+	
+	run:cleanup  {
+		script [
+			{ echo $runCommandOutput }
+			{ format }
+		]
+	}
+}

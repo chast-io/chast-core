@@ -1,14 +1,36 @@
 package refactoring
 
+import "github.com/google/uuid"
+
 type RunModel struct {
-	SupportedLanguages []string
-	Run                []Run
+	Run    []*Run
+	Stages []string // TODO replacePlaceholder
+}
+
+type SingleRunModel struct {
+	Run   *Run
+	Stage string // TODO replacePlaceholder
 }
 
 type Run struct {
-	Docker  Docker
-	Local   Local
-	Command Command
+	Id                 string
+	uuid               string
+	Dependencies       []*Run
+	SupportedLanguages []string
+	Docker             Docker
+	Local              Local
+	Command            Command
+}
+
+func (run *Run) GetUUID() string {
+	if run.uuid == "" {
+		id := run.Id
+		if id != "" {
+			id = id + "-"
+		}
+		run.uuid = id + uuid.New().String()
+	}
+	return run.uuid
 }
 
 type Docker struct {
