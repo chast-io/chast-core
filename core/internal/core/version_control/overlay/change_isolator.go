@@ -16,10 +16,12 @@ type changeIsolator struct {
 }
 
 type Isolate interface {
-	setupFolders() error
-	initialize()
-	prepare() error
-	cleanup() error
+	initialize() error
+	prepareOutsideNS() error
+	prepareInsideNS() error
+	cleanupOutsideNS() error
+	cleanupInsideNS() error
+	getIsolationStrategy() IsolationStrategy
 }
 
 func newChangeIsolator(
@@ -35,6 +37,10 @@ func newChangeIsolator(
 	}
 }
 
+func (changeIsolator *changeIsolator) initialize() error {
+	return changeIsolator.setupFolders()
+}
+
 func (changeIsolator *changeIsolator) setupFolders() error {
 	log.Printf("Setting up folders: %s, %s, \n", changeIsolator.ChangeCaptureFolder, changeIsolator.OperationDirectory)
 	if err := os.MkdirAll(changeIsolator.ChangeCaptureFolder, 0755); err != nil {
@@ -46,8 +52,13 @@ func (changeIsolator *changeIsolator) setupFolders() error {
 	return nil
 }
 
-func (changeIsolator *changeIsolator) cleanup() error {
-	log.Tracef("Cleaning up change isolator")
+func (changeIsolator *changeIsolator) cleanupInsideNS() error {
+	log.Printf("[Inside NS ] Cleaning up change isolator")
+	return nil
+}
+
+func (changeIsolator *changeIsolator) cleanupOutsideNS() error {
+	log.Printf("[Outside NS ] Cleaning up change isolator")
 
 	isEmpty, err := isFolderEmpty(changeIsolator.OperationDirectory)
 	if err != nil {

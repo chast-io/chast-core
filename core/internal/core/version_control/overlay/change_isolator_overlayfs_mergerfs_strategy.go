@@ -7,7 +7,7 @@ import (
 )
 
 type changeIsolatorOverlayfsMergerfsStrategy struct {
-	*changeIsolator
+	changeIsolator
 
 	mergerFsHandler   *mergerFsHandler
 	overlayFsHandler  *overlayFsHandler
@@ -16,14 +16,22 @@ type changeIsolatorOverlayfsMergerfsStrategy struct {
 	changeRootHandler *changeRootHandler
 }
 
-func newChangeIsolatorOverlayfsMergerfsStrategy(changeIsolator *changeIsolator) *changeIsolatorOverlayfsMergerfsStrategy {
+func newChangeIsolatorOverlayfsMergerfsStrategy(changeIsolator changeIsolator) *changeIsolatorOverlayfsMergerfsStrategy {
 	return &changeIsolatorOverlayfsMergerfsStrategy{
 		changeIsolator: changeIsolator,
 	}
 }
 
-func (strategy *changeIsolatorOverlayfsMergerfsStrategy) initialize() {
+func (strategy *changeIsolatorOverlayfsMergerfsStrategy) getIsolationStrategy() IsolationStrategy {
+	return OverlayFS
+}
+
+func (strategy *changeIsolatorOverlayfsMergerfsStrategy) initialize() error {
 	log.Tracef("Initializing change isolator with the overlayfs mergerfs strategy")
+
+	if err := strategy.changeIsolator.initialize(); err != nil {
+		return err
+	}
 
 	rootFolder := strategy.RootFolder
 	newRootFsFolder := filepath.Join(strategy.OperationDirectory, "rootfs")
@@ -37,10 +45,20 @@ func (strategy *changeIsolatorOverlayfsMergerfsStrategy) initialize() {
 	strategy.procMounter = newMounter("proc", rootFolder, newRootFsFolder)
 
 	strategy.changeRootHandler = newChangeRoot(newRootFsFolder, strategy.WorkingDirectory)
+
+	return nil
 }
 
-func (strategy *changeIsolatorOverlayfsMergerfsStrategy) prepare() error {
-	log.Tracef("Preparing change isolator with the overlayfs mergerfs strategy")
+// === Prepare ===
+
+func (strategy *changeIsolatorOverlayfsMergerfsStrategy) prepareOutsideNS() error {
+	log.Tracef("[Outside NS] Preparing change isolator with the overlayfs mergerfs strategy")
+	return nil
+
+}
+
+func (strategy *changeIsolatorOverlayfsMergerfsStrategy) prepareInsideNS() error {
+	log.Tracef("[Inside NS] Preparing change isolator with the overlayfs mergerfs strategy")
 
 	if err := strategy.mergerFsHandler.mount(); err != nil {
 		return errors.Wrap(err, "Error mounting mergerfs")
@@ -71,8 +89,10 @@ func (strategy *changeIsolatorOverlayfsMergerfsStrategy) prepare() error {
 	return nil
 }
 
-func (strategy *changeIsolatorOverlayfsMergerfsStrategy) cleanup() error {
-	log.Tracef("Cleaning up change isolator with the overlayfs mergerfs strategy")
+// === Cleanup ===
+
+func (strategy *changeIsolatorOverlayfsMergerfsStrategy) cleanupInsideNS() error {
+	log.Tracef("[Inside NS] Cleaning up change isolator with the overlayfs mergerfs strategy")
 
 	if err := strategy.changeRootHandler.close(); err != nil {
 		return errors.Wrap(err, "Error closing change root")
@@ -102,5 +122,11 @@ func (strategy *changeIsolatorOverlayfsMergerfsStrategy) cleanup() error {
 		return errors.Wrap(err, "Error cleaning up mergerfs")
 	}
 
-	return strategy.changeIsolator.cleanup()
+	return strategy.changeIsolator.cleanupInsideNS()
+}
+
+func (strategy *changeIsolatorOverlayfsMergerfsStrategy) cleanupOutsideNS() error {
+	log.Tracef("[Outside NS] Cleaning up change isolator with the overlayfs mergerfs strategy")
+
+	return strategy.changeIsolator.cleanupOutsideNS()
 }

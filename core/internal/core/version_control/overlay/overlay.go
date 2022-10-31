@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"syscall"
 )
@@ -24,7 +25,19 @@ func init() {
 func nsExecution() {
 	log.SetLevel(log.TraceLevel)
 
+	log.Printf("Running in isolated environment")
+
 	nsContext := NamespaceContext{}
+
+	if len(os.Args) < 1 {
+		log.Fatal("Missing arguments")
+	}
+
+	isolationStrategyStr, err := strconv.ParseUint(os.Args[1], 10, 8)
+	if err != nil {
+		log.Fatalf("Error parsing isolation strategy of value \"%s\" - %s", os.Args[1], err)
+	}
+
 	pipe := os.NewFile(uintptr(3), "pipe")
 	data, err := io.ReadAll(pipe)
 	if err != nil {
@@ -35,17 +48,16 @@ func nsExecution() {
 		log.Fatalf("Error while decoding namespace context: %v", err)
 	}
 
-	var isolator Isolate = newChangeIsolatorOverlayfsMergerfsStrategy(
-		newChangeIsolator(nsContext.RootFolder, nsContext.ChangeCaptureFolder, nsContext.OperationDirectory, nsContext.WorkingDirectory),
+	var isolationStrategy = uint8(isolationStrategyStr)
+	isolator, err := nsContext.GetIsolationStrategy(
+		isolationStrategy,
+		*newChangeIsolator(nsContext.RootFolder, nsContext.ChangeCaptureFolder, nsContext.OperationDirectory, nsContext.WorkingDirectory),
 	)
-
-	if err := isolator.setupFolders(); err != nil {
-		log.Fatalf("Error setting up defined folders - %s", err)
+	if err != nil {
+		log.Fatalf("Cannot load isolation strategy: %v", err)
 	}
 
-	isolator.initialize()
-
-	if err := isolator.prepare(); err != nil {
+	if err := isolator.prepareInsideNS(); err != nil {
 		log.Fatalf("Error in preparing isolation - %s", err)
 	}
 
@@ -53,8 +65,8 @@ func nsExecution() {
 		log.Fatalf("Error in running isolated process - %s", err)
 	}
 
-	if err := isolator.cleanup(); err != nil {
-		log.Fatalf("Error in preparing isolation - %s", err)
+	if err := isolator.cleanupInsideNS(); err != nil {
+		log.Fatalf("Error in cleaning up isolation - %s", err)
 	}
 }
 
@@ -77,8 +89,8 @@ func nsRun(nsContext NamespaceContext) error {
 	return nil
 }
 
-func launchProcessInNewUserNamespace(nsContext *NamespaceContext) error {
-	var args = append([]string{"nsExecution"})
+func launchProcessInNewUserNamespace(nsContext *NamespaceContext, isolationStrategy IsolationStrategy) error {
+	var args = append([]string{"nsExecution", strconv.Itoa(int(isolationStrategy))})
 	cmd := reexec.Command(args...)
 
 	encodedNsContext, marshalingErr := json.Marshal(nsContext)
@@ -154,11 +166,37 @@ func buildSysProcAttr(networkCapabilitiesRequired bool) *syscall.SysProcAttr {
 }
 
 func RunCommandInIsolatedEnvironment(context *NamespaceContext) error {
+	log.SetLevel(log.TraceLevel)
+
 	if err := checkIfFolderExists(context.RootFolder); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Root folder %s does not exist", context.RootFolder))
 	}
 
-	return launchProcessInNewUserNamespace(context)
+	//var isolator Isolate = newChangeIsolatorOverlayfsMergerfsStrategy(
+	//	*newChangeIsolator(context.RootFolder, context.ChangeCaptureFolder, context.OperationDirectory, context.WorkingDirectory),
+	//)
+
+	var isolator Isolate = newChangeIsolatorUnionFsStrategy(
+		*newChangeIsolator(context.RootFolder, context.ChangeCaptureFolder, context.OperationDirectory, context.WorkingDirectory),
+	)
+
+	if err := isolator.initialize(); err != nil {
+		return err
+	}
+
+	if err := isolator.prepareOutsideNS(); err != nil {
+		return err
+	}
+
+	if err := launchProcessInNewUserNamespace(context, isolator.getIsolationStrategy()); err != nil {
+		return err
+	}
+
+	if err := isolator.cleanupOutsideNS(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func checkIfFolderExists(path string) error {
