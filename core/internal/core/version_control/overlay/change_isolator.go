@@ -36,6 +36,7 @@ func newChangeIsolator(
 }
 
 func (changeIsolator *changeIsolator) setupFolders() error {
+	log.Printf("Setting up folders: %s, %s, \n", changeIsolator.ChangeCaptureFolder, changeIsolator.OperationDirectory)
 	if err := os.MkdirAll(changeIsolator.ChangeCaptureFolder, 0755); err != nil {
 		return err
 	}

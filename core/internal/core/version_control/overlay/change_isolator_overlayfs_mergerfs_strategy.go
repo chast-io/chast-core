@@ -50,6 +50,8 @@ func (strategy *changeIsolatorOverlayfsMergerfsStrategy) prepare() error {
 		return errors.Wrap(err, "Error mounting overlayfs")
 	}
 
+	// TODO mount empty /tmp folder to prevent recursive alterations and to provide a clean and temporary tmp folder
+
 	if err := strategy.devMounter.mount(); err != nil {
 		return errors.Wrap(err, "Error mounting dev")
 	}

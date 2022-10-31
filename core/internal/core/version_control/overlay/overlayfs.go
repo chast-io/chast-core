@@ -45,6 +45,7 @@ func (overlayFs *overlayFsHandler) setupFolders() error {
 }
 
 func (overlayFs *overlayFsHandler) mount() error {
+	// TODO support multiple lower dirs
 	log.Tracef("Trying to mount overlayfs over %s into %s", overlayFs.BaseDir, overlayFs.Target)
 
 	if err := overlayFs.setupFolders(); err != nil {
@@ -54,6 +55,7 @@ func (overlayFs *overlayFsHandler) mount() error {
 	fstype := "overlay"
 
 	opts := fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s", overlayFs.BaseDir, overlayFs.UpperDir, overlayFs.WorkDir)
+	log.Tracef("Mounting overlayfs with options: %s", opts)
 	if err := unix.Mount("none", overlayFs.Target, fstype, unix.MS_NOSUID, opts); err != nil {
 		return err
 	}

@@ -1,41 +1,41 @@
 package refactoring_pipeline_builder
 
 import (
+	refactoringPipelineModel "chast.io/core/internal/model/pipeline/refactoring"
 	"chast.io/core/internal/model/run_models/refactoring"
+	refactoringRunModelIsolator "chast.io/core/internal/recipe/run_model_isolator/refactoring"
+	"chast.io/core/pkg/util/collection"
 	"log"
 )
 
-func BuildRunPipeline(runModel *refactoring.RunModel) {
-	log.Printf("Refactoring BuildRunPipeline")
-	log.Printf("Run Command: %s", runModel.Run[0].Command.Cmds)
-
-	buildLocalRunPipeline(runModel)
-
-	//var nsContext = overlay.NewNamespaceContext(
-	//	"/",                            // This will be defined by the versioning system
-	//	"/tmp/overlay-auto-test/upper", // This will be defined by the versioning system
-	//	"/tmp/overlay-auto-test/operationDirectory", // This will be defined by the versioning system
-	//	runModel.Run[0].Command.WorkingDirectory,
-	//	runModel.Run[0].Command.Cmds[0]..., // TODO support multiple commands
-	//)
-
-	//if err := overlay.RunCommandInIsolatedEnvironment(nsContext); err != nil {
-	//	log.Fatalf("Error running command in isolated environment - %s", err)
-	//}
-}
-
-func getExecutionGraph(run []*refactoring.Run) ([][]refactoring.SingleRunModel, error) {
-	var usages = make([]map[string]refactoring.Run, 0)
-	var modelLookup = make(map[string]int)
-
-	for _, runModel := range run {
-		setUsageOfRun(runModel, &modelLookup, &usages)
-
-		for _, dependency := range runModel.Dependencies {
-			setUsageOfRun(dependency, &modelLookup, &usages)
-		}
+func BuildRunPipeline(runModel *refactoring.RunModel) *refactoringPipelineModel.Pipeline {
+	executionOrder, err := getExecutionOrder(runModel.Run)
+	if err != nil {
+		log.Fatalf("Error getting execution order - %s", err)
 	}
 
+	isolatedExecutionOrder := buildIsolatedExecutionOrder(executionOrder, runModel)
+
+	// TODO make configurable
+	pipeline := refactoringPipelineModel.NewPipeline("/tmp/chast/", "/tmp/chast-changes/", "/")
+
+	for _, runModelsInStage := range isolatedExecutionOrder {
+		stage := refactoringPipelineModel.NewStage("") // TODO forward custom stage name
+		for _, runModel := range runModelsInStage {
+			step := refactoringPipelineModel.NewStep(runModel)
+			stage.AddStep(step)
+		}
+		pipeline.AddStage(stage)
+	}
+
+	return pipeline
+
+}
+
+func getExecutionOrder(run []*refactoring.Run) ([][]*refactoring.Run, error) {
+	usages, modelLookup := collectUsagesAndBuildLookup(run)
+
+	// create a list of stages with tasks that can be executed in parallel
 	executionGraphList := make([][]*refactoring.Run, 0)
 	for len(usages[0]) > 0 {
 		level := make([]*refactoring.Run, 0)
@@ -63,7 +63,21 @@ func getExecutionGraph(run []*refactoring.Run) ([][]refactoring.SingleRunModel, 
 		executionGraphList = append(executionGraphList, level)
 	}
 
-	return nil, nil
+	return executionGraphList, nil
+}
+
+func collectUsagesAndBuildLookup(run []*refactoring.Run) ([]map[string]refactoring.Run, map[string]int) {
+	var usages = make([]map[string]refactoring.Run, 0)
+	var modelLookup = make(map[string]int)
+
+	for _, runModel := range run {
+		setUsageOfRun(runModel, &modelLookup, &usages)
+
+		for _, dependency := range runModel.Dependencies {
+			setUsageOfRun(dependency, &modelLookup, &usages)
+		}
+	}
+	return usages, modelLookup
 }
 
 func setUsageOfRun(
@@ -93,24 +107,10 @@ func getMapInArray(maps *[]map[string]refactoring.Run, key int) map[string]refac
 	return (*maps)[key]
 }
 
-func buildLocalRunPipeline(runModel *refactoring.RunModel) {
-	getExecutionGraph(runModel.Run)
-
-	// TODO convert execution graph to a pipeline
-
-	//runModels, err := (&refactoringRunModelSplitter.RunModelSplitter{}).SplitRunModels(runModel)
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	//pipeline := refactoringPipelineModel.NewPipeline("", "", "")
-	//
-	//for _, runModel := range runModels {
-	//	step := pipeline.AddStep(runModel)
-	//	println(fmt.Sprintf("%#v", step))
-	//}
-}
-
-func buildDockerRunPipeline(runModel *refactoring.Run) {
-
+func buildIsolatedExecutionOrder(executionOrder [][]*refactoring.Run, runModel *refactoring.RunModel) [][]*refactoring.SingleRunModel {
+	return collection.Map(executionOrder, func(run []*refactoring.Run) []*refactoring.SingleRunModel {
+		return collection.Map(run, func(run *refactoring.Run) *refactoring.SingleRunModel {
+			return refactoringRunModelIsolator.Isolate(runModel, run)
+		})
+	})
 }

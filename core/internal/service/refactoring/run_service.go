@@ -1,42 +1,40 @@
-package service
+package refactoringService
 
 import (
 	refactoringPipelineBuilder "chast.io/core/internal/core/pipeline_builder/refactoring"
+	refactoringPipelineModel "chast.io/core/internal/model/pipeline/refactoring"
 	"chast.io/core/internal/model/run_models/refactoring"
 	"chast.io/core/internal/recipe/run_model_builder"
+	"chast.io/core/internal/runner/local"
 	util "chast.io/core/pkg/util"
 	"github.com/pkg/errors"
-	"log"
 )
 import (
 	"chast.io/core/internal/recipe/parser"
 )
 
-func Run(recipeFile *util.File, args ...string) (*Pipeline, error) {
-	//var model generalRunModel.RunModel
+func Run(recipeFile *util.File, args ...string) error {
 	parsedRecipe, err := parser.ParseRecipe(recipeFile)
 	if err != nil {
 		panic(err)
 	}
-	log.Printf("Parsed recipe: %v", parsedRecipe)
 
 	runModel, err := run_model_builder.BuildRunModel(parsedRecipe, args, recipeFile.ParentDirectory)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
+	var pipeline *refactoringPipelineModel.Pipeline
 	switch m := (*runModel).(type) {
 	case refactoring.RunModel:
-		refactoringPipelineBuilder.BuildRunPipeline(&m)
+		pipeline = refactoringPipelineBuilder.BuildRunPipeline(&m)
 	default:
-		return nil, errors.Errorf("No pipline builder for provided run model")
+		return errors.Errorf("Provided recipe is not a refactoring recipe")
 	}
 
-	println(runModel)
+	if err := local.NewRunner(true, false).Run(pipeline); err != nil {
+		return err
+	}
 
-	return &Pipeline{}, nil
-}
-
-// TODO
-type Pipeline struct {
+	return nil
 }

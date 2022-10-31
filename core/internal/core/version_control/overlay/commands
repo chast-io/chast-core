@@ -10,6 +10,8 @@ mount --rbind /dev /tmp/overlay-test/mount/dev
 mount --rbind /proc /tmp/overlay-test/mount/proc
 chroot /tmp/overlay-test/mount /bin/bash
 
+
+lowerdir=/tmp/chast/707afd6a-def8-4934-9c03-d819a92f3fb9/mergerfs,upperdir=/shared/home/rjenni/Projects/mse-repos/master-thesis/chast/chast-core/cli/.chast/tmp/707afd6a-def8-4934-9c03-d819a92f3fb9,workdir=/tmp/chast/707afd6a-def8-4934-9c03-d819a92f3fb9/overlayFsWorkingDir
 ----
 
 mount --rbind /dev /tmp/overlay-test/view/dev

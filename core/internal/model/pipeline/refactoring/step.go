@@ -6,6 +6,7 @@ import (
 )
 
 type Step struct {
+	// TODO replace single run model with generic run model containing only the necessary information
 	RunModel            *refactoring.SingleRunModel
 	UUID                string
 	ChangeCaptureFolder string
@@ -20,8 +21,7 @@ func NewStep(runModel *refactoring.SingleRunModel) *Step {
 	}
 }
 
-func (s Step) WithPipeline(targetPipeline *Pipeline) Step {
+func (s *Step) WithPipeline(targetPipeline *Pipeline) {
 	s.ChangeCaptureFolder = filepath.Join(targetPipeline.ChangeCaptureFolder, "tmp", s.UUID)
 	s.OperationLocation = filepath.Join(targetPipeline.OperationLocation, s.UUID)
-	return s
 }

@@ -1,10 +1,13 @@
 package overlay
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/containers/storage/pkg/reexec"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -22,7 +25,15 @@ func nsExecution() {
 	log.SetLevel(log.TraceLevel)
 
 	nsContext := NamespaceContext{}
-	nsContext.convertFromStringArgs(os.Args[1:])
+	pipe := os.NewFile(uintptr(3), "pipe")
+	data, err := io.ReadAll(pipe)
+	if err != nil {
+		log.Fatalf("Error while reading namespace context from pipe: %v", err)
+	}
+	err = json.Unmarshal(data, &nsContext)
+	if err != nil {
+		log.Fatalf("Error while decoding namespace context: %v", err)
+	}
 
 	var isolator Isolate = newChangeIsolatorOverlayfsMergerfsStrategy(
 		newChangeIsolator(nsContext.RootFolder, nsContext.ChangeCaptureFolder, nsContext.OperationDirectory, nsContext.WorkingDirectory),
@@ -48,30 +59,58 @@ func nsExecution() {
 }
 
 func nsRun(nsContext NamespaceContext) error {
-	commandString := strings.Join(nsContext.Command, " ")
-	log.Debugf("Running command \"%s\" in isolated environment", commandString)
-	cmd := exec.Command("/bin/bash", "-c", commandString)
+	for _, command := range nsContext.Commands {
+		commandString := strings.Join(command, " ")
+		log.Debugf("Running command \"%s\" in isolated environment", commandString)
+		cmd := exec.Command("/bin/bash", "-c", commandString) // TODO make runner configurable
 
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 
-	cmd.Env = []string{"PS1=-[chast-ns-process]- # "}
+		cmd.Env = []string{"PS1=-[chast-ns-process]- # "}
 
-	if err := cmd.Run(); err != nil {
-		return errors.Wrap(err, "Error running command")
+		if err := cmd.Run(); err != nil {
+			return errors.Wrap(err, "Error running command")
+		}
 	}
 	return nil
 }
 
-func launchProcessInNewUserNamespace(nsContext ArgsConverter) error {
-	var args = append([]string{"nsExecution"}, nsContext.toStringArgs()...)
+func launchProcessInNewUserNamespace(nsContext *NamespaceContext) error {
+	var args = append([]string{"nsExecution"})
 	cmd := reexec.Command(args...)
+
+	encodedNsContext, marshalingErr := json.Marshal(nsContext)
+	if marshalingErr != nil {
+		return fmt.Errorf("encoding configuration for %q: %w", nsContext, marshalingErr)
+	}
+
+	// https://github.com/containers/buildah/blob/main/run_common.go#L1097
+	// setPdeathsig(cmd)
 
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.SysProcAttr = buildSysProcAttr(false)
+
+	// https://github.com/containers/buildah/blob/main/run_common.go#L1126
+	//cmd.Env = util.MergeEnv(os.Environ(), []string{fmt.Sprintf("LOGLEVEL=%d", log.GetLevel())})
+
+	preader, pwriter, err := os.Pipe()
+	if err != nil {
+		return fmt.Errorf("creating configuration pipe: %w", err)
+	}
+	_, nsContextCopyError := io.Copy(pwriter, bytes.NewReader(encodedNsContext))
+	if nsContextCopyError != nil {
+		nsContextCopyError = fmt.Errorf("while copying configuration down pipe to child process: %w", nsContextCopyError)
+	}
+
+	if err := pwriter.Close(); err != nil {
+		return errors.Wrap(err, "Error closing config pipe writer")
+	}
+
+	cmd.ExtraFiles = append([]*os.File{preader}, cmd.ExtraFiles...)
 
 	if err := cmd.Start(); err != nil {
 		return errors.Errorf("Error starting the reexec.Command - %s\n", err)
@@ -116,7 +155,7 @@ func buildSysProcAttr(networkCapabilitiesRequired bool) *syscall.SysProcAttr {
 
 func RunCommandInIsolatedEnvironment(context *NamespaceContext) error {
 	if err := checkIfFolderExists(context.RootFolder); err != nil {
-		return err
+		return errors.Wrap(err, fmt.Sprintf("Root folder %s does not exist", context.RootFolder))
 	}
 
 	return launchProcessInNewUserNamespace(context)
