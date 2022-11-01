@@ -53,12 +53,12 @@ func (changeIsolator *changeIsolator) setupFolders() error {
 }
 
 func (changeIsolator *changeIsolator) cleanupInsideNS() error {
-	log.Printf("[Inside NS ] Cleaning up change isolator")
+	log.Tracef("[Inside NS] Cleaning up change isolator")
 	return nil
 }
 
 func (changeIsolator *changeIsolator) cleanupOutsideNS() error {
-	log.Printf("[Outside NS ] Cleaning up change isolator")
+	log.Tracef("[Outside NS] Cleaning up change isolator")
 
 	isEmpty, err := isFolderEmpty(changeIsolator.OperationDirectory)
 	if err != nil {

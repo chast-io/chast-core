@@ -41,3 +41,14 @@ func (p *Pipeline) AddStage(stage *Stage) {
 		p.Stages = append(p.Stages, stage)
 	}
 }
+
+// TODO find more permanent solution
+func (p *Pipeline) AddStageAtStart(stage *Stage) {
+	stage.WithPipeline(p)
+	if p.Stages[0] == nil {
+		p.Stages[0] = stage
+	} else {
+		stage.prev = p.Stages[len(p.Stages)-1]
+		p.Stages = append([]*Stage{stage}, p.Stages...)
+	}
+}

@@ -60,9 +60,14 @@ func (unionFs *unionFsHandler) mount() error {
 func (unionFs *unionFsHandler) unmount() error {
 	log.Tracef("Trying to unmount unionfs at %s", unionFs.Target)
 
-	if err := unix.Unmount(unionFs.Target, 0); err != nil {
+	if _, err := exec.Command("umount", unionFs.Target).CombinedOutput(); err != nil {
 		return err
 	}
+
+	// This results in an "Operation not permitted" error
+	//if err := unix.Unmount(unionFs.Target, 0); err != nil {
+	//	return err
+	//}
 
 	log.Debugf("UnionFs was successfully unmounted at %s", unionFs.Target)
 

@@ -25,7 +25,7 @@ func BuildRunPipeline(runModel *refactoring.RunModel) *refactoringPipelineModel.
 			step := refactoringPipelineModel.NewStep(runModel)
 			stage.AddStep(step)
 		}
-		pipeline.AddStage(stage)
+		pipeline.AddStageAtStart(stage)
 	}
 
 	return pipeline

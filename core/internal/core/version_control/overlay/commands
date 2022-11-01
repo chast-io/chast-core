@@ -2,8 +2,12 @@ See https://unix.stackexchange.com/questions/721874/jail-sandbox-process-on-an-o
 
 Log:
 
-mkdir -p /tmp/overlay-test/{upper,workdir,mount}
+mkdir -p /tmp/overlay-test/{upper,workdir,mount,view}
 unshare -rnm
+
+unionfs-fuse -o cow,max_files=32768,relaxed_permissions /tmp/overlay-test/upper=RW:/=RO /tmp/overlay-test/mount
+
+
 mount.mergerfs / /tmp/overlay-test/view -o use_ino,posix_acl=true
 mount -t overlay overlay -o lowerdir=/tmp/overlay-test/view,upperdir=/tmp/overlay-test/upper,workdir=/tmp/overlay-test/workdir /tmp/overlay-test/mount
 mount --rbind /dev /tmp/overlay-test/mount/dev
@@ -31,3 +35,6 @@ fuse-overlayfs -o lowerdir=/,upperdir=/tmp/overlay-test/upper,workdir=/tmp/overl
 sudo chroot /tmp/overlay-test/mount
 
 fusermount -u /tmp/overlay-test/mount
+
+
+// overlayfs: failed to retrieve lower fileattr (/shared, err=-1)
