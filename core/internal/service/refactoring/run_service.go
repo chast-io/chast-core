@@ -6,7 +6,7 @@ import (
 	"chast.io/core/internal/run_model/builder"
 	"chast.io/core/internal/run_model/model/refactoring"
 	"chast.io/core/internal/runner/local"
-	util "chast.io/core/pkg/util"
+	util "chast.io/core/pkg/util/fs"
 	"github.com/pkg/errors"
 )
 import (

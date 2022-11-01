@@ -1,4 +1,4 @@
-package change_isolator
+package handler
 
 import (
 	"fmt"
@@ -9,15 +9,15 @@ import (
 	"os/exec"
 )
 
-type unionFsHandler struct {
+type UnionFsHandler struct {
 	Source       string
 	MergeSources []string
 	UpperDir     string
 	Target       string
 }
 
-func newUnionFs(source string, mergeSources []string, upperDir string, target string) *unionFsHandler {
-	return &unionFsHandler{
+func NewUnionFs(source string, mergeSources []string, upperDir string, target string) *UnionFsHandler {
+	return &UnionFsHandler{
 		Source:       source,
 		MergeSources: mergeSources,
 		UpperDir:     upperDir,
@@ -25,14 +25,7 @@ func newUnionFs(source string, mergeSources []string, upperDir string, target st
 	}
 }
 
-func (unionFs *unionFsHandler) setupFolders() error {
-	if err := os.MkdirAll(unionFs.Target, 0755); err != nil {
-		return errors.Wrap(err, "Failed to create unionFs target dir")
-	}
-	return nil
-}
-
-func (unionFs *unionFsHandler) mount() error {
+func (unionFs *UnionFsHandler) Mount() error {
 	// TODO support multiple lower dirs
 	log.Tracef("Trying to mount unionfs over %s into %s", unionFs.Source, unionFs.Target)
 
@@ -57,31 +50,34 @@ func (unionFs *unionFsHandler) mount() error {
 	return nil
 }
 
-func (unionFs *unionFsHandler) unmount() error {
+func (unionFs *UnionFsHandler) setupFolders() error {
+	if err := os.MkdirAll(unionFs.Target, 0755); err != nil {
+		return errors.Wrap(err, "Failed to create unionFs target dir")
+	}
+	return nil
+}
+
+func (unionFs *UnionFsHandler) Unmount() error {
 	log.Tracef("Trying to unmount unionfs at %s", unionFs.Target)
 
+	// unix.Unmount(unionFs.Target, 0) is results in an "Operation not permitted" error
 	if _, err := exec.Command("umount", unionFs.Target).CombinedOutput(); err != nil {
 		return err
 	}
-
-	// This results in an "Operation not permitted" error
-	//if err := unix.Unmount(unionFs.Target, 0); err != nil {
-	//	return err
-	//}
 
 	log.Debugf("UnionFs was successfully unmounted at %s", unionFs.Target)
 
 	return nil
 }
 
-func (unionFs *unionFsHandler) cleanup() error {
+func (unionFs *UnionFsHandler) Cleanup() error {
 	if err := unionFs.cleanupTargetDir(); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (unionFs *unionFsHandler) cleanupTargetDir() error {
+func (unionFs *UnionFsHandler) cleanupTargetDir() error {
 	log.Tracef("Trying to cleanup unionfs targert at %s", unionFs.Target)
 
 	if err := unix.Rmdir(unionFs.Target); err != nil {

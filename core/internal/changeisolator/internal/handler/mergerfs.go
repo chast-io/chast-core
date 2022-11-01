@@ -1,4 +1,4 @@
-package change_isolator
+package handler
 
 import (
 	"github.com/pkg/errors"
@@ -8,19 +8,19 @@ import (
 	"os/exec"
 )
 
-type mergerFsHandler struct {
+type MergerFsHandler struct {
 	Source string
 	Target string
 }
 
-func newMergerFs(source string, target string) *mergerFsHandler {
-	return &mergerFsHandler{
+func NewMergerFs(source string, target string) *MergerFsHandler {
+	return &MergerFsHandler{
 		Source: source,
 		Target: target,
 	}
 }
 
-func (mergerFs *mergerFsHandler) mount() error {
+func (mergerFs *MergerFsHandler) Mount() error {
 	log.Tracef("Trying to merge %s into %s", mergerFs.Source, mergerFs.Target)
 
 	if err := os.MkdirAll(mergerFs.Target, 0755); err != nil {
@@ -42,7 +42,7 @@ func (mergerFs *mergerFsHandler) mount() error {
 	return nil
 }
 
-func (mergerFs *mergerFsHandler) unmount() error {
+func (mergerFs *MergerFsHandler) Unmount() error {
 	log.Tracef("Trying to unmerge mergerfs at %s", mergerFs.Target)
 
 	if err := unix.Unmount(mergerFs.Target, 0); err != nil {
@@ -54,7 +54,7 @@ func (mergerFs *mergerFsHandler) unmount() error {
 	return nil
 }
 
-func (mergerFs *mergerFsHandler) cleanup() error {
+func (mergerFs *MergerFsHandler) Cleanup() error {
 	log.Tracef("Trying to cleanup mergerfs at %s", mergerFs.Target)
 
 	if err := unix.Rmdir(mergerFs.Target); err != nil {

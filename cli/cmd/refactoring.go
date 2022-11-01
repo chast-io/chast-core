@@ -1,13 +1,13 @@
 package cmd
 
 import (
+	util "chast.io/core/pkg/util/fs"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 import (
 	"chast.io/core/pkg/api/refactoring"
-	util "chast.io/core/pkg/util"
 )
 
 // refactoringCmd represents the refactoring command

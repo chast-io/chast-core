@@ -1,7 +1,9 @@
 package local
 
 import (
-	"chast.io/core/internal/change_isolator"
+	"chast.io/core/internal/changeisolator/pkg"
+	"chast.io/core/internal/changeisolator/pkg/namespace"
+	"chast.io/core/internal/changeisolator/pkg/strategy"
 	"chast.io/core/internal/pipeline/model/refactoring"
 	"github.com/pkg/errors"
 )
@@ -42,16 +44,17 @@ func runIsolated(
 	stage *refactoringPipelineModel.Stage,
 	pipeline *refactoringPipelineModel.Pipeline) error {
 
-	var nsContext = change_isolator.NewNamespaceContext(
+	var nsContext = namespace.NewContext(
 		pipeline.RootFileSystemLocation,
 		stage.GetPrevChangeCaptureFolders(),
 		step.ChangeCaptureFolder,
 		step.OperationLocation,
 		step.RunModel.Run.Command.WorkingDirectory,
 		step.RunModel.Run.Command.Cmds,
+		strategy.UnionFS,
 	)
 
-	if err := change_isolator.RunCommandInIsolatedEnvironment(nsContext); err != nil {
+	if err := pkg.RunCommandInIsolatedEnvironment(nsContext); err != nil {
 		return errors.Errorf("Error running command in isolated environment - %s", err)
 	}
 	return nil

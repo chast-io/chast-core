@@ -1,4 +1,4 @@
-package change_isolator
+package handler
 
 import (
 	log "github.com/sirupsen/logrus"
@@ -7,21 +7,21 @@ import (
 	"syscall"
 )
 
-type mounter struct {
+type Mounter struct {
 	Folder string
 	Source string
 	Target string
 }
 
-func newMounter(folder string, root string, target string) *mounter {
-	return &mounter{
+func NewMounter(folder string, root string, target string) *Mounter {
+	return &Mounter{
 		Folder: folder,
 		Source: filepath.Join(root, folder),
 		Target: filepath.Join(target, folder),
 	}
 }
 
-func (mntr *mounter) mount() error {
+func (mntr *Mounter) Mount() error {
 	log.Tracef("Trying to mount %s into %s", mntr.Source, mntr.Target)
 	fstype := ""
 	if mntr.Folder == "proc" {
@@ -38,7 +38,7 @@ func (mntr *mounter) mount() error {
 	return nil
 }
 
-func (mntr *mounter) unmount() error {
+func (mntr *Mounter) Unmount() error {
 	log.Tracef("Trying to unmount %s lazily", mntr.Target)
 	if errLazy := syscall.Unmount(mntr.Target, unix.MNT_DETACH); errLazy != nil {
 		return errLazy

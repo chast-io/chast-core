@@ -2,7 +2,7 @@ package parser
 
 import (
 	"chast.io/core/internal/recipe/model"
-	util "chast.io/core/pkg/util"
+	util "chast.io/core/pkg/util/fs"
 	"errors"
 	"gopkg.in/yaml.v3"
 	"log"

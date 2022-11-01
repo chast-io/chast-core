@@ -1,4 +1,4 @@
-package change_isolator
+package handler
 
 import (
 	log "github.com/sirupsen/logrus"
@@ -6,20 +6,20 @@ import (
 	"os"
 )
 
-type changeRootHandler struct {
+type ChangeRootHandler struct {
 	RootFsPath                 string
 	WorkingDirectory           string
 	originalRootFileDescriptor *os.File
 }
 
-func newChangeRoot(rootFsPath string, workingDirectory string) *changeRootHandler {
-	return &changeRootHandler{
+func NewChangeRoot(rootFsPath string, workingDirectory string) *ChangeRootHandler {
+	return &ChangeRootHandler{
 		RootFsPath:       rootFsPath,
 		WorkingDirectory: workingDirectory,
 	}
 }
 
-func (crh *changeRootHandler) init() error {
+func (crh *ChangeRootHandler) Init() error {
 	root, err := os.Open("/")
 	if err != nil {
 		return err
@@ -29,9 +29,9 @@ func (crh *changeRootHandler) init() error {
 	return nil
 }
 
-func (crh *changeRootHandler) open() error {
+func (crh *ChangeRootHandler) Open() error {
 	if err := unix.Chroot(crh.RootFsPath); err != nil {
-		if err := crh.close(); err != nil {
+		if err := crh.Close(); err != nil {
 			return err
 		}
 		return err
@@ -45,7 +45,7 @@ func (crh *changeRootHandler) open() error {
 	return nil
 }
 
-func (crh *changeRootHandler) close() error {
+func (crh *ChangeRootHandler) Close() error {
 	if err := crh.originalRootFileDescriptor.Chdir(); err != nil {
 		return err
 	}

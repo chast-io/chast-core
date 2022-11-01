@@ -1,13 +1,23 @@
-package change_isolator
+package strategie
 
 import (
+	"chast.io/core/internal/changeisolator/pkg/strategy"
+	"chast.io/core/pkg/util/fs"
 	log "github.com/sirupsen/logrus"
-	"io"
 	"os"
 )
 
-type changeIsolator struct {
-	Isolate
+type Isolator interface {
+	Initialize() error
+	PrepareOutsideNS() error
+	PrepareInsideNS() error
+	CleanupOutsideNS() error
+	CleanupInsideNS() error
+	GetIsolationStrategy() strategy.IsolationStrategy
+}
+
+type IsolatorContext struct {
+	Isolator
 
 	RootFolder          string
 	ChangeCaptureFolder string
@@ -15,21 +25,12 @@ type changeIsolator struct {
 	WorkingDirectory    string
 }
 
-type Isolate interface {
-	initialize() error
-	prepareOutsideNS() error
-	prepareInsideNS() error
-	cleanupOutsideNS() error
-	cleanupInsideNS() error
-	getIsolationStrategy() IsolationStrategy
-}
-
-func newChangeIsolator(
+func NewChangeIsolator(
 	rootFolder string,
 	changeCaptureFolder string,
 	operationDirectory string,
-	currentWorkingDirectory string) *changeIsolator {
-	return &changeIsolator{
+	currentWorkingDirectory string) *IsolatorContext {
+	return &IsolatorContext{
 		RootFolder:          rootFolder,
 		ChangeCaptureFolder: changeCaptureFolder,
 		OperationDirectory:  operationDirectory,
@@ -37,11 +38,11 @@ func newChangeIsolator(
 	}
 }
 
-func (changeIsolator *changeIsolator) initialize() error {
+func (changeIsolator *IsolatorContext) Initialize() error {
 	return changeIsolator.setupFolders()
 }
 
-func (changeIsolator *changeIsolator) setupFolders() error {
+func (changeIsolator *IsolatorContext) setupFolders() error {
 	log.Printf("Setting up folders: %s, %s, \n", changeIsolator.ChangeCaptureFolder, changeIsolator.OperationDirectory)
 	if err := os.MkdirAll(changeIsolator.ChangeCaptureFolder, 0755); err != nil {
 		return err
@@ -52,15 +53,15 @@ func (changeIsolator *changeIsolator) setupFolders() error {
 	return nil
 }
 
-func (changeIsolator *changeIsolator) cleanupInsideNS() error {
+func (changeIsolator *IsolatorContext) CleanupInsideNS() error {
 	log.Tracef("[Inside NS] Cleaning up change isolator")
 	return nil
 }
 
-func (changeIsolator *changeIsolator) cleanupOutsideNS() error {
+func (changeIsolator *IsolatorContext) CleanupOutsideNS() error {
 	log.Tracef("[Outside NS] Cleaning up change isolator")
 
-	isEmpty, err := isFolderEmpty(changeIsolator.OperationDirectory)
+	isEmpty, err := fs.IsFolderEmpty(changeIsolator.OperationDirectory)
 	if err != nil {
 		return err
 	}
@@ -71,21 +72,4 @@ func (changeIsolator *changeIsolator) cleanupOutsideNS() error {
 		}
 	}
 	return nil
-}
-
-func isFolderEmpty(name string) (bool, error) {
-	f, err := os.Open(name)
-	if err != nil {
-		return false, err
-	}
-
-	_, err = f.Readdirnames(1)
-	if err == io.EOF {
-		return true, nil
-	}
-
-	if err := f.Close(); err != nil {
-		return false, err
-	}
-	return false, err
 }

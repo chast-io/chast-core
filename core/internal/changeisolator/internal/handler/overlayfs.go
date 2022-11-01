@@ -1,4 +1,4 @@
-package change_isolator
+package handler
 
 import (
 	"fmt"
@@ -8,15 +8,15 @@ import (
 	"os"
 )
 
-type overlayFsHandler struct {
+type OverlayFsHandler struct {
 	BaseDir  string
 	Target   string
 	UpperDir string
 	WorkDir  string
 }
 
-func newOverlayFs(baseDir string, target string, upperDir string, workDir string) *overlayFsHandler {
-	return &overlayFsHandler{
+func NewOverlayFs(baseDir string, target string, upperDir string, workDir string) *OverlayFsHandler {
+	return &OverlayFsHandler{
 		BaseDir:  baseDir,
 		Target:   target,
 		UpperDir: upperDir,
@@ -24,27 +24,7 @@ func newOverlayFs(baseDir string, target string, upperDir string, workDir string
 	}
 }
 
-func (overlayFs *overlayFsHandler) setupFolders() error {
-	if _, err := os.Stat(overlayFs.BaseDir); os.IsNotExist(err) {
-		return errors.Wrap(err, "BaseDir does not exist")
-	}
-
-	if _, err := os.Stat(overlayFs.UpperDir); os.IsNotExist(err) {
-		return errors.Wrap(err, "UpperDir does not exist")
-	}
-
-	if err := os.MkdirAll(overlayFs.Target, 0755); err != nil {
-		return errors.Wrap(err, "Failed to create overlayFs target dir")
-	}
-
-	if err := os.MkdirAll(overlayFs.WorkDir, 0755); err != nil {
-		return errors.Wrap(err, "Failed to create overlayFs working dir")
-	}
-
-	return nil
-}
-
-func (overlayFs *overlayFsHandler) mount() error {
+func (overlayFs *OverlayFsHandler) Mount() error {
 	// TODO support multiple lower dirs
 	log.Tracef("Trying to mount overlayfs over %s into %s", overlayFs.BaseDir, overlayFs.Target)
 
@@ -65,7 +45,27 @@ func (overlayFs *overlayFsHandler) mount() error {
 	return nil
 }
 
-func (overlayFs *overlayFsHandler) unmount() error {
+func (overlayFs *OverlayFsHandler) setupFolders() error {
+	if _, err := os.Stat(overlayFs.BaseDir); os.IsNotExist(err) {
+		return errors.Wrap(err, "BaseDir does not exist")
+	}
+
+	if _, err := os.Stat(overlayFs.UpperDir); os.IsNotExist(err) {
+		return errors.Wrap(err, "UpperDir does not exist")
+	}
+
+	if err := os.MkdirAll(overlayFs.Target, 0755); err != nil {
+		return errors.Wrap(err, "Failed to create overlayFs target dir")
+	}
+
+	if err := os.MkdirAll(overlayFs.WorkDir, 0755); err != nil {
+		return errors.Wrap(err, "Failed to create overlayFs working dir")
+	}
+
+	return nil
+}
+
+func (overlayFs *OverlayFsHandler) Unmount() error {
 	log.Tracef("Trying to unmount overlayfs at %s", overlayFs.Target)
 
 	if err := unix.Unmount(overlayFs.Target, 0); err != nil {
@@ -77,7 +77,7 @@ func (overlayFs *overlayFsHandler) unmount() error {
 	return nil
 }
 
-func (overlayFs *overlayFsHandler) cleanup() error {
+func (overlayFs *OverlayFsHandler) Cleanup() error {
 	if err := overlayFs.cleanupTargetDir(); err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (overlayFs *overlayFsHandler) cleanup() error {
 	return nil
 }
 
-func (overlayFs *overlayFsHandler) cleanupTargetDir() error {
+func (overlayFs *OverlayFsHandler) cleanupTargetDir() error {
 	log.Tracef("Trying to cleanup overlayfs targert at %s", overlayFs.Target)
 
 	if err := unix.Rmdir(overlayFs.Target); err != nil {
@@ -98,7 +98,7 @@ func (overlayFs *overlayFsHandler) cleanupTargetDir() error {
 	return nil
 }
 
-func (overlayFs *overlayFsHandler) cleanupWorkingDir() error {
+func (overlayFs *OverlayFsHandler) cleanupWorkingDir() error {
 	log.Tracef("Trying to cleanup overlayfs working dir at %s", overlayFs.WorkDir)
 
 	if err := os.RemoveAll(overlayFs.WorkDir); err != nil {
