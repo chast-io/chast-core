@@ -1,7 +1,7 @@
 package parser
 
 import (
-	. "chast.io/core/internal/model/recipe"
+	. "chast.io/core/internal/recipe/model"
 	"gopkg.in/yaml.v3"
 	"strings"
 )

@@ -1,8 +1,8 @@
 package local
 
 import (
-	"chast.io/core/internal/core/version_control/overlay"
-	refactoringPipelineModel "chast.io/core/internal/model/pipeline/refactoring"
+	"chast.io/core/internal/change_isolator"
+	"chast.io/core/internal/pipeline/model/refactoring"
 	"github.com/pkg/errors"
 )
 
@@ -42,7 +42,7 @@ func runIsolated(
 	stage *refactoringPipelineModel.Stage,
 	pipeline *refactoringPipelineModel.Pipeline) error {
 
-	var nsContext = overlay.NewNamespaceContext(
+	var nsContext = change_isolator.NewNamespaceContext(
 		pipeline.RootFileSystemLocation,
 		stage.GetPrevChangeCaptureFolders(),
 		step.ChangeCaptureFolder,
@@ -51,7 +51,7 @@ func runIsolated(
 		step.RunModel.Run.Command.Cmds,
 	)
 
-	if err := overlay.RunCommandInIsolatedEnvironment(nsContext); err != nil {
+	if err := change_isolator.RunCommandInIsolatedEnvironment(nsContext); err != nil {
 		return errors.Errorf("Error running command in isolated environment - %s", err)
 	}
 	return nil

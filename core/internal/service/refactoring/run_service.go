@@ -1,10 +1,10 @@
 package refactoringService
 
 import (
-	refactoringPipelineBuilder "chast.io/core/internal/core/pipeline_builder/refactoring"
-	refactoringPipelineModel "chast.io/core/internal/model/pipeline/refactoring"
-	"chast.io/core/internal/model/run_models/refactoring"
-	"chast.io/core/internal/recipe/run_model_builder"
+	refactoringPipelineBuilder "chast.io/core/internal/pipeline/builder/refactoring"
+	"chast.io/core/internal/pipeline/model/refactoring"
+	"chast.io/core/internal/run_model/builder"
+	"chast.io/core/internal/run_model/model/refactoring"
 	"chast.io/core/internal/runner/local"
 	util "chast.io/core/pkg/util"
 	"github.com/pkg/errors"
@@ -19,7 +19,7 @@ func Run(recipeFile *util.File, args ...string) error {
 		panic(err)
 	}
 
-	runModel, err := run_model_builder.BuildRunModel(parsedRecipe, args, recipeFile.ParentDirectory)
+	runModel, err := builder.BuildRunModel(parsedRecipe, args, recipeFile.ParentDirectory)
 	if err != nil {
 		return err
 	}
