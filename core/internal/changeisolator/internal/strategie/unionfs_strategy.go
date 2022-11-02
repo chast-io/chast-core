@@ -1,11 +1,12 @@
 package strategie
 
 import (
+	"path/filepath"
+
 	"chast.io/core/internal/changeisolator/internal/handler"
 	"chast.io/core/internal/changeisolator/pkg/strategy"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"path/filepath"
 )
 
 type UnionFsStrategy struct {
@@ -18,7 +19,7 @@ type UnionFsStrategy struct {
 }
 
 func NewUnionFsStrategy(context IsolatorContext) *UnionFsStrategy {
-	return &UnionFsStrategy{
+	return &UnionFsStrategy{ //nolint:exhaustruct // handlers are initialized separately and explicitly
 		IsolatorContext: context,
 	}
 }

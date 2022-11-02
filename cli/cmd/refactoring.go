@@ -1,17 +1,14 @@
 package cmd
 
 import (
+	"chast.io/core/pkg/api/refactoring"
 	util "chast.io/core/pkg/util/fs"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-import (
-	"chast.io/core/pkg/api/refactoring"
-)
-
-// refactoringCmd represents the refactoring command
-var refactoringCmd = &cobra.Command{
+// refactoringCmd represents the refactoring command.
+var refactoringCmd = &cobra.Command{ //nolint:exhaustruct // Only defining required fields
 	Use:   "refactoring <chastConfigFile>",
 	Short: "A brief description of your command", // TODO
 	Long:  ``,                                    // TODO
@@ -19,15 +16,15 @@ var refactoringCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		recipeFileArg := args[0]
 
-		file := util.NewFile(recipeFileArg)
-		if !file.Exists() {
+		file, newFileError := util.NewFile(recipeFileArg)
+		if newFileError != nil || !file.Exists() {
 			log.Fatalf("Recipe file \"%v\" does not exist.\n", file.AbsolutePath)
 		}
 		refactoring.Run(file, args[1:]...)
 	},
 }
 
-func init() {
+func init() { //nolint:gochecknoinits // This is the way cobra wants it.
 	runCmd.AddCommand(refactoringCmd)
 
 	defaultHelpFunction := refactoringCmd.HelpFunc()
@@ -44,7 +41,6 @@ func init() {
 }
 
 func helpFunction(cmd *cobra.Command, args []string, defaultHelpFunction func(*cobra.Command, []string)) {
-	println("Custom help function")
 	if len(cmd.ValidArgs) > 0 {
 		helpFunction(cmd, args, defaultHelpFunction)
 	} else {

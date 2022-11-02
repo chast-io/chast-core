@@ -1,11 +1,12 @@
 package strategie
 
 import (
+	"path/filepath"
+
 	"chast.io/core/internal/changeisolator/internal/handler"
 	"chast.io/core/internal/changeisolator/pkg/strategy"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"path/filepath"
 )
 
 type OverlayFsMergerFsStrategy struct {
@@ -19,7 +20,7 @@ type OverlayFsMergerFsStrategy struct {
 }
 
 func NewOverlayFsMergerFsStrategy(context IsolatorContext) *OverlayFsMergerFsStrategy {
-	return &OverlayFsMergerFsStrategy{
+	return &OverlayFsMergerFsStrategy{ //nolint:exhaustruct // handler initialization is done in Initialize method
 		IsolatorContext: context,
 	}
 }
@@ -42,7 +43,12 @@ func (strat *OverlayFsMergerFsStrategy) Initialize() error {
 
 	strat.mergerFsHandler = handler.NewMergerFs(rootFolder, mergerFsFolder)
 
-	strat.overlayFsHandler = handler.NewOverlayFs(mergerFsFolder, newRootFsFolder, strat.ChangeCaptureFolder, overlayFsWorkingDirFolder)
+	strat.overlayFsHandler = handler.NewOverlayFs(
+		mergerFsFolder,
+		newRootFsFolder,
+		strat.ChangeCaptureFolder,
+		overlayFsWorkingDirFolder,
+	)
 	strat.devMounter = handler.NewMounter("dev", rootFolder, newRootFsFolder)
 	strat.procMounter = handler.NewMounter("proc", rootFolder, newRootFsFolder)
 
@@ -55,8 +61,8 @@ func (strat *OverlayFsMergerFsStrategy) Initialize() error {
 
 func (strat *OverlayFsMergerFsStrategy) PrepareOutsideNS() error {
 	log.Tracef("[Outside NS] Preparing change isolator with the overlayfs mergerfs strategy")
-	return nil
 
+	return nil
 }
 
 func (strat *OverlayFsMergerFsStrategy) PrepareInsideNS() error {

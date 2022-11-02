@@ -1,11 +1,12 @@
 package handler
 
 import (
+	"os"
+	"os/exec"
+
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
-	"os"
-	"os/exec"
 )
 
 type MergerFsHandler struct {
@@ -23,7 +24,7 @@ func NewMergerFs(source string, target string) *MergerFsHandler {
 func (mergerFs *MergerFsHandler) Mount() error {
 	log.Tracef("Trying to merge %s into %s", mergerFs.Source, mergerFs.Target)
 
-	if err := os.MkdirAll(mergerFs.Target, 0755); err != nil {
+	if err := os.MkdirAll(mergerFs.Target, 0o755); err != nil {
 		return errors.Wrap(err, "Failed to create mergerFs target dir")
 	}
 
@@ -34,7 +35,7 @@ func (mergerFs *MergerFsHandler) Mount() error {
 	}
 
 	if _, err := exec.Command(command, args...).CombinedOutput(); err != nil {
-		return err
+		return errors.Wrap(err, "Failed to mount mergerfs")
 	}
 
 	log.Debugf("Mergerfs was successfully mounted -  %s into %s", mergerFs.Source, mergerFs.Target)
@@ -46,7 +47,7 @@ func (mergerFs *MergerFsHandler) Unmount() error {
 	log.Tracef("Trying to unmerge mergerfs at %s", mergerFs.Target)
 
 	if err := unix.Unmount(mergerFs.Target, 0); err != nil {
-		return err
+		return errors.Wrap(err, "Failed to unmount mergerfs")
 	}
 
 	log.Debugf("MergerFs was successfully unmounted at %s", mergerFs.Target)
@@ -58,8 +59,10 @@ func (mergerFs *MergerFsHandler) Cleanup() error {
 	log.Tracef("Trying to cleanup mergerfs at %s", mergerFs.Target)
 
 	if err := unix.Rmdir(mergerFs.Target); err != nil {
-		return err
+		return errors.Wrap(err, "Failed to remove mergerfs target dir")
 	}
+
 	log.Debugf("Removed mergerfs dir (%s)", mergerFs.Target)
+
 	return nil
 }

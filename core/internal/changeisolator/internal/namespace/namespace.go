@@ -2,17 +2,18 @@ package namespace
 
 import (
 	"bytes"
-	"chast.io/core/internal/changeisolator/internal/strategie"
-	"chast.io/core/internal/changeisolator/pkg/namespace"
-	"chast.io/core/pkg/util/fs"
 	"encoding/json"
 	"fmt"
-	"github.com/containers/storage/pkg/reexec"
-	"github.com/pkg/errors"
 	"io"
 	"os"
 	"os/exec"
 	"syscall"
+
+	"chast.io/core/internal/changeisolator/internal/strategie"
+	"chast.io/core/internal/changeisolator/pkg/namespace"
+	"chast.io/core/pkg/util/fs"
+	"github.com/containers/storage/pkg/reexec"
+	"github.com/pkg/errors"
 )
 
 type UserNamespaceRunnerContext struct {
@@ -23,6 +24,7 @@ type UserNamespaceRunnerContext struct {
 func New(nsContext *namespace.Context) *UserNamespaceRunnerContext {
 	return &UserNamespaceRunnerContext{
 		nsContext: nsContext,
+		isolator:  nil,
 	}
 }
 
@@ -33,8 +35,9 @@ func (nsrc *UserNamespaceRunnerContext) Initialize() error {
 
 	isolator, err := nsrc.nsContext.BuildIsolationStrategy()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Error building isolation strategy")
 	}
+
 	nsrc.isolator = isolator
 
 	return nil
@@ -44,36 +47,36 @@ func (nsrc *UserNamespaceRunnerContext) Run() error {
 	isolator := nsrc.isolator
 
 	if err := isolator.Initialize(); err != nil {
-		return err
+		return errors.Wrap(err, "Error initializing isolator")
 	}
 
 	if err := isolator.PrepareOutsideNS(); err != nil {
-		return err
+		return errors.Wrap(err, "Error running preparation work outside namespace")
 	}
 
 	if err := nsrc.launchProcess(); err != nil {
-		return err
+		return errors.Wrap(err, "Error launching process")
 	}
 
 	if err := isolator.CleanupOutsideNS(); err != nil {
-		return err
+		return errors.Wrap(err, "Error running cleanup work outside namespace")
 	}
 
 	return nil
 }
 
 func (nsrc *UserNamespaceRunnerContext) launchProcess() error {
-	cmd, err := nsrc.setupCommand()
-	if err != nil {
-		return err
+	cmd, setupCommandErr := nsrc.setupCommand()
+	if setupCommandErr != nil {
+		return setupCommandErr
 	}
 
 	if err := cmd.Start(); err != nil {
-		return errors.Errorf("Error starting the reexec.Command - %s\n", err)
+		return errors.Errorf("error starting the reexec.Command - %s", err)
 	}
 
 	if err := cmd.Wait(); err != nil {
-		return errors.Errorf("Error waiting for the reexec.Command - %s\n", err)
+		return errors.Errorf("error waiting for the reexec.Command - %s", err)
 	}
 
 	return nil
@@ -93,7 +96,7 @@ func (nsrc *UserNamespaceRunnerContext) setupCommand() (*exec.Cmd, error) {
 	cmd.SysProcAttr = buildSysProcAttr(false)
 
 	// https://github.com/containers/buildah/blob/main/run_common.go#L1126
-	//cmd.Env = util.MergeEnv(os.Environ(), []string{fmt.Sprintf("LOGLEVEL=%d", log.GetLevel())})
+	// cmd.Env = util.MergeEnv(os.Environ(), []string{fmt.Sprintf("LOGLEVEL=%d", log.GetLevel())})
 
 	namespaceContextFile, err := buildNamespaceContextFile(nsContext)
 	if err != nil {
@@ -106,7 +109,7 @@ func (nsrc *UserNamespaceRunnerContext) setupCommand() (*exec.Cmd, error) {
 }
 
 func buildSysProcAttr(networkCapabilitiesRequired bool) *syscall.SysProcAttr {
-	userToRootUidMappings := []syscall.SysProcIDMap{
+	userToRootUIDMappings := []syscall.SysProcIDMap{
 		{
 			ContainerID: 0,
 			HostID:      os.Getuid(),
@@ -128,8 +131,8 @@ func buildSysProcAttr(networkCapabilitiesRequired bool) *syscall.SysProcAttr {
 		cloneFlags |= syscall.CLONE_NEWNET
 	}
 
-	return &syscall.SysProcAttr{
-		UidMappings: userToRootUidMappings,
+	return &syscall.SysProcAttr{ //nolint:exhaustruct // only set the fields we need
+		UidMappings: userToRootUIDMappings,
 		GidMappings: userGroupToRootGroupMappings,
 		Cloneflags:  cloneFlags,
 	}
@@ -141,13 +144,14 @@ func buildNamespaceContextFile(nsContext *namespace.Context) (*os.File, error) {
 		return nil, fmt.Errorf("encoding configuration for %q: %w", nsContext, marshalingErr)
 	}
 
-	pipeReader, pipeWriter, err := os.Pipe()
-	if err != nil {
-		return nil, fmt.Errorf("creating configuration pipe: %w", err)
+	pipeReader, pipeWriter, pipeError := os.Pipe()
+	if pipeError != nil {
+		return nil, fmt.Errorf("creating configuration pipe: %w", pipeError)
 	}
+
 	_, nsContextCopyError := io.Copy(pipeWriter, bytes.NewReader(encodedNsContext))
 	if nsContextCopyError != nil {
-		nsContextCopyError = fmt.Errorf("while copying configuration down pipe to child process: %w", nsContextCopyError)
+		return nil, fmt.Errorf("while copying configuration down pipe to child process: %w", nsContextCopyError)
 	}
 
 	if err := pipeWriter.Close(); err != nil {

@@ -3,6 +3,7 @@ package pkg
 import (
 	"chast.io/core/internal/changeisolator/internal/namespace"
 	namespace2 "chast.io/core/internal/changeisolator/pkg/namespace"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -11,8 +12,12 @@ func RunCommandInIsolatedEnvironment(nsContext *namespace2.Context) error {
 
 	userNamespaceRunnerContext := namespace.New(nsContext)
 	if err := userNamespaceRunnerContext.Initialize(); err != nil {
-		return err
+		return errors.Wrap(err, "Error initializing user namespace runner context")
 	}
 
-	return userNamespaceRunnerContext.Run()
+	if err := userNamespaceRunnerContext.Run(); err != nil {
+		return errors.Wrap(err, "Failed to run command in isolated environment")
+	}
+
+	return nil
 }

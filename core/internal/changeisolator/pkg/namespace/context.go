@@ -38,8 +38,13 @@ func NewContext(
 	}
 }
 
-func (nsc *Context) BuildIsolationStrategy() (strategie.Isolator, error) {
+func NewEmptyContext() *Context {
+	return &Context{} //nolint:exhaustruct // initialized empty here for later full initialization
+}
+
+func (nsc *Context) BuildIsolationStrategy() (strategie.Isolator, error) { //nolint:ireturn // Factory method
 	var isolator strategie.Isolator
+
 	isolatorContext := nsc.newContextFromNamespaceContext()
 
 	switch nsc.IsolationStrategy {
@@ -52,8 +57,9 @@ func (nsc *Context) BuildIsolationStrategy() (strategie.Isolator, error) {
 	}
 
 	if err := isolator.Initialize(); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Error initializing isolation strategy")
 	}
+
 	return isolator, nil
 }
 
@@ -63,5 +69,7 @@ func (nsc *Context) newContextFromNamespaceContext() strategie.IsolatorContext {
 		ChangeCaptureFolder: nsc.ChangeCaptureFolder,
 		OperationDirectory:  nsc.OperationDirectory,
 		WorkingDirectory:    nsc.WorkingDirectory,
+
+		Isolator: nil,
 	}
 }

@@ -2,7 +2,7 @@ module chast.io/cli
 
 go 1.19
 
-replace chast.io/core => ./../core
+replace chast.io/core => ./../core //nolint:gomoddirectives // TODO: remove this replace directive once the core package is published
 
 require (
 	chast.io/core v0.0.0-00010101000000-000000000000

@@ -3,7 +3,7 @@ package strategy
 type IsolationStrategy = uint8
 
 const (
-	UnknownIsolation IsolationStrategy = iota
-	OverlayFS        IsolationStrategy = iota
-	UnionFS          IsolationStrategy = iota
+	_         IsolationStrategy = iota
+	OverlayFS IsolationStrategy = iota
+	UnionFS   IsolationStrategy = iota
 )

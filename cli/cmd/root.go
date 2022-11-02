@@ -10,8 +10,8 @@ import (
 
 var cfgFile string
 
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
+// rootCmd represents the base command when called without any subcommands.
+var rootCmd = &cobra.Command{ //nolint:exhaustruct // Only defining required fields
 	Use:   "chast",
 	Short: "A brief description of your application",
 	Long: `A longer description that spans multiple lines and likely contains
@@ -34,7 +34,7 @@ func Execute() {
 	}
 }
 
-func init() {
+func init() { //nolint:gochecknoinits // This is the way cobra wants it.
 	cobra.OnInitialize(initConfig)
 
 	// Here you will define your flags and configuration settings.
@@ -68,6 +68,6 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+		_, _ = fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
 	}
 }
