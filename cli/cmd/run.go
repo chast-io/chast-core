@@ -1,13 +1,11 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
-// runCmd represents the refactoring command
-var runCmd = &cobra.Command{
+// runCmd represents the refactoring command.
+var runCmd = &cobra.Command{ //nolint:exhaustruct // Only defining required fields
 	Use:   "run",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
@@ -17,11 +15,11 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("refactoring called")
+		cmd.HelpFunc()(cmd, args)
 	},
 }
 
-func init() {
+func init() { //nolint:gochecknoinits // This is the way cobra wants it.
 	rootCmd.AddCommand(runCmd)
 
 	// Here you will define your flags and configuration settings.

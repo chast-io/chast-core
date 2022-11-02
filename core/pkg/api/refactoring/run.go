@@ -1,8 +1,14 @@
 package refactoring
 
-import util "chast.io/core/pkg/util"
-import "chast.io/core/internal/service"
+import (
+	refactoringService "chast.io/core/internal/service/pkg/refactoring"
+	util "chast.io/core/pkg/util/fs"
+	log "github.com/sirupsen/logrus"
+)
 
-func Run(recipe util.FileReader) {
-	service.BuildPipeline(recipe)
+func Run(recipe *util.File, args ...string) {
+	err := refactoringService.Run(recipe, args...)
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
