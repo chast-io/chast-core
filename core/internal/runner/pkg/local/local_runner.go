@@ -6,6 +6,7 @@ import (
 	"chast.io/core/internal/changeisolator/pkg/strategy"
 	refactoringPipelineModel2 "chast.io/core/internal/pipeline/pkg/model/refactoring"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 type Runner struct {
@@ -21,6 +22,8 @@ func NewRunner(isolated bool, parallel bool) *Runner {
 }
 
 func (r *Runner) Run(pipeline *refactoringPipelineModel2.Pipeline) error {
+	log.Printf("Running pipeline %s", pipeline.UUID)
+
 	if r.isolated && !r.parallel {
 		return sequentialRun(pipeline)
 	}

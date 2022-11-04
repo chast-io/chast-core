@@ -2,12 +2,13 @@ package refactoringservice
 
 import (
 	refactoringPipelineBuilder "chast.io/core/internal/pipeline/pkg/builder/refactoring"
+	refactoringpipelinecleanup "chast.io/core/internal/pipeline/pkg/cleanup/refactoring"
 	refactoringpipelinemodel "chast.io/core/internal/pipeline/pkg/model/refactoring"
 	"chast.io/core/internal/recipe/pkg/parser"
 	"chast.io/core/internal/run_model/pkg/builder"
 	"chast.io/core/internal/run_model/pkg/model/refactoring"
 	"chast.io/core/internal/runner/pkg/local"
-	util "chast.io/core/pkg/util/fs"
+	util "chast.io/core/pkg/util/fs/file"
 	"github.com/pkg/errors"
 )
 
@@ -32,6 +33,10 @@ func Run(recipeFile *util.File, args ...string) error {
 
 	if err := local.NewRunner(true, false).Run(pipeline); err != nil {
 		return errors.Wrap(err, "Failed to run pipeline")
+	}
+
+	if err := refactoringpipelinecleanup.Cleanup(pipeline); err != nil {
+		return errors.Wrap(err, "Failed to cleanup pipeline")
 	}
 
 	return nil

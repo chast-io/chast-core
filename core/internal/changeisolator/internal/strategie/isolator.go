@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"chast.io/core/internal/changeisolator/pkg/strategy"
-	"chast.io/core/pkg/util/fs"
+	"chast.io/core/pkg/util/fs/folder"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -70,7 +70,7 @@ func (changeIsolator *IsolatorContext) CleanupInsideNS() error {
 func (changeIsolator *IsolatorContext) CleanupOutsideNS() error {
 	log.Tracef("[Outside NS] Cleaning up change isolator")
 
-	isEmpty, isFolderEmptyError := fs.IsFolderEmpty(changeIsolator.OperationDirectory)
+	isEmpty, isFolderEmptyError := folder.IsFolderEmpty(changeIsolator.OperationDirectory)
 	if isFolderEmptyError != nil {
 		return errors.Wrap(isFolderEmptyError, "Error checking if operation directory is empty")
 	}

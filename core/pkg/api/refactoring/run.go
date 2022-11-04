@@ -2,7 +2,7 @@ package refactoring
 
 import (
 	refactoringService "chast.io/core/internal/service/pkg/refactoring"
-	util "chast.io/core/pkg/util/fs"
+	util "chast.io/core/pkg/util/fs/file"
 	log "github.com/sirupsen/logrus"
 )
 

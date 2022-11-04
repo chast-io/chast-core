@@ -15,6 +15,7 @@ type UnionFsStrategy struct {
 	unionFsHandler    *handler.UnionFsHandler
 	devMounter        *handler.Mounter
 	procMounter       *handler.Mounter
+	tmpMounter        *handler.TmpMounter
 	changeRootHandler *handler.ChangeRootHandler
 }
 
@@ -44,6 +45,7 @@ func (strat *UnionFsStrategy) Initialize() error {
 
 	strat.devMounter = handler.NewMounter("dev", rootFolder, newRootFsFolder)
 	strat.procMounter = handler.NewMounter("proc", rootFolder, newRootFsFolder)
+	strat.tmpMounter = handler.NewTmpMounter(rootFolder, newRootFsFolder, strat.OperationDirectory)
 
 	strat.changeRootHandler = handler.NewChangeRoot(newRootFsFolder, strat.WorkingDirectory)
 
@@ -63,14 +65,16 @@ func (strat *UnionFsStrategy) PrepareOutsideNS() error {
 func (strat *UnionFsStrategy) PrepareInsideNS() error {
 	log.Tracef("[Inside NS] Preparing change isolator with the unionfs strategy")
 
-	// TODO mount empty /tmp folder to prevent recursive alterations and to provide a clean and temporary tmp folder
-
 	if err := strat.devMounter.Mount(); err != nil {
 		return errors.Wrap(err, "Error mounting dev")
 	}
 
 	if err := strat.procMounter.Mount(); err != nil {
 		return errors.Wrap(err, "Error mounting proc")
+	}
+
+	if err := strat.tmpMounter.Mount(); err != nil {
+		return errors.Wrap(err, "Error mounting tmp")
 	}
 
 	if err := strat.changeRootHandler.Init(); err != nil {
@@ -91,6 +95,10 @@ func (strat *UnionFsStrategy) CleanupInsideNS() error {
 
 	if err := strat.changeRootHandler.Close(); err != nil {
 		return errors.Wrap(err, "Error closing change root")
+	}
+
+	if err := strat.tmpMounter.Unmount(); err != nil {
+		return errors.Wrap(err, "Error unmounting tmp")
 	}
 
 	if err := strat.procMounter.Unmount(); err != nil {

@@ -11,7 +11,7 @@ import (
 
 	"chast.io/core/internal/changeisolator/internal/strategie"
 	"chast.io/core/internal/changeisolator/pkg/namespace"
-	"chast.io/core/pkg/util/fs"
+	"chast.io/core/pkg/util/fs/folder"
 	"github.com/containers/storage/pkg/reexec"
 	"github.com/pkg/errors"
 )
@@ -29,7 +29,7 @@ func New(nsContext *namespace.Context) *UserNamespaceRunnerContext {
 }
 
 func (nsrc *UserNamespaceRunnerContext) Initialize() error {
-	if !fs.DoesFolderExist(nsrc.nsContext.RootFolder) {
+	if !folder.DoesFolderExist(nsrc.nsContext.RootFolder) {
 		return errors.Errorf("Root folder %s does not exist", nsrc.nsContext.RootFolder)
 	}
 
