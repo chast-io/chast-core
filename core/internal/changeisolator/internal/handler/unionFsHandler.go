@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -11,18 +12,18 @@ import (
 )
 
 type UnionFsHandler struct {
-	Source       string
-	MergeSources []string
-	UpperDir     string
-	Target       string
+	Source            string
+	SourceJoinFolders []string
+	UpperDir          string
+	Target            string
 }
 
-func NewUnionFs(source string, mergeSources []string, upperDir string, target string) *UnionFsHandler {
+func NewUnionFs(source string, sourceJoinFolders []string, upperDir string, target string) *UnionFsHandler {
 	return &UnionFsHandler{
-		Source:       source,
-		MergeSources: mergeSources,
-		UpperDir:     upperDir,
-		Target:       target,
+		Source:            source,
+		SourceJoinFolders: sourceJoinFolders,
+		UpperDir:          upperDir,
+		Target:            target,
 	}
 }
 
@@ -35,10 +36,15 @@ func (unionFs *UnionFsHandler) Mount() error {
 	}
 
 	command := "/usr/bin/unionfs-fuse"
+
 	args := []string{
 		"-o",
-		"cow,relaxed_permissions",
-		fmt.Sprintf("%s=RW:%s=RO", unionFs.UpperDir, unionFs.Source),
+		// cow             : copy on write, changes are only reflected in the upper dir
+		// hide_meta_files : hide .unionfs-fuse folder present in each dir except the lower dir
+		//				     and containing all the metadata (removal information)
+		// hard_remove     : remove files from the upper dir instead of just hiding them
+		"cow,hide_meta_files,hard_remove",
+		fmt.Sprintf("%s=RW:%s", unionFs.UpperDir, unionFs.getSourceFolders()),
 		unionFs.Target,
 	}
 
@@ -49,6 +55,21 @@ func (unionFs *UnionFsHandler) Mount() error {
 	log.Debugf("mounted unionfs over %s into %s", unionFs.Source, unionFs.Target)
 
 	return nil
+}
+
+func (unionFs *UnionFsHandler) getSourceFolders() string {
+	var sourceFolders strings.Builder
+
+	size := len(unionFs.SourceJoinFolders)
+
+	for i := range unionFs.SourceJoinFolders {
+		// reverse order required to have the last task be the left most and the first task be the right most path
+		sourceFolders.WriteString(fmt.Sprintf("%s=RO:", unionFs.SourceJoinFolders[size-1-i]))
+	}
+
+	sourceFolders.WriteString(fmt.Sprintf("%s=RO", unionFs.Source))
+
+	return sourceFolders.String()
 }
 
 func (unionFs *UnionFsHandler) setupFolders() error {

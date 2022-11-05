@@ -17,13 +17,13 @@ type Step struct {
 func NewStep(runModel *refactoring.SingleRunModel) *Step {
 	runUUID := runModel.Run.GetUUID()
 
-	return &Step{ //nolint:exhaustruct // rest initialized in WithPipeline
+	return &Step{ //nolint:exhaustruct // rest initialized in WithStage
 		RunModel: runModel,
 		UUID:     runUUID,
 	}
 }
 
-func (s *Step) WithPipeline(targetPipeline *Pipeline) {
-	s.ChangeCaptureFolder = filepath.Join(targetPipeline.ChangeCaptureFolder, "tmp", s.UUID)
-	s.OperationLocation = filepath.Join(targetPipeline.OperationLocation, s.UUID)
+func (s *Step) WithStage(stage *Stage) {
+	s.ChangeCaptureFolder = filepath.Join(stage.ChangeCaptureFolder, s.UUID)
+	s.OperationLocation = filepath.Join(stage.OperationLocation, s.UUID)
 }

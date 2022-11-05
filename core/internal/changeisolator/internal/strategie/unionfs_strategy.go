@@ -41,7 +41,12 @@ func (strat *UnionFsStrategy) Initialize() error {
 	rootFolder := strat.RootFolder
 	newRootFsFolder := filepath.Join(strat.OperationDirectory, "rootfs")
 
-	strat.unionFsHandler = handler.NewUnionFs(rootFolder, []string{}, strat.ChangeCaptureFolder, newRootFsFolder)
+	strat.unionFsHandler = handler.NewUnionFs(
+		rootFolder,
+		strat.RootJoinFolders,
+		strat.ChangeCaptureFolder,
+		newRootFsFolder,
+	)
 
 	strat.devMounter = handler.NewMounter("dev", rootFolder, newRootFsFolder)
 	strat.procMounter = handler.NewMounter("proc", rootFolder, newRootFsFolder)

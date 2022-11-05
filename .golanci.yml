@@ -22,7 +22,7 @@ run:
 # All possible options can be found here https://github.com/golangci/golangci-lint/blob/master/.golangci.reference.yml
 linters-settings:
   cyclop:
-    # The maximal code complexity to report.
+    # The maximal code complexity to pipelinereport.
     # Default: 10
     max-complexity: 30
     # The maximal average package complexity.
@@ -54,7 +54,7 @@ linters-settings:
     statements: 50
 
   gocognit:
-    # Minimal code complexity to report
+    # Minimal code complexity to pipelinereport
     # Default: 30 (but we recommend 10-20)
     min-complexity: 20
 

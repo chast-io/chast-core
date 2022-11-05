@@ -22,6 +22,7 @@ type IsolatorContext struct {
 	Isolator
 
 	RootFolder          string
+	RootJoinFolders     []string
 	ChangeCaptureFolder string
 	OperationDirectory  string
 	WorkingDirectory    string
@@ -29,12 +30,14 @@ type IsolatorContext struct {
 
 func NewChangeIsolator(
 	rootFolder string,
+	rootJoinFolders []string,
 	changeCaptureFolder string,
 	operationDirectory string,
 	currentWorkingDirectory string,
 ) *IsolatorContext {
 	return &IsolatorContext{
 		RootFolder:          rootFolder,
+		RootJoinFolders:     rootJoinFolders,
 		ChangeCaptureFolder: changeCaptureFolder,
 		OperationDirectory:  operationDirectory,
 		WorkingDirectory:    currentWorkingDirectory,

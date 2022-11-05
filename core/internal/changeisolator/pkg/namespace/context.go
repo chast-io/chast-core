@@ -64,12 +64,11 @@ func (nsc *Context) BuildIsolationStrategy() (strategie.Isolator, error) { //nol
 }
 
 func (nsc *Context) newContextFromNamespaceContext() strategie.IsolatorContext {
-	return strategie.IsolatorContext{
-		RootFolder:          nsc.RootFolder,
-		ChangeCaptureFolder: nsc.ChangeCaptureFolder,
-		OperationDirectory:  nsc.OperationDirectory,
-		WorkingDirectory:    nsc.WorkingDirectory,
-
-		Isolator: nil,
-	}
+	return *strategie.NewChangeIsolator(
+		nsc.RootFolder,
+		nsc.MergeFolders,
+		nsc.ChangeCaptureFolder,
+		nsc.OperationDirectory,
+		nsc.WorkingDirectory,
+	)
 }
