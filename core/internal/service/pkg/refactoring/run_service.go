@@ -3,7 +3,6 @@ package refactoringservice
 import (
 	refactoringPipelineBuilder "chast.io/core/internal/pipeline/pkg/builder/refactoring"
 	refactoringpipelinemodel "chast.io/core/internal/pipeline/pkg/model/refactoring"
-	"chast.io/core/internal/post_processing/diff/pkg/diff"
 	"chast.io/core/internal/post_processing/pipelinereport"
 	"chast.io/core/internal/recipe/pkg/parser"
 	"chast.io/core/internal/run_model/pkg/builder"
@@ -41,7 +40,8 @@ func Run(recipeFile *util.File, args ...string) error {
 		return errors.Wrap(reportError, "Failed to generate report")
 	}
 
-	diff.BuildDiff(pipeline, report)
+	report.PrintFileTree(true)
+	report.PrintChanges(true)
 
 	//changedFilesRelative, recipeParseError := report.ChangedFilesRelative()
 	//if recipeParseError != nil {
