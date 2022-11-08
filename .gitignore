@@ -1,6 +1,7 @@
 .idea/git_toolbox_prj.xml
 .idea/golinter.xml
 
+sonarlint/
 .idea/**/workspace.xml
 .idea/**/tasks.xml
 .idea/**/usage.statistics.xml
