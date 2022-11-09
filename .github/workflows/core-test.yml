@@ -28,7 +28,7 @@ jobs:
         run: go build -v ./...
         working-directory: ./core
       - name: Test with the Go CLI
-        run: go test ./... | go-junit-report -set-exit-code > report.xml
+        run: go test -v ./... | go-junit-report -set-exit-code > report.xml
         working-directory: ./core
       - name: Test Summary
         uses: test-summary/action@v2
