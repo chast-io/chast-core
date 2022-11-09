@@ -1,14 +1,14 @@
-package refactoringpipelinebuilder_test
+package dependencygraph_test
 
 import (
 	"testing"
 
-	uut "chast.io/core/internal/pipeline/pkg/builder/refactoring"
+	uut "chast.io/core/internal/pipeline/internal/dependency_graph"
 	"chast.io/core/internal/run_model/pkg/model/refactoring"
 )
 
 // region Helpers
-func builderDummyRunModelWithSingleRun() *refactoring.RunModel {
+func dependencyGraphDummyRunModelWithSingleRun() *refactoring.RunModel {
 	return &refactoring.RunModel{
 		Run: []*refactoring.Run{
 			{
@@ -40,45 +40,26 @@ func builderDummyRunModelWithSingleRun() *refactoring.RunModel {
 // endregion
 
 // region BuildRunPipeline [SingleRun]
-func TestBuildRunPipeline_SingleRun(t *testing.T) {
+func TestBuildExecutionOrder_SingleRun(t *testing.T) {
 	t.Parallel()
 
-	runModel1 := builderDummyRunModelWithSingleRun()
+	runModel1 := dependencyGraphDummyRunModelWithSingleRun()
 
-	actualPipeline, _ := uut.BuildRunPipeline(runModel1)
+	executionOrder, _ := uut.BuildExecutionOrder(runModel1)
 
-	t.Run("should set UUID", func(t *testing.T) {
+	t.Run("should return a single stage", func(t *testing.T) {
 		t.Parallel()
-		if actualPipeline.UUID == "" {
-			t.Error("Expected pipeline UUID to be set, but was empty")
+
+		if len(executionOrder) != 1 {
+			t.Errorf("expected execution order to contain 1 stage but was %d", len(executionOrder))
 		}
 	})
 
-	t.Run("should set operation location", func(t *testing.T) {
+	t.Run("should return a single run", func(t *testing.T) {
 		t.Parallel()
-		if actualPipeline.OperationLocation != "/tmp/chast" {
-			t.Errorf("expected operation location to be %s but was %s", "/tmp/chast", actualPipeline.OperationLocation)
-		}
-	})
 
-	t.Run("should set change capture folder", func(t *testing.T) {
-		t.Parallel()
-		if actualPipeline.ChangeCaptureLocation != "/tmp/chast-changes/"+actualPipeline.UUID {
-			t.Errorf("Expected pipeline ChangeCaptureLocation to be '/tmp/chast-changes/%s', but was '%s'", actualPipeline.UUID, actualPipeline.ChangeCaptureLocation)
-		}
-	})
-
-	t.Run("should set root file system location", func(t *testing.T) {
-		t.Parallel()
-		if actualPipeline.RootFileSystemLocation != "/" {
-			t.Errorf("Expected pipeline RootFileSystemLocation to be '/', but was '%s'", actualPipeline.RootFileSystemLocation)
-		}
-	})
-
-	t.Run("should set stages", func(t *testing.T) {
-		t.Parallel()
-		if len(actualPipeline.Stages) != 1 {
-			t.Errorf("Expected pipeline to have 1 stage, but had %d", len(actualPipeline.Stages))
+		if len(executionOrder[0]) != 1 {
+			t.Errorf("expected execution order to contain 1 run but was %d", len(executionOrder[0]))
 		}
 	})
 }
@@ -87,7 +68,7 @@ func TestBuildRunPipeline_SingleRun(t *testing.T) {
 
 // region BuildRunPipeline [MultipleRuns]
 
-func TestBuildRunPipeline_MultipleRuns_WithStages(t *testing.T) {
+func TestBuildExecutionOrder_MultipleRuns_WithStages(t *testing.T) {
 	t.Parallel()
 
 	run1 := &refactoring.Run{
@@ -145,68 +126,68 @@ func TestBuildRunPipeline_MultipleRuns_WithStages(t *testing.T) {
 		},
 	}
 
-	actualPipeline, _ := uut.BuildRunPipeline(runModel)
+	executionOrder, _ := uut.BuildExecutionOrder(runModel)
 
 	t.Run("should set stages", func(t *testing.T) {
 		t.Parallel()
-		if len(actualPipeline.Stages) != 3 {
-			t.Errorf("Expected pipeline to have 3 stages, but had %d", len(actualPipeline.Stages))
+		if len(executionOrder) != 3 {
+			t.Errorf("expected execution order to contain 3 stages but was %d", len(executionOrder))
 		}
 	})
 
 	t.Run("should set stage 1", func(t *testing.T) {
 		t.Parallel()
-		if len(actualPipeline.Stages[0].Steps) != 3 {
-			t.Errorf("Expected stage 1 to have 3 steps, but had %d", len(actualPipeline.Stages[0].Steps))
+		if len(executionOrder[0]) != 3 {
+			t.Errorf("expected execution order to contain 3 runs in stage 1 but was %d", len(executionOrder[0]))
 		}
 	})
 
 	t.Run("should set stage 2", func(t *testing.T) {
 		t.Parallel()
-		if len(actualPipeline.Stages[1].Steps) != 1 {
-			t.Errorf("Expected stage 2 to have 1 step, but had %d", len(actualPipeline.Stages[1].Steps))
+		if len(executionOrder[1]) != 1 {
+			t.Errorf("expected execution order to contain 1 run in stage 2 but was %d", len(executionOrder[1]))
 		}
 	})
 
 	t.Run("should set stage 3", func(t *testing.T) {
 		t.Parallel()
-		if len(actualPipeline.Stages[2].Steps) != 1 {
-			t.Errorf("Expected stage 3 to have 1 step, but had %d", len(actualPipeline.Stages[2].Steps))
+		if len(executionOrder[2]) != 1 {
+			t.Errorf("expected execution order to contain 1 run in stage 3 but was %d", len(executionOrder[2]))
 		}
 	})
 
 	t.Run("should set stage 1 step 1", func(t *testing.T) {
 		t.Parallel()
-		if actualPipeline.Stages[0].Steps[0].RunModel.Run != run1 {
-			t.Errorf("Expected stage 1 step 1 to be run1, but was %s", actualPipeline.Stages[0].Steps[0].RunModel.Run.ID)
+		if executionOrder[0][0] != run1 {
+			t.Errorf("expected execution order to contain run1 in stage 1 step 1 but was %s", executionOrder[0][0].ID)
 		}
 	})
 
 	t.Run("should set stage 1 step 2", func(t *testing.T) {
 		t.Parallel()
-		if actualPipeline.Stages[0].Steps[1].RunModel.Run != run2 {
-			t.Errorf("Expected stage 1 step 2 to be run2, but was %s", actualPipeline.Stages[0].Steps[1].RunModel.Run.ID)
+		if executionOrder[0][1] != run2 {
+			t.Errorf("expected execution order to contain run2 in stage 1 step 2 but was %s", executionOrder[0][1].ID)
 		}
 	})
 
 	t.Run("should set stage 1 step 3", func(t *testing.T) {
 		t.Parallel()
-		if actualPipeline.Stages[0].Steps[2].RunModel.Run != run5 {
-			t.Errorf("Expected stage 1 step 3 to be run5, but was %s", actualPipeline.Stages[2].Steps[0].RunModel.Run.ID)
+		if executionOrder[0][2] != run5 {
+			t.Errorf("expected execution order to contain run5 in stage 1 step 3 but was %s", executionOrder[0][2].ID)
 		}
 	})
 
 	t.Run("should set stage 2 step 1", func(t *testing.T) {
 		t.Parallel()
-		if actualPipeline.Stages[1].Steps[0].RunModel.Run != run3deps1 {
-			t.Errorf("Expected stage 2 step 1 to be run3deps1, but was %s", actualPipeline.Stages[1].Steps[0].RunModel.Run.ID)
+		if executionOrder[1][0] != run3deps1 {
+			t.Errorf("expected execution order to contain run3deps1 in stage 2 step 1 but was %s", executionOrder[1][0].ID)
 		}
 	})
 
 	t.Run("should set stage 3 step 1", func(t *testing.T) {
 		t.Parallel()
-		if actualPipeline.Stages[2].Steps[0].RunModel.Run != run4deps1and2and3 {
-			t.Errorf("Expected stage 3 step 1 to be run4depsAll, but was %s", actualPipeline.Stages[2].Steps[0].RunModel.Run.ID)
+		if executionOrder[2][0] != run4deps1and2and3 {
+			t.Errorf("expected execution order to contain run4deps1and2and3 in stage 3 step 1 but was %s", executionOrder[2][0].ID)
 		}
 	})
 }
@@ -275,7 +256,7 @@ func TestBuildExecutionOrder_CyclicDependencyDetection(t *testing.T) {
 		},
 	}
 
-	_, err := uut.BuildRunPipeline(runModel)
+	_, err := uut.BuildExecutionOrder(runModel)
 
 	if err == nil {
 		t.Error("expected error to be returned but was nil")

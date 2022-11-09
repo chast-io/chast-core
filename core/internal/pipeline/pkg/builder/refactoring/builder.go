@@ -1,6 +1,7 @@
 package refactoringpipelinebuilder
 
 import (
+	"github.com/pkg/errors"
 	"strconv"
 
 	"chast.io/core/internal/internal_util/collection"
@@ -10,9 +11,12 @@ import (
 	"chast.io/core/internal/run_model/pkg/model/refactoring"
 )
 
-func BuildRunPipeline(runModel *refactoring.RunModel) *refactoringpipelinemodel.Pipeline {
+func BuildRunPipeline(runModel *refactoring.RunModel) (*refactoringpipelinemodel.Pipeline, error) {
 	// TODO verify id uniqueness
-	isolatedExecutionOrder := buildIsolatedExecutionOrder(runModel)
+	isolatedExecutionOrder, isolatedExecutionOrderBuildError := buildIsolatedExecutionOrder(runModel)
+	if isolatedExecutionOrderBuildError != nil {
+		return nil, errors.Wrap(isolatedExecutionOrderBuildError, "failed to build isolated execution order")
+	}
 
 	// TODO make configurable
 	pipeline := refactoringpipelinemodel.NewPipeline("/tmp/chast/", "/tmp/chast-changes/", "/")
@@ -28,17 +32,20 @@ func BuildRunPipeline(runModel *refactoring.RunModel) *refactoringpipelinemodel.
 		pipeline.AddStage(stage)
 	}
 
-	return pipeline
+	return pipeline, nil
 }
 
 func buildIsolatedExecutionOrder(
 	runModel *refactoring.RunModel,
-) [][]*refactoring.SingleRunModel {
-	executionOrder := dependencygraph.BuildExecutionOrder(runModel)
+) ([][]*refactoring.SingleRunModel, error) {
+	executionOrder, executionOrderBuildError := dependencygraph.BuildExecutionOrder(runModel)
+	if executionOrderBuildError != nil {
+		return nil, errors.Wrap(executionOrderBuildError, "failed to build execution order")
+	}
 
 	return collection.Map(executionOrder, func(run []*refactoring.Run) []*refactoring.SingleRunModel {
 		return collection.Map(run, func(run *refactoring.Run) *refactoring.SingleRunModel {
 			return refactoringRunModelIsolator.Isolate(runModel, run)
 		})
-	})
+	}), nil
 }

@@ -1,12 +1,13 @@
 package dependencygraph
 
 import (
-	"log"
-
 	"chast.io/core/internal/run_model/pkg/model/refactoring"
+	"github.com/pkg/errors"
 )
 
-func BuildExecutionOrder(runModel *refactoring.RunModel) [][]*refactoring.Run {
+var ErrCyclicDependency = errors.New("cyclic dependency detected")
+
+func BuildExecutionOrder(runModel *refactoring.RunModel) ([][]*refactoring.Run, error) {
 	executionOrder := make([][]*refactoring.Run, 0)
 
 	coveredRunsCount := 0
@@ -24,7 +25,7 @@ func BuildExecutionOrder(runModel *refactoring.RunModel) [][]*refactoring.Run {
 			coveredRunsCount++
 
 			for dependent := range queueNode.dependents {
-				dependent.RemoveDependency(queueNode)
+				dependent.removeDependency(queueNode)
 
 				if len(dependent.dependencies) == 0 {
 					queue = append(queue, dependent)
@@ -36,19 +37,19 @@ func BuildExecutionOrder(runModel *refactoring.RunModel) [][]*refactoring.Run {
 	}
 
 	if coveredRunsCount != len(runModel.Run) {
-		log.Fatal("cyclic dependency detected")
+		return nil, ErrCyclicDependency
 	}
 
-	return executionOrder
+	return executionOrder, nil
 }
 
-func buildDependencyGraph(runModel *refactoring.RunModel) []*Node {
-	roots := make([]*Node, 0)
-	nodes := make([]*Node, 0)
-	nodesMap := make(map[*refactoring.Run]*Node)
+func buildDependencyGraph(runModel *refactoring.RunModel) []*node {
+	roots := make([]*node, 0)
+	nodes := make([]*node, 0)
+	nodesMap := make(map[*refactoring.Run]*node)
 
 	for _, run := range runModel.Run {
-		node := NewNode(run)
+		node := newNode(run)
 		nodes = append(nodes, node)
 		nodesMap[run] = node
 	}
@@ -58,18 +59,10 @@ func buildDependencyGraph(runModel *refactoring.RunModel) []*Node {
 			roots = append(roots, node)
 		} else {
 			for _, dependency := range node.self.Dependencies {
-				node.AddDependency(nodesMap[dependency])
+				node.addDependency(nodesMap[dependency])
 			}
 		}
 	}
 
 	return roots
-}
-
-func nodesToRuns(nodes []*Node) []*refactoring.Run {
-	runs := make([]*refactoring.Run, 0)
-	for _, node := range nodes {
-		runs = append(runs, node.self)
-	}
-	return runs
 }

@@ -5,21 +5,21 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type Node struct {
+type node struct {
 	self         *refactoring.Run
-	dependents   map[*Node]bool
-	dependencies map[*Node]bool
+	dependents   map[*node]bool
+	dependencies map[*node]bool
 }
 
-func NewNode(run *refactoring.Run) *Node {
-	return &Node{
+func newNode(run *refactoring.Run) *node {
+	return &node{
 		self:         run,
-		dependents:   make(map[*Node]bool),
-		dependencies: make(map[*Node]bool),
+		dependents:   make(map[*node]bool),
+		dependencies: make(map[*node]bool),
 	}
 }
 
-func (n *Node) AddDependency(node *Node) bool {
+func (n *node) addDependency(node *node) bool {
 	if n.dependencies[node] {
 		log.Warnf("dependency already exists: %v -> %v", n.self.ID, node.self.ID)
 
@@ -32,13 +32,13 @@ func (n *Node) AddDependency(node *Node) bool {
 	return true
 }
 
-func (n *Node) RemoveDependency(node *Node) bool {
+func (n *node) removeDependency(node *node) bool {
 	if !n.dependencies[node] {
 		return false
 	}
 
 	delete(n.dependencies, node)
-	delete(n.dependents, n)
+	delete(node.dependents, n)
 
 	return true
 }

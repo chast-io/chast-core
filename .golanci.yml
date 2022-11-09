@@ -289,3 +289,6 @@ issues:
         - noctx
         - wrapcheck
         - lll
+    - path: "_test\\.go"
+      linters:
+        - testpackage
