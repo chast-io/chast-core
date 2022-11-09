@@ -20,11 +20,24 @@ jobs:
         with:
           go-version: '1.19.2'
       - name: Install dependencies
-        run: go mod download
+        run: |
+          go mod download
+          go install github.com/jstemmer/go-junit-report/v2@latest
         working-directory: ./core
       - name: Build
         run: go build -v ./...
         working-directory: ./core
       - name: Test with the Go CLI
-        run: go test ./...
+        run: go test ./... | go-junit-report -set-exit-code > report.xml
         working-directory: ./core
+      - name: Test Summary
+        uses: test-summary/action@v2
+        with:
+          paths: ./core/report.xml
+        if: always()
+      - name: Upload test summary
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-summary
+          path: test-summary.md
+        if: always()
