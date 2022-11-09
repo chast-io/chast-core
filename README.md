@@ -19,10 +19,10 @@ language.
 
 ## Required tools
 
--  General
+- **General**
   - [unionfs-fuse](https://github.com/rpodgorny/unionfs-fuse) (Linux only, for Apple see MacOS support section in their README)
   - user namespace support required
   - (For OverlayFs-MergerFs-Isolation-Strategy: OverlayFs, Fuse, MergerFs required)
--  For development:
+- **For development:**
   - [Go](https://golang.org/doc/install) (1.19.2 or higher)
   - [GolangCI-Lint](https://golangci-lint.run/usage/install/)
