@@ -3,13 +3,11 @@ package refactoring
 import "github.com/google/uuid"
 
 type RunModel struct {
-	Run    []*Run
-	Stages []string // TODO replacePlaceholder
+	Run []*Run
 }
 
 type SingleRunModel struct {
-	Run   *Run
-	Stage string // TODO replacePlaceholder
+	Run *Run
 }
 
 type Run struct {

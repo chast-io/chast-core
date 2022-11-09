@@ -1,13 +1,15 @@
-package refactoringpipelinebuilder
+package refactoringpipelinebuilder_test
 
 import (
-	"chast.io/core/internal/run_model/pkg/model/refactoring"
-	"strings"
 	"testing"
+
+	uut "chast.io/core/internal/pipeline/pkg/builder/refactoring"
+	"chast.io/core/internal/run_model/pkg/model/refactoring"
 )
 
-func TestBuildRunPipeline_SingleRun(t *testing.T) {
-	runModel1 := &refactoring.RunModel{
+// region Helpers
+func builderDummyRunModelWithSingleRun() *refactoring.RunModel {
+	return &refactoring.RunModel{
 		Run: []*refactoring.Run{
 			{
 				ID:                 "run1",
@@ -32,30 +34,23 @@ func TestBuildRunPipeline_SingleRun(t *testing.T) {
 				},
 			},
 		},
-		Stages: []string{"stage1"},
 	}
+}
 
-	//pipeline1 := refactoringpipelinemodel.Pipeline{
-	//	OperationLocation:      "/tmp/chast",
-	//	ChangeCaptureLocation:    "/tmp/chast-changes",
-	//	RootFileSystemLocation: "/",
-	//	UUID: "",
-	//	Stages:
-	//}
+// endregion
 
-	actualPipeline := BuildRunPipeline(runModel1)
+// region BuildRunPipeline [SingleRun]
+func TestBuildRunPipeline_SingleRun(t *testing.T) {
+	t.Parallel()
 
-	t.Run("should set UUID prefix", func(t *testing.T) {
+	runModel1 := builderDummyRunModelWithSingleRun()
+
+	actualPipeline := uut.BuildRunPipeline(runModel1)
+
+	t.Run("should set UUID", func(t *testing.T) {
 		t.Parallel()
-		if strings.HasPrefix(actualPipeline.UUID, "PIPELINE-") == false {
-			t.Errorf("Expected pipeline UUID to start with 'PIPELINE-', but was '%s'", actualPipeline.UUID)
-		}
-	})
-
-	t.Run("should set correct UUID ", func(t *testing.T) {
-		t.Parallel()
-		if len(actualPipeline.UUID) != len("PIPELINE-")+len("00000000-0000-0000-0000-000000000000") {
-			t.Errorf("Expected pipeline UUID to be 36 characters long, but was %d", len(actualPipeline.UUID))
+		if actualPipeline.UUID == "" {
+			t.Error("Expected pipeline UUID to be set, but was empty")
 		}
 	})
 
@@ -86,5 +81,134 @@ func TestBuildRunPipeline_SingleRun(t *testing.T) {
 			t.Errorf("Expected pipeline to have 1 stage, but had %d", len(actualPipeline.Stages))
 		}
 	})
-
 }
+
+// endregion
+
+// region BuildRunPipeline [MultipleRuns]
+
+func TestBuildRunPipeline_MultipleRuns_AutoStage(t *testing.T) {
+	t.Parallel()
+
+	run1 := &refactoring.Run{
+		ID:                 "run1",
+		Dependencies:       []*refactoring.Run{},
+		SupportedLanguages: []string{},
+		Docker:             refactoring.Docker{},  //nolint:exhaustruct // not required for test
+		Local:              refactoring.Local{},   //nolint:exhaustruct // not required for test
+		Command:            refactoring.Command{}, //nolint:exhaustruct // not required for test
+	}
+
+	run2 := &refactoring.Run{
+		ID:                 "run2",
+		Dependencies:       []*refactoring.Run{},
+		SupportedLanguages: []string{},
+		Docker:             refactoring.Docker{},  //nolint:exhaustruct // not required for test
+		Local:              refactoring.Local{},   //nolint:exhaustruct // not required for test
+		Command:            refactoring.Command{}, //nolint:exhaustruct // not required for test
+	}
+
+	run3deps1 := &refactoring.Run{
+		ID:                 "run3deps1",
+		Dependencies:       []*refactoring.Run{run1},
+		SupportedLanguages: []string{},
+		Docker:             refactoring.Docker{},  //nolint:exhaustruct // not required for test
+		Local:              refactoring.Local{},   //nolint:exhaustruct // not required for test
+		Command:            refactoring.Command{}, //nolint:exhaustruct // not required for test
+	}
+
+	run4deps1and2and3 := &refactoring.Run{
+		ID:                 "run4deps1and2and3",
+		Dependencies:       []*refactoring.Run{run1, run2, run3deps1},
+		SupportedLanguages: []string{},
+		Docker:             refactoring.Docker{},  //nolint:exhaustruct // not required for test
+		Local:              refactoring.Local{},   //nolint:exhaustruct // not required for test
+		Command:            refactoring.Command{}, //nolint:exhaustruct // not required for test
+	}
+
+	run5 := &refactoring.Run{
+		ID:                 "run5",
+		Dependencies:       []*refactoring.Run{},
+		SupportedLanguages: []string{},
+		Docker:             refactoring.Docker{},  //nolint:exhaustruct // not required for test
+		Local:              refactoring.Local{},   //nolint:exhaustruct // not required for test
+		Command:            refactoring.Command{}, //nolint:exhaustruct // not required for test
+	}
+
+	runModel := &refactoring.RunModel{
+		Run: []*refactoring.Run{
+			run1,
+			run2,
+			run3deps1,
+			run4deps1and2and3,
+			run5,
+		},
+	}
+
+	actualPipeline := uut.BuildRunPipeline(runModel)
+
+	t.Run("should set stages", func(t *testing.T) {
+		t.Parallel()
+		if len(actualPipeline.Stages) != 3 {
+			t.Errorf("Expected pipeline to have 3 stages, but had %d", len(actualPipeline.Stages))
+		}
+	})
+
+	t.Run("should set stage 1", func(t *testing.T) {
+		t.Parallel()
+		if len(actualPipeline.Stages[0].Steps) != 3 {
+			t.Errorf("Expected stage 1 to have 3 steps, but had %d", len(actualPipeline.Stages[0].Steps))
+		}
+	})
+
+	t.Run("should set stage 2", func(t *testing.T) {
+		t.Parallel()
+		if len(actualPipeline.Stages[1].Steps) != 1 {
+			t.Errorf("Expected stage 2 to have 1 step, but had %d", len(actualPipeline.Stages[1].Steps))
+		}
+	})
+
+	t.Run("should set stage 3", func(t *testing.T) {
+		t.Parallel()
+		if len(actualPipeline.Stages[2].Steps) != 1 {
+			t.Errorf("Expected stage 3 to have 1 step, but had %d", len(actualPipeline.Stages[2].Steps))
+		}
+	})
+
+	t.Run("should set stage 1 step 1", func(t *testing.T) {
+		t.Parallel()
+		if actualPipeline.Stages[0].Steps[0].RunModel.Run != run1 {
+			t.Errorf("Expected stage 1 step 1 to be run1, but was %s", actualPipeline.Stages[0].Steps[0].RunModel.Run.ID)
+		}
+	})
+
+	t.Run("should set stage 1 step 2", func(t *testing.T) {
+		t.Parallel()
+		if actualPipeline.Stages[0].Steps[1].RunModel.Run != run2 {
+			t.Errorf("Expected stage 1 step 2 to be run2, but was %s", actualPipeline.Stages[0].Steps[1].RunModel.Run.ID)
+		}
+	})
+
+	t.Run("should set stage 1 step 3", func(t *testing.T) {
+		t.Parallel()
+		if actualPipeline.Stages[0].Steps[2].RunModel.Run != run5 {
+			t.Errorf("Expected stage 1 step 3 to be run5, but was %s", actualPipeline.Stages[2].Steps[0].RunModel.Run.ID)
+		}
+	})
+
+	t.Run("should set stage 2 step 1", func(t *testing.T) {
+		t.Parallel()
+		if actualPipeline.Stages[1].Steps[0].RunModel.Run != run3deps1 {
+			t.Errorf("Expected stage 2 step 1 to be run3deps1, but was %s", actualPipeline.Stages[1].Steps[0].RunModel.Run.ID)
+		}
+	})
+
+	t.Run("should set stage 3 step 1", func(t *testing.T) {
+		t.Parallel()
+		if actualPipeline.Stages[2].Steps[0].RunModel.Run != run4deps1and2and3 {
+			t.Errorf("Expected stage 3 step 1 to be run4depsAll, but was %s", actualPipeline.Stages[2].Steps[0].RunModel.Run.ID)
+		}
+	})
+}
+
+// endregion

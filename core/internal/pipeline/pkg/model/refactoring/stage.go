@@ -46,6 +46,7 @@ func (s *Stage) AddStep(step *Step) {
 func (s *Stage) withPipeline(targetPipeline *Pipeline) {
 	s.pipeline = targetPipeline
 	s.setStageDetails()
+
 	for _, step := range s.Steps {
 		s.setStepDetails(step)
 	}

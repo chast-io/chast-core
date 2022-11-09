@@ -42,8 +42,7 @@ func (parser *RunModelBuilder) buildRunModel(
 	)
 
 	runModel = refactoring.RunModel{
-		Run:    mappedRuns,
-		Stages: nil, // TODO implement
+		Run: mappedRuns,
 	}
 
 	return &runModel, nil

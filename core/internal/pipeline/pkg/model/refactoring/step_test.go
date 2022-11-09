@@ -1,25 +1,29 @@
-package refactoringpipelinemodel
+package refactoringpipelinemodel_test
 
 import (
-	"chast.io/core/internal/run_model/pkg/model/refactoring"
 	"testing"
+
+	uut "chast.io/core/internal/pipeline/pkg/model/refactoring"
+	"chast.io/core/internal/run_model/pkg/model/refactoring"
 )
 
+// region NewStep
 func TestNewStep(t *testing.T) {
+	t.Parallel()
+
 	id := "runID"
 	runModel := &refactoring.SingleRunModel{
 		Run: &refactoring.Run{
 			ID:                 id,
 			Dependencies:       make([]*refactoring.Run, 0),
 			SupportedLanguages: []string{"java"},
-			Docker:             refactoring.Docker{},
-			Local:              refactoring.Local{},
-			Command:            refactoring.Command{},
+			Docker:             refactoring.Docker{},  //nolint:exhaustruct // not required for test
+			Local:              refactoring.Local{},   //nolint:exhaustruct // not required for test
+			Command:            refactoring.Command{}, //nolint:exhaustruct // not required for test
 		},
-		Stage: "stage",
 	}
 
-	actualStep := NewStep(runModel)
+	actualStep := uut.NewStep(runModel)
 
 	t.Run("should set UUID from run model", func(t *testing.T) {
 		t.Parallel()
@@ -49,3 +53,5 @@ func TestNewStep(t *testing.T) {
 		}
 	})
 }
+
+// endregion

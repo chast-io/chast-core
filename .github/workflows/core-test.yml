@@ -1,0 +1,30 @@
+name: Core Test
+
+on:
+  push:
+    tags:
+      - v*
+    branches:
+      - master
+      - main
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.19.2'
+      - name: Install dependencies
+        run: go mod download
+        working-directory: ./core
+      - name: Build
+        run: go build -v ./...
+        working-directory: ./core
+      - name: Test with the Go CLI
+        run: go test ./...
+        working-directory: ./core
