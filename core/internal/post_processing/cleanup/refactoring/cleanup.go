@@ -10,19 +10,19 @@ import (
 )
 
 func CleanupPipeline(pipeline *refactoringpipelinemodel.Pipeline) error {
-	targetFolder := pipeline.ChangeCaptureFolder
+	targetFolder := pipeline.ChangeCaptureLocation
 
 	for _, stage := range pipeline.Stages {
 		if err := CleanupStage(stage); err != nil {
 			return errors.Wrap(err, "Error cleaning up stage")
 		}
 
-		if err := cleanupDeletedPaths(stage.ChangeCaptureFolder); err != nil {
+		if err := cleanupDeletedPaths(stage.ChangeCaptureLocation); err != nil {
 			return errors.Wrap(err, "Error cleaning up deleted paths in stage")
 		}
 
 		// merge stage to target dir and allow overwrites
-		if err := dirmerger.MergeFolders([]string{stage.ChangeCaptureFolder}, targetFolder, false); err != nil {
+		if err := dirmerger.MergeFolders([]string{stage.ChangeCaptureLocation}, targetFolder, false); err != nil {
 			return errors.Wrap(err, "failed to cleanup stage")
 		}
 	}
@@ -35,7 +35,7 @@ func CleanupPipeline(pipeline *refactoringpipelinemodel.Pipeline) error {
 		return errors.Wrap(err, "Error merging deletions")
 	}
 
-	if err := os.RemoveAll(filepath.Join(pipeline.ChangeCaptureFolder, "tmp")); err != nil {
+	if err := os.RemoveAll(filepath.Join(pipeline.ChangeCaptureLocation, "tmp")); err != nil {
 		return errors.Wrap(err, "failed to remove temporary changes directory")
 	}
 
@@ -45,10 +45,10 @@ func CleanupPipeline(pipeline *refactoringpipelinemodel.Pipeline) error {
 func CleanupStage(stage *refactoringpipelinemodel.Stage) error {
 	sourceFolders := make([]string, 0)
 	for _, step := range stage.Steps {
-		sourceFolders = append(sourceFolders, step.ChangeCaptureFolder)
+		sourceFolders = append(sourceFolders, step.ChangeCaptureLocation)
 	}
 	// merge steps in stage and prevent overwrites
-	if err := dirmerger.MergeFolders(sourceFolders, stage.ChangeCaptureFolder, true); err != nil {
+	if err := dirmerger.MergeFolders(sourceFolders, stage.ChangeCaptureLocation, true); err != nil {
 		return errors.Wrap(err, "failed to cleanup stage")
 	}
 

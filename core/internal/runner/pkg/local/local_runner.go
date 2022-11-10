@@ -59,8 +59,8 @@ func runIsolated(
 ) error {
 	var nsContext = namespace.NewContext(
 		pipeline.RootFileSystemLocation,
-		stage.GetPrevChangeCaptureFolders(),
-		step.ChangeCaptureFolder,
+		stage.GetPrevChangeCaptureLocations(),
+		step.ChangeCaptureLocation,
 		step.OperationLocation,
 		step.RunModel.Run.Command.WorkingDirectory,
 		step.RunModel.Run.Command.Cmds,

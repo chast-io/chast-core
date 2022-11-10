@@ -1,0 +1,13 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="go test core" type="GoTestRunConfiguration" factoryName="Go Test" nameIsGenerated="true">
+    <module name="chast" />
+    <working_directory value="$PROJECT_DIR$/core" />
+    <parameters value="-coverpkg=./..." />
+    <kind value="DIRECTORY" />
+    <package value="go-playground" />
+    <directory value="$PROJECT_DIR$/core" />
+    <filePath value="$PROJECT_DIR$" />
+    <framework value="gotest" />
+    <method v="2" />
+  </configuration>
+</component>

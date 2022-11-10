@@ -7,13 +7,14 @@ import (
 )
 
 type Stage struct {
-	UUID                string
-	ChangeCaptureFolder string
-	OperationLocation   string
+	UUID                  string
+	ChangeCaptureLocation string
+	OperationLocation     string
 
 	Steps []*Step
 
-	prev *Stage
+	prev     *Stage
+	pipeline *Pipeline
 }
 
 func NewStage(name string) *Stage {
@@ -24,7 +25,7 @@ func NewStage(name string) *Stage {
 
 	extendedUUID += uuid.New().String()
 
-	return &Stage{ //nolint:exhaustruct // rest initialized in WithPipeline
+	return &Stage{ //nolint:exhaustruct // rest initialized in withPipeline
 		UUID:  extendedUUID,
 		Steps: make([]*Step, 0),
 		prev:  nil,
@@ -32,21 +33,38 @@ func NewStage(name string) *Stage {
 }
 
 func (s *Stage) AddStep(step *Step) {
-	s.Steps = append(s.Steps, step)
-}
+	if step == nil {
+		return
+	}
 
-func (s *Stage) WithPipeline(targetPipeline *Pipeline) {
-	for _, step := range s.Steps {
-		s.ChangeCaptureFolder = filepath.Join(targetPipeline.ChangeCaptureFolder, "tmp", s.UUID)
-		s.OperationLocation = filepath.Join(targetPipeline.OperationLocation, s.UUID)
-		step.WithStage(s)
+	s.Steps = append(s.Steps, step)
+	if s.pipeline != nil {
+		s.setStepDetails(step)
 	}
 }
 
-func (s *Stage) GetPrevChangeCaptureFolders() []string {
+func (s *Stage) withPipeline(targetPipeline *Pipeline) {
+	s.pipeline = targetPipeline
+	s.setStageDetails()
+
+	for _, step := range s.Steps {
+		s.setStepDetails(step)
+	}
+}
+
+func (s *Stage) setStageDetails() {
+	s.ChangeCaptureLocation = filepath.Join(s.pipeline.ChangeCaptureLocation, "tmp", s.UUID)
+	s.OperationLocation = filepath.Join(s.pipeline.OperationLocation, s.UUID)
+}
+
+func (s *Stage) setStepDetails(step *Step) {
+	step.withStage(s)
+}
+
+func (s *Stage) GetPrevChangeCaptureLocations() []string {
 	if s.prev == nil {
 		return []string{}
 	}
 
-	return append(s.prev.GetPrevChangeCaptureFolders(), s.prev.ChangeCaptureFolder)
+	return append(s.prev.GetPrevChangeCaptureLocations(), s.prev.ChangeCaptureLocation)
 }

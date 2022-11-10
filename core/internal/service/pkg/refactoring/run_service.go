@@ -24,11 +24,18 @@ func Run(recipeFile *util.File, args ...string) error {
 	}
 
 	var pipeline *refactoringpipelinemodel.Pipeline
+
+	var pipelineBuildError error
+
 	switch m := (*runModel).(type) {
 	case refactoring.RunModel:
-		pipeline = refactoringPipelineBuilder.BuildRunPipeline(&m)
+		pipeline, pipelineBuildError = refactoringPipelineBuilder.BuildRunPipeline(&m)
 	default:
 		return errors.Errorf("Provided recipe is not a refactoring recipe")
+	}
+
+	if pipelineBuildError != nil {
+		return errors.Wrap(pipelineBuildError, "Failed to build pipeline")
 	}
 
 	if err := local.NewRunner(true, false).Run(pipeline); err != nil {
@@ -42,15 +49,6 @@ func Run(recipeFile *util.File, args ...string) error {
 
 	report.PrintFileTree(true)
 	report.PrintChanges(true)
-
-	//changedFilesRelative, recipeParseError := report.ChangedFilesRelative()
-	//if recipeParseError != nil {
-	//	return errors.Wrap(recipeParseError, "Failed to generate report")
-	//}
-	//
-	//for _, line := range changedFilesRelative {
-	//	println(line)
-	//}
 
 	return nil
 }

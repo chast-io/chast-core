@@ -1,12 +1,12 @@
 package filetree
 
 import (
-	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"chast.io/core/internal/post_processing/pipelinereport/internal/diff"
+	"github.com/pkg/errors"
 	"github.com/ttacon/chalk"
 	"github.com/xlab/treeprint"
 )

@@ -15,7 +15,6 @@ import (
 
 func Isolate(runModel *refactoring.RunModel, run *refactoring.Run) *refactoring.SingleRunModel {
 	return &refactoring.SingleRunModel{
-		Run:   run,
-		Stage: "", // TODO implement
+		Run: run,
 	}
 }

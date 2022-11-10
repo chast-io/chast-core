@@ -1,28 +1,34 @@
 package diff
 
 import (
-	"github.com/sergi/go-diff/diffmatchpatch"
-	"github.com/spf13/afero"
-	"github.com/ttacon/chalk"
 	"path/filepath"
 	"strings"
 
 	refactoringpipelinemodel "chast.io/core/internal/pipeline/pkg/model/refactoring"
 	gitDiff "github.com/go-git/go-git/v5/utils/diff"
 	"github.com/pkg/errors"
+	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/spf13/afero"
+	"github.com/ttacon/chalk"
 )
 
 const unionFsHiddenPathSuffix = "_HIDDEN~"
 
 func BuildDiff(pipeline *refactoringpipelinemodel.Pipeline, changedFiles []string) (*ChangeDiff, error) {
-	changeDiff := ChangeDiff{BaseFolder: pipeline.ChangeCaptureFolder, ChangedFiles: changedFiles, Diffs: make(map[string]FsDiff)}
+	changeDiff := ChangeDiff{
+		BaseFolder:   pipeline.ChangeCaptureLocation,
+		ChangedFiles: changedFiles,
+		Diffs:        make(map[string]FsDiff),
+	}
+
 	osFileSystem := afero.NewOsFs()
 
 	for _, originalFilePath := range changedFiles {
-		newFilePath := filepath.Join(pipeline.ChangeCaptureFolder, originalFilePath)
+		newFilePath := filepath.Join(pipeline.ChangeCaptureLocation, originalFilePath)
 
 		if strings.HasSuffix(originalFilePath, unionFsHiddenPathSuffix) {
-			changeDiff.Diffs[newFilePath] = FsDiff{FileStatus: Deleted}
+			changeDiff.Diffs[newFilePath] = FsDiff{FileStatus: Deleted, Diffs: nil}
+
 			continue
 		}
 
@@ -32,7 +38,8 @@ func BuildDiff(pipeline *refactoringpipelinemodel.Pipeline, changedFiles []strin
 		}
 
 		if !originalExists {
-			changeDiff.Diffs[newFilePath] = FsDiff{FileStatus: Added}
+			changeDiff.Diffs[newFilePath] = FsDiff{FileStatus: Added, Diffs: nil}
+
 			continue
 		}
 
@@ -72,39 +79,41 @@ func BuildDiff(pipeline *refactoringpipelinemodel.Pipeline, changedFiles []strin
 }
 
 func (d *ChangeDiff) ToString(colorize bool) string {
-	var sb strings.Builder
+	var stringBuilder strings.Builder
 
 	for _, file := range d.ChangedFiles {
 		fileDiff := d.Diffs[d.BaseFolder+file]
 		if fileDiff.FileStatus == Modified {
-			sb.WriteString("\n\n")
-			sb.WriteString(file)
-			sb.WriteString("\n\n")
+			stringBuilder.WriteString("\n\n")
+			stringBuilder.WriteString(file)
+			stringBuilder.WriteString("\n\n")
 		}
+
 		for _, diff := range fileDiff.Diffs {
 			switch diff.Type {
 			case Equal:
-				sb.WriteString(prefixEachLine("=", diff.Text))
+				stringBuilder.WriteString(prefixEachLine("=", diff.Text))
 			case Insert:
 				if colorize {
-					sb.WriteString(chalk.Green.Color(prefixEachLine("+", diff.Text)))
+					stringBuilder.WriteString(chalk.Green.Color(prefixEachLine("+", diff.Text)))
 				} else {
-					sb.WriteString(prefixEachLine("+", diff.Text))
+					stringBuilder.WriteString(prefixEachLine("+", diff.Text))
 				}
 			case Delete:
 				if colorize {
-					sb.WriteString(chalk.Red.Color(prefixEachLine("-", diff.Text)))
+					stringBuilder.WriteString(chalk.Red.Color(prefixEachLine("-", diff.Text)))
 				} else {
-					sb.WriteString(prefixEachLine("-", diff.Text))
+					stringBuilder.WriteString(prefixEachLine("-", diff.Text))
 				}
 			}
-			sb.WriteString("\n")
+
+			stringBuilder.WriteString("\n")
 		}
 	}
 
-	return sb.String()
+	return stringBuilder.String()
 }
 
 func prefixEachLine(prefix string, text string) string {
-	return prefix + strings.Replace(text, "\n", "\n"+prefix, -1)
+	return prefix + strings.ReplaceAll(text, "\n", "\n"+prefix)
 }

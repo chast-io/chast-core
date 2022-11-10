@@ -9,18 +9,18 @@ import (
 type Pipeline struct {
 	OperationLocation      string
 	Stages                 []*Stage
-	ChangeCaptureFolder    string
+	ChangeCaptureLocation  string
 	RootFileSystemLocation string
 	UUID                   string
 }
 
 func NewPipeline(
 	operationLocation string,
-	changeCaptureFolder string,
+	changeCaptureLocation string,
 	rootFileSystemLocation string,
 ) *Pipeline {
 	absOperationLocation, _ := filepath.Abs(operationLocation)
-	absChangeCaptureFolder, _ := filepath.Abs(changeCaptureFolder)
+	absChangeCaptureLocation, _ := filepath.Abs(changeCaptureLocation)
 	absRootFileSystemLocation, _ := filepath.Abs(rootFileSystemLocation)
 
 	pipelineUUID := "PIPELINE-" + uuid.New().String()
@@ -29,13 +29,13 @@ func NewPipeline(
 		UUID:                   pipelineUUID,
 		Stages:                 make([]*Stage, 1),
 		OperationLocation:      absOperationLocation,
-		ChangeCaptureFolder:    filepath.Join(absChangeCaptureFolder, pipelineUUID),
+		ChangeCaptureLocation:  filepath.Join(absChangeCaptureLocation, pipelineUUID),
 		RootFileSystemLocation: absRootFileSystemLocation,
 	}
 }
 
 func (p *Pipeline) AddStage(stage *Stage) {
-	stage.WithPipeline(p)
+	stage.withPipeline(p)
 
 	if p.Stages[0] == nil {
 		p.Stages[0] = stage
