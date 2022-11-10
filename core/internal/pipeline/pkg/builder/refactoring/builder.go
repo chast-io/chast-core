@@ -1,7 +1,6 @@
 package refactoringpipelinebuilder
 
 import (
-	"github.com/pkg/errors"
 	"strconv"
 
 	"chast.io/core/internal/internal_util/collection"
@@ -9,6 +8,7 @@ import (
 	refactoringpipelinemodel "chast.io/core/internal/pipeline/pkg/model/refactoring"
 	refactoringRunModelIsolator "chast.io/core/internal/run_model/pkg/isolator/refactoring"
 	"chast.io/core/internal/run_model/pkg/model/refactoring"
+	"github.com/pkg/errors"
 )
 
 func BuildRunPipeline(runModel *refactoring.RunModel) (*refactoringpipelinemodel.Pipeline, error) {

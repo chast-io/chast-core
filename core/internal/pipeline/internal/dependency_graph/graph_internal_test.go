@@ -60,6 +60,7 @@ func TestNewNode(t *testing.T) {
 
 // region: addDependency
 
+//nolint:gocognit // nested test cases
 func TestAddDependency(t *testing.T) {
 	t.Parallel()
 

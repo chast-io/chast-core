@@ -1,13 +1,13 @@
 package refactoringpipelinemodel_test
 
 import (
-	"chast.io/core/internal/run_model/pkg/model/refactoring"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 
 	uut "chast.io/core/internal/pipeline/pkg/model/refactoring"
+	"chast.io/core/internal/run_model/pkg/model/refactoring"
 )
 
 // region Helpers

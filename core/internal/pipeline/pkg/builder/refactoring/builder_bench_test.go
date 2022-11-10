@@ -1,23 +1,24 @@
-package refactoringpipelinebuilder //nolint:testpackage // access to private members required
+package refactoringpipelinebuilder
+
 import (
-	log "github.com/sirupsen/logrus"
 	"strconv"
 	"testing"
 
 	"chast.io/core/internal/run_model/pkg/model/refactoring"
+	log "github.com/sirupsen/logrus"
 )
 
 func BenchmarkBuildExecutionOrder(b *testing.B) {
 	runModels := make([]*refactoring.Run, 0)
 
-	for i := 0; i < 10000; i++ {
+	for runNumber := 0; runNumber < 10000; runNumber++ {
 		dependencies := make([]*refactoring.Run, 0)
-		for j := 2; j < i/10; j++ {
-			dependencies = append(dependencies, runModels[i/j+j])
+		for j := 2; j < runNumber/10; j++ {
+			dependencies = append(dependencies, runModels[runNumber/j+j])
 		}
 
 		runModel := &refactoring.Run{
-			ID:                 "run" + strconv.Itoa(i+1),
+			ID:                 "run" + strconv.Itoa(runNumber+1),
 			Dependencies:       dependencies,
 			SupportedLanguages: []string{},
 			Docker:             refactoring.Docker{},  //nolint:exhaustruct // not required for test
@@ -37,7 +38,7 @@ func BenchmarkBuildExecutionOrder(b *testing.B) {
 	logLevel := log.GetLevel()
 	log.SetLevel(log.FatalLevel)
 
-	BuildRunPipeline(runModel)
+	_, _ = BuildRunPipeline(runModel)
 
 	log.SetLevel(logLevel)
 }
