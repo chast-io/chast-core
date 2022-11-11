@@ -7,7 +7,7 @@ import (
 )
 
 func Run(recipe *util.File, args ...string) {
-	err := refactoringService.Run(recipe, args...)
+	err := refactoringService.Run(recipe, args, nil)
 	if err != nil {
 		log.Fatalln(err)
 	}

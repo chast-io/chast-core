@@ -15,10 +15,10 @@ func dependencyGraphDummyRunModelWithSingleRun() *refactoring.RunModel {
 				ID:                 "run1",
 				Dependencies:       []*refactoring.Run{},
 				SupportedLanguages: []string{"java"},
-				Docker: refactoring.Docker{
+				Docker: &refactoring.Docker{
 					DockerImage: "dockerImage1",
 				},
-				Local: refactoring.Local{
+				Local: &refactoring.Local{
 					RequiredTools: []refactoring.RequiredTool{
 						{
 							Description: "description1",
@@ -26,7 +26,7 @@ func dependencyGraphDummyRunModelWithSingleRun() *refactoring.RunModel {
 						},
 					},
 				},
-				Command: refactoring.Command{
+				Command: &refactoring.Command{
 					Cmds: [][]string{
 						{"cmd1"},
 					},
@@ -75,45 +75,45 @@ func TestBuildExecutionOrder_MultipleRuns_WithStages(t *testing.T) {
 		ID:                 "run1",
 		Dependencies:       []*refactoring.Run{},
 		SupportedLanguages: []string{},
-		Docker:             refactoring.Docker{},  //nolint:exhaustruct // not required for test
-		Local:              refactoring.Local{},   //nolint:exhaustruct // not required for test
-		Command:            refactoring.Command{}, //nolint:exhaustruct // not required for test
+		Docker:             &refactoring.Docker{},  //nolint:exhaustruct // not required for test
+		Local:              &refactoring.Local{},   //nolint:exhaustruct // not required for test
+		Command:            &refactoring.Command{}, //nolint:exhaustruct // not required for test
 	}
 
 	run2 := &refactoring.Run{
 		ID:                 "run2",
 		Dependencies:       []*refactoring.Run{},
 		SupportedLanguages: []string{},
-		Docker:             refactoring.Docker{},  //nolint:exhaustruct // not required for test
-		Local:              refactoring.Local{},   //nolint:exhaustruct // not required for test
-		Command:            refactoring.Command{}, //nolint:exhaustruct // not required for test
+		Docker:             &refactoring.Docker{},  //nolint:exhaustruct // not required for test
+		Local:              &refactoring.Local{},   //nolint:exhaustruct // not required for test
+		Command:            &refactoring.Command{}, //nolint:exhaustruct // not required for test
 	}
 
 	run3deps1 := &refactoring.Run{
 		ID:                 "run3deps1",
 		Dependencies:       []*refactoring.Run{run1},
 		SupportedLanguages: []string{},
-		Docker:             refactoring.Docker{},  //nolint:exhaustruct // not required for test
-		Local:              refactoring.Local{},   //nolint:exhaustruct // not required for test
-		Command:            refactoring.Command{}, //nolint:exhaustruct // not required for test
+		Docker:             &refactoring.Docker{},  //nolint:exhaustruct // not required for test
+		Local:              &refactoring.Local{},   //nolint:exhaustruct // not required for test
+		Command:            &refactoring.Command{}, //nolint:exhaustruct // not required for test
 	}
 
 	run4deps1and2and3 := &refactoring.Run{
 		ID:                 "run4deps1and2and3",
 		Dependencies:       []*refactoring.Run{run1, run2, run3deps1},
 		SupportedLanguages: []string{},
-		Docker:             refactoring.Docker{},  //nolint:exhaustruct // not required for test
-		Local:              refactoring.Local{},   //nolint:exhaustruct // not required for test
-		Command:            refactoring.Command{}, //nolint:exhaustruct // not required for test
+		Docker:             &refactoring.Docker{},  //nolint:exhaustruct // not required for test
+		Local:              &refactoring.Local{},   //nolint:exhaustruct // not required for test
+		Command:            &refactoring.Command{}, //nolint:exhaustruct // not required for test
 	}
 
 	run5 := &refactoring.Run{
 		ID:                 "run5",
 		Dependencies:       []*refactoring.Run{},
 		SupportedLanguages: []string{},
-		Docker:             refactoring.Docker{},  //nolint:exhaustruct // not required for test
-		Local:              refactoring.Local{},   //nolint:exhaustruct // not required for test
-		Command:            refactoring.Command{}, //nolint:exhaustruct // not required for test
+		Docker:             &refactoring.Docker{},  //nolint:exhaustruct // not required for test
+		Local:              &refactoring.Local{},   //nolint:exhaustruct // not required for test
+		Command:            &refactoring.Command{}, //nolint:exhaustruct // not required for test
 	}
 
 	runModel := &refactoring.RunModel{
@@ -203,45 +203,45 @@ func TestBuildExecutionOrder_CyclicDependencyDetection(t *testing.T) {
 		ID:                 "run1",
 		Dependencies:       []*refactoring.Run{},
 		SupportedLanguages: []string{},
-		Docker:             refactoring.Docker{},  //nolint:exhaustruct // not required for test
-		Local:              refactoring.Local{},   //nolint:exhaustruct // not required for test
-		Command:            refactoring.Command{}, //nolint:exhaustruct // not required for test
+		Docker:             &refactoring.Docker{},  //nolint:exhaustruct // not required for test
+		Local:              &refactoring.Local{},   //nolint:exhaustruct // not required for test
+		Command:            &refactoring.Command{}, //nolint:exhaustruct // not required for test
 	}
 
 	run2 := &refactoring.Run{
 		ID:                 "run2",
 		Dependencies:       []*refactoring.Run{run1},
 		SupportedLanguages: []string{},
-		Docker:             refactoring.Docker{},  //nolint:exhaustruct // not required for test
-		Local:              refactoring.Local{},   //nolint:exhaustruct // not required for test
-		Command:            refactoring.Command{}, //nolint:exhaustruct // not required for test
+		Docker:             &refactoring.Docker{},  //nolint:exhaustruct // not required for test
+		Local:              &refactoring.Local{},   //nolint:exhaustruct // not required for test
+		Command:            &refactoring.Command{}, //nolint:exhaustruct // not required for test
 	}
 
 	run3 := &refactoring.Run{
 		ID:                 "run3",
 		Dependencies:       []*refactoring.Run{run2},
 		SupportedLanguages: []string{},
-		Docker:             refactoring.Docker{},  //nolint:exhaustruct // not required for test
-		Local:              refactoring.Local{},   //nolint:exhaustruct // not required for test
-		Command:            refactoring.Command{}, //nolint:exhaustruct // not required for test
+		Docker:             &refactoring.Docker{},  //nolint:exhaustruct // not required for test
+		Local:              &refactoring.Local{},   //nolint:exhaustruct // not required for test
+		Command:            &refactoring.Command{}, //nolint:exhaustruct // not required for test
 	}
 
 	run4 := &refactoring.Run{
 		ID:                 "run4",
 		Dependencies:       []*refactoring.Run{run3},
 		SupportedLanguages: []string{},
-		Docker:             refactoring.Docker{},  //nolint:exhaustruct // not required for test
-		Local:              refactoring.Local{},   //nolint:exhaustruct // not required for test
-		Command:            refactoring.Command{}, //nolint:exhaustruct // not required for test
+		Docker:             &refactoring.Docker{},  //nolint:exhaustruct // not required for test
+		Local:              &refactoring.Local{},   //nolint:exhaustruct // not required for test
+		Command:            &refactoring.Command{}, //nolint:exhaustruct // not required for test
 	}
 
 	run5 := &refactoring.Run{
 		ID:                 "run5",
 		Dependencies:       []*refactoring.Run{},
 		SupportedLanguages: []string{},
-		Docker:             refactoring.Docker{},  //nolint:exhaustruct // not required for test
-		Local:              refactoring.Local{},   //nolint:exhaustruct // not required for test
-		Command:            refactoring.Command{}, //nolint:exhaustruct // not required for test
+		Docker:             &refactoring.Docker{},  //nolint:exhaustruct // not required for test
+		Local:              &refactoring.Local{},   //nolint:exhaustruct // not required for test
+		Command:            &refactoring.Command{}, //nolint:exhaustruct // not required for test
 	}
 
 	run2.Dependencies = []*refactoring.Run{run1, run3} // introduce cyclic dependency

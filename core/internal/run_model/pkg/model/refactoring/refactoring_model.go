@@ -15,9 +15,9 @@ type Run struct {
 	uuid               string
 	Dependencies       []*Run
 	SupportedLanguages []string
-	Docker             Docker
-	Local              Local
-	Command            Command
+	Docker             *Docker
+	Local              *Local
+	Command            *Command
 }
 
 func (run *Run) GetUUID() string {

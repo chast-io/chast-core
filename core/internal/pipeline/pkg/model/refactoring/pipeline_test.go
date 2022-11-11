@@ -25,9 +25,9 @@ func pipelineDummyStep() *uut.Step {
 			ID:                 "runId",
 			Dependencies:       make([]*refactoring.Run, 0),
 			SupportedLanguages: []string{"java"},
-			Docker:             refactoring.Docker{},  //nolint:exhaustruct // not required for test
-			Local:              refactoring.Local{},   //nolint:exhaustruct // not required for test
-			Command:            refactoring.Command{}, //nolint:exhaustruct // not required for test
+			Docker:             &refactoring.Docker{},  //nolint:exhaustruct // not required for test
+			Local:              &refactoring.Local{},   //nolint:exhaustruct // not required for test
+			Command:            &refactoring.Command{}, //nolint:exhaustruct // not required for test
 		},
 	}
 

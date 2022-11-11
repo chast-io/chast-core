@@ -21,9 +21,9 @@ func BenchmarkBuildExecutionOrder(b *testing.B) {
 			ID:                 "run" + strconv.Itoa(runNumber+1),
 			Dependencies:       dependencies,
 			SupportedLanguages: []string{},
-			Docker:             refactoring.Docker{},  //nolint:exhaustruct // not required for test
-			Local:              refactoring.Local{},   //nolint:exhaustruct // not required for test
-			Command:            refactoring.Command{}, //nolint:exhaustruct // not required for test
+			Docker:             &refactoring.Docker{},  //nolint:exhaustruct // not required for test
+			Local:              &refactoring.Local{},   //nolint:exhaustruct // not required for test
+			Command:            &refactoring.Command{}, //nolint:exhaustruct // not required for test
 		}
 
 		runModels = append(runModels, runModel)
