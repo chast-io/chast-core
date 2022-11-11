@@ -72,8 +72,11 @@ func buildDependencyGraph(runModel *refactoring.RunModel) []*node {
 }
 
 func hasCycles(nodes []*node) bool {
+	visited := make(map[*node]bool)
+	recStack := make(map[*node]bool)
+
 	for _, rootNode := range nodes {
-		if hasCyclesRecursive(rootNode, make(map[*node]bool), make(map[*node]bool)) {
+		if hasCyclesRecursive(rootNode, visited, recStack) {
 			return true
 		}
 	}
@@ -82,19 +85,19 @@ func hasCycles(nodes []*node) bool {
 }
 
 func hasCyclesRecursive(node *node, visited map[*node]bool, recStack map[*node]bool) bool {
-	if visited[node] {
-		return false
-	}
-
 	if recStack[node] {
 		return true
+	}
+
+	if visited[node] {
+		return false
 	}
 
 	visited[node] = true
 	recStack[node] = true
 
-	for dependency := range node.dependencies {
-		if hasCyclesRecursive(dependency, visited, recStack) {
+	for dependant := range node.dependents {
+		if hasCyclesRecursive(dependant, visited, recStack) {
 			return true
 		}
 	}

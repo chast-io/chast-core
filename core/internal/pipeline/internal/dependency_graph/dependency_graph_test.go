@@ -199,6 +199,10 @@ func TestBuildExecutionOrder_MultipleRuns_WithStages(t *testing.T) {
 func TestBuildExecutionOrder_CyclicDependencyDetection(t *testing.T) {
 	t.Parallel()
 
+	// run1 <- run2 <- run3 <- run4
+	//           |_______^
+	// run5
+
 	run1 := &refactoring.Run{
 		ID:                 "run1",
 		Dependencies:       []*refactoring.Run{},
