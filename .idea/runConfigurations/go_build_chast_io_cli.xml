@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="go build chast.io/cli" type="GoApplicationRunConfiguration" factoryName="Go Application" nameIsGenerated="true">
+    <module name="chast" />
+    <working_directory value="$PROJECT_DIR$/cli" />
+    <parameters value="run refactoring ../test/chast/rearrange_class_members.chast.yml ../test/chast/TestFile.cs ../test/chast/default_config.yaml" />
+    <kind value="PACKAGE" />
+    <package value="chast.io/cli" />
+    <directory value="$PROJECT_DIR$" />
+    <method v="2" />
+  </configuration>
+</component>
