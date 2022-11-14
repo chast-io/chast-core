@@ -9,13 +9,18 @@ import (
 	"github.com/pkg/errors"
 )
 
+var errMissingPrimaryArgument = errors.New("Missing primary argument")
+
 func HandlePrimaryArgument(
 	primaryParameter *recipemodel.Parameter,
 	variables *runmodel.Variables,
 	unparsedArgument string,
 ) error {
 	if primaryParameter == nil {
-		return errors.New("No primary parameter defined for this recipe. This is a required field.")
+		return errors.Wrap(
+			errMissingPrimaryArgument,
+			"No primary parameter defined for this recipe. This is a required field",
+		)
 	}
 
 	if unparsedArgument == "" {

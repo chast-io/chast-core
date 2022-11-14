@@ -1,11 +1,12 @@
 package extensionsdetection
 
 import (
-	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/pkg/errors"
+	"github.com/spf13/afero"
 )
 
 type Extension struct {
@@ -45,13 +46,13 @@ func DetectExtensions(rootPath string) (map[string]*Extension, error) {
 
 		return nil
 	}); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Could not walk through directory")
 	}
 
 	return extensions, nil
 }
 
-// returns the common parent path of two given paths
+// returns the common parent path of two given paths.
 func commonParentPath(path1 string, path2 string) string {
 	path1, _ = filepath.Abs(path1)
 	path2, _ = filepath.Abs(path2)

@@ -68,7 +68,7 @@ func Count[S interface{}](source []S, f func(S) bool) int {
 	return count
 }
 
-func Reduce[S interface{}, T interface{}](source []S, f func(S, T) T, initial T) T {
+func Reduce[S interface{}, T interface{}](source []S, f func(S, T) T, initial T) T { //nolint:ireturn,lll // generic collection function
 	accumulator := initial
 
 	for _, v := range source {

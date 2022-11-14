@@ -50,6 +50,7 @@ func verifyArgument(parameter *recipemodel.Parameter, value string) error {
 			if err := verifyPath(parameter, value); err != nil {
 				return err
 			}
+
 			return nil
 		}
 

@@ -1,19 +1,18 @@
 package parser
 
 import (
-	"chast.io/core/internal/internal_util/collection"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"strings"
 
+	"chast.io/core/internal/internal_util/collection"
 	recipemodel "chast.io/core/internal/recipe/pkg/model"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
 type RefactoringParser struct{}
 
-// TODO validate recipe! After optional positional arguments, no more required positional arguments are allowed
 func (parser *RefactoringParser) ParseRecipe(data *[]byte) (*recipemodel.Recipe, error) {
 	var refactoringRecipe *recipemodel.RefactoringRecipe
 
@@ -33,9 +32,8 @@ func (parser *RefactoringParser) ParseRecipe(data *[]byte) (*recipemodel.Recipe,
 	return &recipe, nil
 }
 
+// TODO: check dependencies (dependencies must exist, no cycles, etc.)
 func validateRecipe(recipe *recipemodel.RefactoringRecipe) error {
-	// TODO: check dependencies (dependencies must exist, no cycles, etc.)
-
 	if err := validateRuns(recipe.Runs); err != nil {
 		return errors.Wrap(err, "Error validating primary parameter")
 	}
@@ -52,12 +50,12 @@ func validateRecipe(recipe *recipemodel.RefactoringRecipe) error {
 }
 
 func validateRuns(runs []recipemodel.Run) error {
-	if runs == nil || len(runs) == 0 {
+	if len(runs) == 0 {
 		return errors.New("At least one run is required")
 	}
 
-	for _, run := range runs {
-		if err := validateRun(&run); err != nil {
+	for i := range runs {
+		if err := validateRun(&runs[i]); err != nil {
 			return errors.Wrap(err, "Error validating run")
 		}
 	}
@@ -81,6 +79,8 @@ func validateRun(run *recipemodel.Run) error {
 	return nil
 }
 
+var errInvalidPrimaryParameter = errors.New("Invalid primary parameter error: ")
+
 func validatePrimaryParameter(parameter *recipemodel.Parameter, supportedExtensions []string) error {
 	if parameter == nil {
 		return errors.New("Primary parameter is required")
@@ -91,24 +91,31 @@ func validatePrimaryParameter(parameter *recipemodel.Parameter, supportedExtensi
 		log.Printf("Primary parameter ID is not set and falls back to '%s'\n", parameter.ID)
 	}
 
-	if parameter.RequiredExtension.Required == false {
+	if !parameter.RequiredExtension.Required {
 		// TODO show message if it was explicitly set to false
 		parameter.RequiredExtension.Required = true
 	}
 
-	options := []string{"filePath", "folderPath", "wildcardPath", "string", "int", "boolean"} // TODO make this configurable
+	// TODO make this configurable
+	options := []string{"filePath", "folderPath", "wildcardPath", "string", "int", "boolean"}
 	if parameter.TypeExtension.Type == "" {
-		return errors.New(fmt.Sprintf("Primary parameter type is required. Options: %s", options))
+		return errors.Wrap(
+			errInvalidPrimaryParameter,
+			fmt.Sprintf("Primary parameter type is required. Options: %s", options),
+		)
 	}
 
 	if !collection.Include(options, parameter.TypeExtension.Type) {
-		return errors.New(fmt.Sprintf("Invalid primary parameter type. Must be of type %s", options))
+		return errors.Wrap(errInvalidPrimaryParameter, fmt.Sprintf("Must be of type %s", options))
 	}
 
 	if parameter.TypeExtension.Extensions == nil || len(parameter.TypeExtension.Extensions) == 0 {
 		parameter.TypeExtension.Extensions = supportedExtensions
 	} else {
-		return errors.New("Primary parameter can not contain extensions as they are defined by the supported extensions of the runs.")
+		return errors.Wrap(
+			errInvalidPrimaryParameter,
+			"Primary parameter can not contain extensions as they are defined by the supported extensions of the runs",
+		)
 	}
 
 	if parameter.DescriptionExtension.Description == "" {

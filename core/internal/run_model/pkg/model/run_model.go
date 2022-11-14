@@ -12,9 +12,10 @@ type Variables struct {
 
 func NewVariables(workingDirectory string) *Variables {
 	return &Variables{
-		Map:              make(map[string]string),
-		WorkingDirectory: workingDirectory,
-		DefaultValueUsed: false,
+		WorkingDirectory:  workingDirectory,
+		Map:               make(map[string]string),
+		DefaultValueUsed:  false,
+		TypeDetectionPath: "",
 	}
 }
 

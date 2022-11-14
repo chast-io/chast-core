@@ -1,13 +1,14 @@
 package builder
 
 import (
+	"os"
+	"strconv"
+	"strings"
+
 	"chast.io/core/internal/internal_util/collection"
 	recipemodel "chast.io/core/internal/recipe/pkg/model"
 	runmodel "chast.io/core/internal/run_model/pkg/model"
 	"github.com/pkg/errors"
-	"os"
-	"strconv"
-	"strings"
 )
 
 type handleFlagsMapper interface {

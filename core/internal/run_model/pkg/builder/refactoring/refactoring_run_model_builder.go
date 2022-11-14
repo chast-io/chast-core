@@ -1,13 +1,13 @@
 package refactoringrunmodelbuilder
 
 import (
-	extensionsdetection "chast.io/core/internal/run_model/internal/extensions_detection"
 	"path/filepath"
 	"strings"
 
 	"chast.io/core/internal/internal_util/collection"
 	recipemodel "chast.io/core/internal/recipe/pkg/model"
 	"chast.io/core/internal/run_model/internal/builder"
+	extensionsdetection "chast.io/core/internal/run_model/internal/extensions_detection"
 	runmodel "chast.io/core/internal/run_model/pkg/model"
 	"chast.io/core/internal/run_model/pkg/model/refactoring"
 	"github.com/pkg/errors"
@@ -40,15 +40,15 @@ func (parser *RunModelBuilder) buildRunModel(
 	unparsedFlags []runmodel.UnparsedFlag,
 ) (*runmodel.RunModel, error) {
 	if err := builder.HandlePrimaryArgument(recipeModel.PrimaryParameter, variables, unparsedArguments[0]); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Failed to handle primary argument")
 	}
 
 	if err := builder.HandlePositionalArguments(recipeModel, variables, unparsedArguments[1:]); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Failed to handle positional arguments")
 	}
 
 	if err := builder.HandleFlags(recipeModel, variables, unparsedFlags); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Failed to handle flags")
 	}
 
 	var runModel runmodel.RunModel

@@ -25,7 +25,11 @@ func HandlePositionalArguments(
 		func(argument recipemodel.Parameter) bool { return argument.Required && argument.DefaultValue == "" },
 	)
 	if len(arguments) < requiredArgsCount {
-		return errors.Errorf("Not enough positional arguments passed. Expected %d, got %d", len(positionalParameters), len(arguments))
+		return errors.Errorf(
+			"Not enough positional arguments passed. Expected %d, got %d",
+			len(positionalParameters),
+			len(arguments),
+		)
 	}
 
 	wordingDir, _ := os.Getwd()

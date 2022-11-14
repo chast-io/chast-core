@@ -8,8 +8,6 @@ import (
 	"chast.io/core/internal/recipe/pkg/parser"
 )
 
-// TODO continue as soon as validation is added
-
 func TestParseRecipe_Refactoring(t *testing.T) {
 	t.Parallel()
 

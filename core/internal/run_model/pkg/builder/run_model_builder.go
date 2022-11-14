@@ -31,7 +31,7 @@ func BuildRunModel(
 	variables := runmodel.NewVariables(recipeDirectory)
 
 	if err := builder.HandleFlags(baseRecipe, variables, flags); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Failed to handle flags")
 	}
 
 	runModel, runModelBuildError := runModelBuilder.BuildRunModel(parsedRecipe, variables, arguments, flags)

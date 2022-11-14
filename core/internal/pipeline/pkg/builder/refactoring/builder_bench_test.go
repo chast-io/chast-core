@@ -1,9 +1,10 @@
-package refactoringpipelinebuilder
+package refactoringpipelinebuilder_test
 
 import (
 	"strconv"
 	"testing"
 
+	uut "chast.io/core/internal/pipeline/pkg/builder/refactoring"
 	"chast.io/core/internal/run_model/pkg/model/refactoring"
 	log "github.com/sirupsen/logrus"
 )
@@ -38,7 +39,7 @@ func BenchmarkBuildExecutionOrder(b *testing.B) {
 	logLevel := log.GetLevel()
 	log.SetLevel(log.FatalLevel)
 
-	_, _ = BuildRunPipeline(runModel)
+	_, _ = uut.BuildRunPipeline(runModel)
 
 	log.SetLevel(logLevel)
 }

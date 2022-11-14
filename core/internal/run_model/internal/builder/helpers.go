@@ -1,15 +1,18 @@
 package builder
 
 import (
-	recipemodel "chast.io/core/internal/recipe/pkg/model"
-	"github.com/pkg/errors"
 	"path/filepath"
 	"strings"
+
+	recipemodel "chast.io/core/internal/recipe/pkg/model"
+	"github.com/pkg/errors"
 )
 
 func absolutizePath(flagValue string, typeExtension recipemodel.TypeExtension, wordingDir string) (string, error) {
 	if strings.HasSuffix(typeExtension.Type, "Path") && !strings.HasPrefix(flagValue, "/") {
-		return filepath.Abs(filepath.Join(wordingDir, flagValue))
+		abs, err := filepath.Abs(filepath.Join(wordingDir, flagValue))
+
+		return abs, errors.Wrap(err, "Could not absolutize path")
 	}
 
 	return flagValue, nil

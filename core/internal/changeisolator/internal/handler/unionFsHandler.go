@@ -28,7 +28,6 @@ func NewUnionFs(source string, sourceJoinFolders []string, upperDir string, targ
 }
 
 func (unionFs *UnionFsHandler) Mount() error {
-	// TODO support multiple lower dirs
 	log.Tracef("Trying to mount unionfs over %s into %s", unionFs.Source, unionFs.Target)
 
 	if err := unionFs.setupFolders(); err != nil {

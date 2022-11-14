@@ -1,9 +1,10 @@
 package parser_test
 
 import (
-	recipemodel "chast.io/core/internal/recipe/pkg/model"
 	"reflect"
 	"testing"
+
+	recipemodel "chast.io/core/internal/recipe/pkg/model"
 )
 
 func testParameter(t *testing.T,

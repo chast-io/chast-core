@@ -1,10 +1,11 @@
 package extensionsdetection_test
 
 import (
-	"chast.io/core/internal/run_model/internal/extensions_detection"
 	"os"
 	"path/filepath"
 	"testing"
+
+	uut "chast.io/core/internal/run_model/internal/extensions_detection"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -33,7 +34,7 @@ func TestDetectExtensions_Valid(t *testing.T) { //nolint:gocognit // This is con
 
 	t.Cleanup(func() { cleanupPaths(baseDir) })
 
-	extensions, err := extensionsdetection.DetectExtensions(baseDir)
+	extensions, err := uut.DetectExtensions(baseDir)
 
 	if err != nil {
 		t.Fatalf("Expected no error, but was '%v'", err)
@@ -102,7 +103,7 @@ func TestDetectExtensions_Valid(t *testing.T) { //nolint:gocognit // This is con
 func TestDetectExtensions_Invalid(t *testing.T) {
 	t.Parallel()
 
-	_, err := extensionsdetection.DetectExtensions("/invalid/path")
+	_, err := uut.DetectExtensions("/invalid/path")
 
 	if err == nil {
 		t.Fatalf("Expected error, but was nil")
