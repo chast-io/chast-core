@@ -31,15 +31,14 @@ jobs:
 
       - name: Run Test
         run: |
-          go test -v -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./...
-#          go test -coverpkg=./... -covermode=count -coverprofile=coverage.out ./...
-#          go tool cover -func=coverage.out -o=coverage.out
-        working-directory: ./core
+          go test -v -coverpkg=./... -covermode=count -coverprofile=coverage.out ./...
+          go tool cover -func=coverage.out -o=coverage.out
+        working-directory: core
 
       - name: Go Coverage Badge  # Pass the `coverage.out` output to this action
         uses: tj-actions/coverage-badge-go@v2
         with:
-          filename: .core/coverage.out
+          filename: core/coverage.out
 
       - name: Verify Changed files
         uses: tj-actions/verify-changed-files@v9.1
