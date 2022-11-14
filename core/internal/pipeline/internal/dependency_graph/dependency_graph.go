@@ -1,6 +1,7 @@
 package dependencygraph
 
 import (
+	"chast.io/core/internal/internal_util/graph"
 	"chast.io/core/internal/run_model/pkg/model/refactoring"
 	"github.com/pkg/errors"
 )
@@ -12,7 +13,7 @@ func BuildExecutionOrder(runModel *refactoring.RunModel) ([][]*refactoring.Run, 
 
 	dependencyGraph := buildDependencyGraph(runModel)
 
-	if hasCycles(dependencyGraph) {
+	if dependencyGraph.hasCycles() {
 		return nil, ErrCyclicDependency
 	}
 
@@ -43,13 +44,13 @@ func BuildExecutionOrder(runModel *refactoring.RunModel) ([][]*refactoring.Run, 
 	return executionOrder, nil
 }
 
-func buildDependencyGraph(runModel *refactoring.RunModel) []*node {
-	roots := make([]*node, 0)
-	nodes := make([]*node, 0)
-	nodesMap := make(map[*refactoring.Run]*node)
+func buildDependencyGraph(runModel *refactoring.RunModel) *graph.DoubleConnectedGraph[refactoring.Run] {
+	roots := make([]*graph.node, 0)
+	nodes := make([]*graph.node, 0)
+	nodesMap := make(map[*refactoring.Run]*graph.node)
 
 	for _, run := range runModel.Run {
-		node := newNode(run)
+		node := graph.NewNode(run)
 		nodes = append(nodes, node)
 		nodesMap[run] = node
 	}
@@ -69,40 +70,4 @@ func buildDependencyGraph(runModel *refactoring.RunModel) []*node {
 	}
 
 	return roots
-}
-
-func hasCycles(nodes []*node) bool {
-	visited := make(map[*node]bool)
-	recStack := make(map[*node]bool)
-
-	for _, rootNode := range nodes {
-		if hasCyclesRecursive(rootNode, visited, recStack) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func hasCyclesRecursive(node *node, visited map[*node]bool, recStack map[*node]bool) bool {
-	if recStack[node] {
-		return true
-	}
-
-	if visited[node] {
-		return false
-	}
-
-	visited[node] = true
-	recStack[node] = true
-
-	for dependant := range node.dependents {
-		if hasCyclesRecursive(dependant, visited, recStack) {
-			return true
-		}
-	}
-
-	recStack[node] = false
-
-	return false
 }

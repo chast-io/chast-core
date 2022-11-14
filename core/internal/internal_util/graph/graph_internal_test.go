@@ -1,4 +1,4 @@
-package dependencygraph
+package graph
 
 import (
 	"testing"
@@ -20,45 +20,45 @@ func GraphDummyRun() *refactoring.Run {
 
 // endregion
 
-// region: newNode
+// region: NewNode
 func TestNewNode(t *testing.T) {
 	t.Parallel()
 
 	run := GraphDummyRun()
 
-	uutNode := newNode(run)
+	uutNode := NewNode(run)
 
 	t.Run("should set self", func(t *testing.T) {
 		t.Parallel()
 		if uutNode.self != run {
-			t.Errorf("Expected node self to be '%v', but was '%v'", run, uutNode.self)
+			t.Errorf("Expected Node self to be '%v', but was '%v'", run, uutNode.self)
 		}
 	})
 
 	t.Run("should initialize dependents map", func(t *testing.T) {
 		t.Parallel()
 		if uutNode.dependents == nil {
-			t.Error("Expected node dependents to be set, but was nil")
+			t.Error("Expected Node dependents to be set, but was nil")
 		}
 		if len(uutNode.dependents) != 0 {
-			t.Errorf("Expected node dependents to be empty, but was '%v'", uutNode.dependents)
+			t.Errorf("Expected Node dependents to be empty, but was '%v'", uutNode.dependents)
 		}
 	})
 
 	t.Run("should initialize dependencies map", func(t *testing.T) {
 		t.Parallel()
 		if uutNode.dependencies == nil {
-			t.Error("Expected node dependencies to be set, but was nil")
+			t.Error("Expected Node dependencies to be set, but was nil")
 		}
 		if len(uutNode.dependencies) != 0 {
-			t.Errorf("Expected node dependencies to be empty, but was '%v'", uutNode.dependencies)
+			t.Errorf("Expected Node dependencies to be empty, but was '%v'", uutNode.dependencies)
 		}
 	})
 }
 
 // endregion
 
-// region: addDependency
+// region: AddDependency
 
 //nolint:gocognit // nested test cases
 func TestAddDependency(t *testing.T) {
@@ -68,10 +68,10 @@ func TestAddDependency(t *testing.T) {
 		t.Parallel()
 
 		run := GraphDummyRun()
-		node := newNode(run)
+		node := NewNode(run)
 
 		dependencyRun := GraphDummyRun()
-		dependencyNode := newNode(dependencyRun)
+		dependencyNode := NewNode(dependencyRun)
 
 		response := node.addDependency(dependencyNode)
 
@@ -87,10 +87,10 @@ func TestAddDependency(t *testing.T) {
 			t.Parallel()
 
 			if len(node.dependencies) != 1 {
-				t.Errorf("Expected node dependencies to contain 1 element, but was '%v'", node.dependencies)
+				t.Errorf("Expected Node dependencies to contain 1 element, but was '%v'", node.dependencies)
 			}
 			if node.dependencies[dependencyNode] == false {
-				t.Error("Expected node dependencies to contain dependencyNode, but did not")
+				t.Error("Expected Node dependencies to contain dependencyNode, but did not")
 			}
 		})
 
@@ -102,7 +102,7 @@ func TestAddDependency(t *testing.T) {
 			}
 
 			if dependencyNode.dependents[node] == false {
-				t.Error("Expected dependencyNode dependents to contain node, but did not")
+				t.Error("Expected dependencyNode dependents to contain Node, but did not")
 			}
 		})
 	})
@@ -111,19 +111,19 @@ func TestAddDependency(t *testing.T) {
 		t.Parallel()
 
 		run := GraphDummyRun()
-		node := newNode(run)
+		node := NewNode(run)
 
 		dependencyRun := GraphDummyRun()
-		dependencyNode := newNode(dependencyRun)
-		node.addDependency(dependencyNode)
+		dependencyNode := NewNode(dependencyRun)
+		node.AddDependency(dependencyNode)
 
-		response := node.addDependency(dependencyNode)
+		response := node.AddDependency(dependencyNode)
 
 		t.Run("should return false", func(t *testing.T) {
 			t.Parallel()
 
 			if response == true {
-				t.Error("Expected node.addDependency to return false, but was true")
+				t.Error("Expected Node.AddDependency to return false, but was true")
 			}
 		})
 
@@ -131,7 +131,7 @@ func TestAddDependency(t *testing.T) {
 			t.Parallel()
 
 			if len(node.dependencies) != 1 {
-				t.Errorf("Expected node dependencies to have size 1, but was '%v'", node.dependencies)
+				t.Errorf("Expected Node dependencies to have size 1, but was '%v'", node.dependencies)
 			}
 		})
 
@@ -147,7 +147,7 @@ func TestAddDependency(t *testing.T) {
 
 // endregion
 
-// region: removeDependency
+// region: RemoveDependency
 
 //nolint:gocognit // nested test
 func TestRemoveDependency(t *testing.T) {
@@ -158,14 +158,14 @@ func TestRemoveDependency(t *testing.T) {
 
 		// Prepare
 		run := GraphDummyRun()
-		node := newNode(run)
+		node := NewNode(run)
 
 		dependencyRun := GraphDummyRun()
-		dependencyNode := newNode(dependencyRun)
-		node.addDependency(dependencyNode)
+		dependencyNode := NewNode(dependencyRun)
+		node.AddDependency(dependencyNode)
 
 		// Test
-		response := node.removeDependency(dependencyNode)
+		response := node.RemoveDependency(dependencyNode)
 
 		// Assert
 		t.Run("should return true", func(t *testing.T) {
@@ -180,7 +180,7 @@ func TestRemoveDependency(t *testing.T) {
 			t.Parallel()
 
 			if len(node.dependencies) != 0 {
-				t.Errorf("Expected node dependencies to be empty, but was '%v'", node.dependencies)
+				t.Errorf("Expected Node dependencies to be empty, but was '%v'", node.dependencies)
 			}
 		})
 
@@ -201,20 +201,20 @@ func TestRemoveDependency(t *testing.T) {
 
 			// Prepare
 			run := GraphDummyRun()
-			node := newNode(run)
+			node := NewNode(run)
 
 			dependencyRun := GraphDummyRun()
-			dependencyNode := newNode(dependencyRun)
+			dependencyNode := NewNode(dependencyRun)
 
 			otherDependencyRun := GraphDummyRun()
-			otherDependencyNode := newNode(otherDependencyRun)
+			otherDependencyNode := NewNode(otherDependencyRun)
 
-			otherDependencyNode.addDependency(dependencyNode)
+			otherDependencyNode.AddDependency(dependencyNode)
 
-			node.addDependency(otherDependencyNode)
+			node.AddDependency(otherDependencyNode)
 
 			// Test
-			response := node.removeDependency(dependencyNode)
+			response := node.RemoveDependency(dependencyNode)
 
 			// Assert
 			t.Run("should return false", func(t *testing.T) {
@@ -229,11 +229,11 @@ func TestRemoveDependency(t *testing.T) {
 				t.Parallel()
 
 				if len(node.dependencies) != 1 {
-					t.Errorf("Expected node dependencies to be empty, but was '%v'", node.dependencies)
+					t.Errorf("Expected Node dependencies to be empty, but was '%v'", node.dependencies)
 				}
 
 				if node.dependencies[otherDependencyNode] == false {
-					t.Error("Expected node dependencies to contain otherDependencyNode, but did not")
+					t.Error("Expected Node dependencies to contain otherDependencyNode, but did not")
 				}
 			})
 
@@ -245,7 +245,7 @@ func TestRemoveDependency(t *testing.T) {
 				}
 
 				if otherDependencyNode.dependencies[dependencyNode] == false {
-					t.Error("Expected otherDependencyNode dependencies to contain node, but did not")
+					t.Error("Expected otherDependencyNode dependencies to contain Node, but did not")
 				}
 			})
 		})
@@ -256,15 +256,15 @@ func TestRemoveDependency(t *testing.T) {
 
 		// Prepare
 		run := GraphDummyRun()
-		node := newNode(run)
+		node := NewNode(run)
 
 		dependencyRun := GraphDummyRun()
-		dependencyNode := newNode(dependencyRun)
+		dependencyNode := NewNode(dependencyRun)
 
-		node.addDependency(dependencyNode)
+		node.AddDependency(dependencyNode)
 
 		// Test
-		response := node.removeDependency(dependencyNode)
+		response := node.RemoveDependency(dependencyNode)
 
 		t.Run("should return true", func(t *testing.T) {
 			t.Parallel()
@@ -278,7 +278,7 @@ func TestRemoveDependency(t *testing.T) {
 			t.Parallel()
 
 			if len(node.dependencies) != 0 {
-				t.Errorf("Expected node dependencies to be empty, but was '%v'", node.dependencies)
+				t.Errorf("Expected Node dependencies to be empty, but was '%v'", node.dependencies)
 			}
 		})
 
