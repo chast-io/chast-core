@@ -1,0 +1,83 @@
+version: 1
+type: refactoring
+name: RearrangeClassMembers
+maintainer: Raphael Jenni
+
+primaryParameter:
+  id: inputFile
+  type: filePath # filePath, folderPath, wildcardPath, string, int, boolean
+  description: The file to be refactored.
+
+positionalParameters:
+  - id: configFile
+    type: filePath
+    extensions:
+      - .yaml
+      - .yml
+    description: Config file defining the order of the class members.
+    longDescription: ./configFile.md
+
+flags:
+  - name: test
+    shortName: test
+    required: false
+    defaultValue: false
+    type: boolean
+    description: Test flag
+    longDescription: Test flag description
+
+run:
+  - id: rearrange_class_members
+    supportedExtensions:
+      - java
+    flags:
+      - name: configFile
+        shortName: c
+        type: filePath
+        extensions:
+          - yaml
+          - yml
+        description: Config file defining the order of the class members.
+        longDescription: ./configFile.md
+    #    nix:
+    #      - ....
+    docker:
+      dockerImage: java:17
+    local:
+      requiredTools:
+        - description: java
+          checkCmd: java -version
+    script:
+      - java -jar ./rearrange_class_members-1.0-SNAPSHOT-all.jar $inputFile $configFile > ${inputFile}.out
+    changeLocations:
+      - $inputFile
+  - id: mv_files
+    dependencies:
+      - rearrange_class_members
+    script:
+      - mv ${inputFile}.out $inputFile
+      #      - /bin/bash
+      - rm -rf ../../build/
+    changeLocations:
+      - $inputFile
+  - id: test1
+    dependencies:
+      - mv_files
+    script:
+      - echo "test" > ${inputFile}.out
+      - mkdir ../../build/
+    #      - /bin/bash
+    changeLocations:
+      - $inputFile
+
+  - id: rearrange_class_members_cs
+    supportedExtensions:
+      - cs
+    script:
+      - java -jar ./rearrange_class_members-1.0-SNAPSHOT-all.jar $inputFile $configFile > ${inputFile}.out
+      - mv ${inputFile}.out $inputFile
+
+tests:
+
+
+documentation:

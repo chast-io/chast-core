@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"chast.io/core/internal/changeisolator/pkg/strategy"
-	"chast.io/core/pkg/util/fs"
+	"chast.io/core/pkg/util/fs/folder"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -22,6 +22,7 @@ type IsolatorContext struct {
 	Isolator
 
 	RootFolder          string
+	RootJoinFolders     []string
 	ChangeCaptureFolder string
 	OperationDirectory  string
 	WorkingDirectory    string
@@ -29,12 +30,14 @@ type IsolatorContext struct {
 
 func NewChangeIsolator(
 	rootFolder string,
+	rootJoinFolders []string,
 	changeCaptureFolder string,
 	operationDirectory string,
 	currentWorkingDirectory string,
 ) *IsolatorContext {
 	return &IsolatorContext{
 		RootFolder:          rootFolder,
+		RootJoinFolders:     rootJoinFolders,
 		ChangeCaptureFolder: changeCaptureFolder,
 		OperationDirectory:  operationDirectory,
 		WorkingDirectory:    currentWorkingDirectory,
@@ -70,7 +73,7 @@ func (changeIsolator *IsolatorContext) CleanupInsideNS() error {
 func (changeIsolator *IsolatorContext) CleanupOutsideNS() error {
 	log.Tracef("[Outside NS] Cleaning up change isolator")
 
-	isEmpty, isFolderEmptyError := fs.IsFolderEmpty(changeIsolator.OperationDirectory)
+	isEmpty, isFolderEmptyError := folder.IsFolderEmpty(changeIsolator.OperationDirectory)
 	if isFolderEmptyError != nil {
 		return errors.Wrap(isFolderEmptyError, "Error checking if operation directory is empty")
 	}

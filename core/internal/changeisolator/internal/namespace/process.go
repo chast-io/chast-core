@@ -9,7 +9,6 @@ import (
 
 	"chast.io/core/internal/changeisolator/pkg/namespace"
 	"github.com/containers/storage/pkg/reexec"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -39,9 +38,7 @@ func nsExecution() {
 		log.Fatalf("Error in preparing isolation - %s", err)
 	}
 
-	if err := nsRun(nsContext); err != nil {
-		log.Fatalf("Error in running isolated process - %s", err)
-	}
+	nsRun(nsContext)
 
 	if err := isolator.CleanupInsideNS(); err != nil {
 		log.Fatalf("Error in cleaning up isolation - %s", err)
@@ -67,7 +64,7 @@ func loadNamespaceContext() namespace.Context {
 	return nsContext
 }
 
-func nsRun(nsContext namespace.Context) error {
+func nsRun(nsContext namespace.Context) {
 	for _, command := range nsContext.Commands {
 		commandString := strings.Join(command, " ")
 		log.Debugf("Running command \"%s\" in isolated environment", commandString)
@@ -81,9 +78,7 @@ func nsRun(nsContext namespace.Context) error {
 		cmd.Env = []string{"PS1=-[chast-ns-process]- # "}
 
 		if err := cmd.Run(); err != nil {
-			return errors.Wrap(err, "Error running command")
+			log.Warnf("Error running command: %v", err)
 		}
 	}
-
-	return nil
 }

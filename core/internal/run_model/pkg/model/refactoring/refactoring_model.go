@@ -3,13 +3,11 @@ package refactoring
 import "github.com/google/uuid"
 
 type RunModel struct {
-	Run    []*Run
-	Stages []string // TODO replacePlaceholder
+	Run []*Run
 }
 
 type SingleRunModel struct {
-	Run   *Run
-	Stage string // TODO replacePlaceholder
+	Run *Run
 }
 
 type Run struct {
@@ -17,9 +15,9 @@ type Run struct {
 	uuid               string
 	Dependencies       []*Run
 	SupportedLanguages []string
-	Docker             Docker
-	Local              Local
-	Command            Command
+	Docker             *Docker
+	Local              *Local
+	Command            *Command
 }
 
 func (run *Run) GetUUID() string {

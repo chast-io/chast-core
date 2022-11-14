@@ -1,28 +1,31 @@
 package refactoringpipelinemodel
 
 import (
+	"path/filepath"
+
 	"github.com/google/uuid"
 )
 
 type Stage struct {
-	Name string
-	UUID string
+	UUID                  string
+	ChangeCaptureLocation string
+	OperationLocation     string
 
 	Steps []*Step
 
-	prev *Stage
+	prev     *Stage
+	pipeline *Pipeline
 }
 
 func NewStage(name string) *Stage {
 	extendedUUID := "STAGE-"
 	if name != "" {
-		extendedUUID = name + "-"
+		extendedUUID += name + "-"
 	}
 
-	name += uuid.New().String()
+	extendedUUID += uuid.New().String()
 
-	return &Stage{
-		Name:  name,
+	return &Stage{ //nolint:exhaustruct // rest initialized in withPipeline
 		UUID:  extendedUUID,
 		Steps: make([]*Step, 0),
 		prev:  nil,
@@ -30,23 +33,38 @@ func NewStage(name string) *Stage {
 }
 
 func (s *Stage) AddStep(step *Step) {
+	if step == nil {
+		return
+	}
+
 	s.Steps = append(s.Steps, step)
+	if s.pipeline != nil {
+		s.setStepDetails(step)
+	}
 }
 
-func (s *Stage) WithPipeline(targetPipeline *Pipeline) {
+func (s *Stage) withPipeline(targetPipeline *Pipeline) {
+	s.pipeline = targetPipeline
+	s.setStageDetails()
+
 	for _, step := range s.Steps {
-		step.WithPipeline(targetPipeline)
+		s.setStepDetails(step)
 	}
 }
 
-func (s *Stage) GetPrevChangeCaptureFolders() []string {
-	prevCaptureFolders := make([]string, 0)
+func (s *Stage) setStageDetails() {
+	s.ChangeCaptureLocation = filepath.Join(s.pipeline.ChangeCaptureLocation, "tmp", s.UUID)
+	s.OperationLocation = filepath.Join(s.pipeline.OperationLocation, s.UUID)
+}
 
-	for prev := s.prev; prev != nil; prev = prev.prev {
-		for _, step := range prev.Steps {
-			prevCaptureFolders = append(prevCaptureFolders, step.ChangeCaptureFolder)
-		}
+func (s *Stage) setStepDetails(step *Step) {
+	step.withStage(s)
+}
+
+func (s *Stage) GetPrevChangeCaptureLocations() []string {
+	if s.prev == nil {
+		return []string{}
 	}
 
-	return prevCaptureFolders
+	return append(s.prev.GetPrevChangeCaptureLocations(), s.prev.ChangeCaptureLocation)
 }

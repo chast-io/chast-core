@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"chast.io/core/pkg/api/refactoring"
-	util "chast.io/core/pkg/util/fs"
+	util "chast.io/core/pkg/util/fs/file"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )

@@ -6,6 +6,8 @@ import (
 
 	"chast.io/core/internal/internal_util/collection"
 	recipemodel "chast.io/core/internal/recipe/pkg/model"
+	"chast.io/core/internal/run_model/internal/builder"
+	extensionsdetection "chast.io/core/internal/run_model/internal/extensions_detection"
 	runmodel "chast.io/core/internal/run_model/pkg/model"
 	"chast.io/core/internal/run_model/pkg/model/refactoring"
 	"github.com/pkg/errors"
@@ -19,11 +21,13 @@ func NewRunModelBuilder() *RunModelBuilder {
 
 func (parser *RunModelBuilder) BuildRunModel(
 	recipeModel *recipemodel.Recipe,
-	arguments *runmodel.ParsedArguments,
+	variables *runmodel.Variables,
+	unparsedArguments []string,
+	unparsedFlags []runmodel.UnparsedFlag,
 ) (*runmodel.RunModel, error) {
 	switch m := (*recipeModel).(type) {
 	case *recipemodel.RefactoringRecipe:
-		return parser.buildRunModel(m, arguments)
+		return parser.buildRunModel(m, variables, unparsedArguments, unparsedFlags)
 	default:
 		return nil, errors.New("Not a refactoring recipe")
 	}
@@ -31,27 +35,69 @@ func (parser *RunModelBuilder) BuildRunModel(
 
 func (parser *RunModelBuilder) buildRunModel(
 	recipeModel *recipemodel.RefactoringRecipe,
-	arguments *runmodel.ParsedArguments,
+	variables *runmodel.Variables,
+	unparsedArguments []string,
+	unparsedFlags []runmodel.UnparsedFlag,
 ) (*runmodel.RunModel, error) {
-	// TODO hande additional arguments
+	if err := builder.HandlePrimaryArgument(recipeModel.PrimaryParameter, variables, unparsedArguments[0]); err != nil {
+		return nil, errors.Wrap(err, "Failed to handle primary argument")
+	}
+
+	if err := builder.HandlePositionalArguments(recipeModel, variables, unparsedArguments[1:]); err != nil {
+		return nil, errors.Wrap(err, "Failed to handle positional arguments")
+	}
+
+	if err := builder.HandleFlags(recipeModel, variables, unparsedFlags); err != nil {
+		return nil, errors.Wrap(err, "Failed to handle flags")
+	}
+
 	var runModel runmodel.RunModel
 
+	filteredRuns, runsFilterError := filterRuns(recipeModel.Runs, variables)
+	if runsFilterError != nil {
+		return nil, errors.Wrap(runsFilterError, "Failed to filter runs")
+	}
+
 	namedRuns := make(map[string]*refactoring.Run)
-	mappedRuns := collection.Map(recipeModel.Runs,
-		func(run recipemodel.Run) *refactoring.Run { return convertRun(run, arguments, namedRuns) },
+	mappedRuns := collection.Map(filteredRuns,
+		func(run recipemodel.Run) *refactoring.Run { return convertRun(run, variables, namedRuns) },
 	)
 
 	runModel = refactoring.RunModel{
-		Run:    mappedRuns,
-		Stages: nil, // TODO implement
+		Run: mappedRuns,
 	}
 
 	return &runModel, nil
 }
 
+func filterRuns(runs []recipemodel.Run, variables *runmodel.Variables) ([]recipemodel.Run, error) {
+	extensions, extensionDetectionError := extensionsdetection.DetectExtensions(variables.TypeDetectionPath)
+	if extensionDetectionError != nil {
+		return nil, errors.Wrap(extensionDetectionError, "Failed to detect extensions")
+	}
+
+	filteredRuns := make([]recipemodel.Run, 0)
+
+	for _, run := range runs {
+		if run.SupportedExtensions == nil || len(run.SupportedExtensions) == 0 {
+			filteredRuns = append(filteredRuns, run)
+
+			continue
+		}
+
+		for _, supportedExtension := range run.SupportedExtensions {
+			if extensions[supportedExtension] != nil {
+				filteredRuns = append(filteredRuns, run)
+			}
+		}
+	}
+
+	return filteredRuns, nil
+}
+
 func convertRun(
 	run recipemodel.Run,
-	arguments *runmodel.ParsedArguments,
+	variables *runmodel.Variables,
 	namedRuns map[string]*refactoring.Run,
 ) *refactoring.Run {
 	dependencies := convertDependencies(run.Dependencies, namedRuns)
@@ -59,8 +105,8 @@ func convertRun(
 
 	newRun.ID = run.ID
 	newRun.Dependencies = dependencies
-	newRun.SupportedLanguages = run.SupportedLanguages
-	newRun.Command = convertCommand(run.Script, arguments)
+	newRun.SupportedLanguages = run.SupportedExtensions
+	newRun.Command = convertCommand(run.Script, variables)
 	newRun.Docker = convertDocker(run.Docker)
 	newRun.Local = convertLocal(run.Local)
 
@@ -98,13 +144,13 @@ func getOrComputeRunFromNamedRuns(runID string, namedRuns map[string]*refactorin
 	return newRun
 }
 
-func convertCommand(commands []string, arguments *runmodel.ParsedArguments) refactoring.Command {
+func convertCommand(commands []string, variables *runmodel.Variables) *refactoring.Command {
 	cmds := collection.Map(commands, strings.Fields)
-	replaceVariablesWithValuesInCommands(cmds, arguments.Arguments)
+	replaceVariablesWithValuesInCommands(cmds, variables.Map)
 
-	return refactoring.Command{
+	return &refactoring.Command{
 		Cmds:             cmds,
-		WorkingDirectory: filepath.Join(arguments.WorkingDirectory, "run"),
+		WorkingDirectory: filepath.Join(variables.WorkingDirectory, "run"),
 	}
 }
 
@@ -126,14 +172,22 @@ func replaceVariablesWithValues(value string, arguments map[string]string) strin
 	return value
 }
 
-func convertDocker(docker recipemodel.Docker) refactoring.Docker {
-	return refactoring.Docker{
+func convertDocker(docker *recipemodel.Docker) *refactoring.Docker {
+	if docker == nil {
+		return nil
+	}
+
+	return &refactoring.Docker{
 		DockerImage: docker.DockerImage,
 	}
 }
 
-func convertLocal(local recipemodel.Local) refactoring.Local {
-	return refactoring.Local{
+func convertLocal(local *recipemodel.Local) *refactoring.Local {
+	if local == nil {
+		return nil
+	}
+
+	return &refactoring.Local{
 		RequiredTools: collection.Map(local.RequiredTools, convertRequiredTool),
 	}
 }

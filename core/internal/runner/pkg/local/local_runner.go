@@ -4,8 +4,10 @@ import (
 	"chast.io/core/internal/changeisolator/pkg"
 	"chast.io/core/internal/changeisolator/pkg/namespace"
 	"chast.io/core/internal/changeisolator/pkg/strategy"
-	refactoringPipelineModel2 "chast.io/core/internal/pipeline/pkg/model/refactoring"
+	refactoringPipelineModel "chast.io/core/internal/pipeline/pkg/model/refactoring"
+	refactoringpipelinecleanup "chast.io/core/internal/post_processing/cleanup/refactoring"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 type Runner struct {
@@ -20,7 +22,9 @@ func NewRunner(isolated bool, parallel bool) *Runner {
 	}
 }
 
-func (r *Runner) Run(pipeline *refactoringPipelineModel2.Pipeline) error {
+func (r *Runner) Run(pipeline *refactoringPipelineModel.Pipeline) error {
+	log.Printf("Running pipeline %s", pipeline.UUID)
+
 	if r.isolated && !r.parallel {
 		return sequentialRun(pipeline)
 	}
@@ -28,28 +32,35 @@ func (r *Runner) Run(pipeline *refactoringPipelineModel2.Pipeline) error {
 	return errors.Errorf("Unisolated and parallel execution is not yet implemented")
 }
 
-func sequentialRun(pipeline *refactoringPipelineModel2.Pipeline) error {
+func sequentialRun(pipeline *refactoringPipelineModel.Pipeline) error {
 	for _, stage := range pipeline.Stages {
 		for _, step := range stage.Steps {
-			err := runIsolated(step, stage, pipeline)
-			if err != nil {
-				return err
+			if err := runIsolated(step, stage, pipeline); err != nil {
+				return errors.Wrap(err, "Error running isolated")
 			}
 		}
+
+		if err := refactoringpipelinecleanup.CleanupStage(stage); err != nil {
+			return errors.Wrap(err, "Error cleaning up stage")
+		}
+	}
+
+	if err := refactoringpipelinecleanup.CleanupPipeline(pipeline); err != nil {
+		return errors.Wrap(err, "Failed to cleanup pipeline")
 	}
 
 	return nil
 }
 
 func runIsolated(
-	step *refactoringPipelineModel2.Step,
-	stage *refactoringPipelineModel2.Stage,
-	pipeline *refactoringPipelineModel2.Pipeline,
+	step *refactoringPipelineModel.Step,
+	stage *refactoringPipelineModel.Stage,
+	pipeline *refactoringPipelineModel.Pipeline,
 ) error {
-	nsContext := namespace.NewContext(
+	var nsContext = namespace.NewContext(
 		pipeline.RootFileSystemLocation,
-		stage.GetPrevChangeCaptureFolders(),
-		step.ChangeCaptureFolder,
+		stage.GetPrevChangeCaptureLocations(),
+		step.ChangeCaptureLocation,
 		step.OperationLocation,
 		step.RunModel.Run.Command.WorkingDirectory,
 		step.RunModel.Run.Command.Cmds,
