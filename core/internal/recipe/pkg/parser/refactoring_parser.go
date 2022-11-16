@@ -1,6 +1,7 @@
 package parser
 
 import (
+	refactroingdependencygraph "chast.io/core/internal/recipe/internal/refactoring/dependency_graph"
 	"fmt"
 	"strings"
 
@@ -32,11 +33,20 @@ func (parser *RefactoringParser) ParseRecipe(data *[]byte) (*recipemodel.Recipe,
 	return &recipe, nil
 }
 
-// TODO: check dependencies (dependencies must exist, no cycles, etc.)
+// TODO: check dependencies
+//   - dependencies must exist
+//   - dependencies must not be circular
+//   - dependencies must not be self-referencing
+//
 // TODO: check for duplicate IDs
 func validateRecipe(recipe *recipemodel.RefactoringRecipe) error {
 	if err := validateRuns(recipe.Runs); err != nil {
 		return errors.Wrap(err, "Error validating primary parameter")
+	}
+
+	dependencyGraph := refactroingdependencygraph.BuildDependencyGraph(recipe)
+	if dependencyGraph.HasCycles() {
+		return errors.New("Recipe dependencies contains a cycle")
 	}
 
 	supportedExtensionsOfRuns := collection.Reduce(recipe.Runs, func(run recipemodel.Run, acc []string) []string {

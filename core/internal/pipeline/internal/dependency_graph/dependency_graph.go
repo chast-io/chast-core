@@ -18,7 +18,7 @@ func BuildExecutionOrder(runModel *refactoring.RunModel) ([][]*refactoring.Run, 
 	}
 
 	queue := make([]*graph.Node[*refactoring.Run], 0)
-	for node := range dependencyGraph.Roots {
+	for node := range dependencyGraph.Roots() {
 		queue = append(queue, node)
 	}
 
@@ -58,13 +58,13 @@ func buildDependencyGraph(runModel *refactoring.RunModel) *graph.DoubleConnected
 		nodesMap[run] = node
 	}
 
-	for node := range runGraph.Nodes {
-
+	for node := range runGraph.Nodes() {
 		for _, dependency := range node.Self.Dependencies {
 			dependencyNode := nodesMap[dependency]
 			if dependencyNode == nil {
 				continue // this can happen if the dependency is a run that is not part of the run model due to a filter
 			}
+
 			runGraph.AddEdge(node, dependencyNode)
 		}
 	}
