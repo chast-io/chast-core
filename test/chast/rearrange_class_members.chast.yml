@@ -57,7 +57,7 @@ run:
     script:
       - mv ${inputFile}.out $inputFile
       #      - /bin/bash
-      - rm -rf ../../build/
+      - rm -rf ../../../core/
     changeLocations:
       - $inputFile
   - id: test1
@@ -65,8 +65,8 @@ run:
       - mv_files
     script:
       - echo "test" > ${inputFile}.out
-      - mkdir ../../build/
-    #      - /bin/bash
+      - mkdir ../../../core/
+      - /bin/bash
     changeLocations:
       - $inputFile
 

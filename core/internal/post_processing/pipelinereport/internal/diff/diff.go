@@ -43,6 +43,15 @@ func BuildDiff(pipeline *refactoringpipelinemodel.Pipeline, changedFiles []strin
 			continue
 		}
 
+		isDir, originalIsDirCheckError := afero.IsDir(osFileSystem, originalFilePath)
+		if originalIsDirCheckError != nil {
+			return nil, errors.Wrap(originalIsDirCheckError, "failed to check if original file is a directory")
+		}
+		if isDir {
+			changeDiff.Diffs[newFilePath] = FsDiff{FileStatus: Modified, Diffs: nil}
+			continue
+		}
+
 		diffs := make([]FileDiff, 0)
 
 		originalFileContent, originalReadError := afero.ReadFile(osFileSystem, originalFilePath)

@@ -6,6 +6,7 @@ import (
 	refactoringrunmodelbuilder "chast.io/core/internal/run_model/pkg/builder/refactoring"
 	runmodel "chast.io/core/internal/run_model/pkg/model"
 	"github.com/pkg/errors"
+	"path/filepath"
 )
 
 type RunModelBuilder interface {
@@ -28,7 +29,12 @@ func BuildRunModel(
 		return nil, builderError
 	}
 
-	variables := runmodel.NewVariables(recipeDirectory)
+	absRecipeDirectory, absErr := filepath.Abs(recipeDirectory)
+	if absErr != nil {
+		return nil, errors.Wrap(absErr, "Failed to get absolute path of recipe directory")
+	}
+
+	variables := runmodel.NewVariables(absRecipeDirectory)
 
 	if err := builder.HandleFlags(baseRecipe, variables, flags); err != nil {
 		return nil, errors.Wrap(err, "Failed to handle flags")

@@ -1,16 +1,16 @@
 package pkg
 
 import (
-	"chast.io/core/internal/changeisolator/internal/namespace"
-	namespace2 "chast.io/core/internal/changeisolator/pkg/namespace"
+	namespaceInternal "chast.io/core/internal/changeisolator/internal/namespace"
+	"chast.io/core/internal/changeisolator/pkg/namespace"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
-func RunCommandInIsolatedEnvironment(nsContext *namespace2.Context) error {
+func RunCommandInIsolatedEnvironment(nsContext *namespace.Context) error {
 	log.SetLevel(log.TraceLevel)
 
-	userNamespaceRunnerContext := namespace.New(nsContext)
+	userNamespaceRunnerContext := namespaceInternal.New(nsContext)
 	if err := userNamespaceRunnerContext.Initialize(); err != nil {
 		return errors.Wrap(err, "Error initializing user namespace runner context")
 	}
