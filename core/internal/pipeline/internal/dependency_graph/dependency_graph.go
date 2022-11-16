@@ -13,11 +13,14 @@ func BuildExecutionOrder(runModel *refactoring.RunModel) ([][]*refactoring.Run, 
 
 	dependencyGraph := buildDependencyGraph(runModel)
 
-	if dependencyGraph.hasCycles() {
+	if dependencyGraph.HasCycles() {
 		return nil, ErrCyclicDependency
 	}
 
-	queue := dependencyGraph
+	queue := make([]*graph.Node[*refactoring.Run], 0)
+	for node := range dependencyGraph.Roots {
+		queue = append(queue, node)
+	}
 
 	for len(queue) > 0 {
 		levelLen := len(queue)
@@ -27,12 +30,12 @@ func BuildExecutionOrder(runModel *refactoring.RunModel) ([][]*refactoring.Run, 
 			queueNode := queue[0]
 			queue = queue[1:]
 
-			level = append(level, queueNode.self)
+			level = append(level, queueNode.Self)
 
-			for dependent := range queueNode.dependents {
-				dependent.removeDependency(queueNode)
+			for dependent := range queueNode.Dependents {
+				dependent.RemoveDependency(queueNode)
 
-				if len(dependent.dependencies) == 0 {
+				if len(dependent.Dependencies) == 0 {
 					queue = append(queue, dependent)
 				}
 			}
@@ -44,30 +47,27 @@ func BuildExecutionOrder(runModel *refactoring.RunModel) ([][]*refactoring.Run, 
 	return executionOrder, nil
 }
 
-func buildDependencyGraph(runModel *refactoring.RunModel) *graph.DoubleConnectedGraph[refactoring.Run] {
-	roots := make([]*graph.node, 0)
-	nodes := make([]*graph.node, 0)
-	nodesMap := make(map[*refactoring.Run]*graph.node)
+func buildDependencyGraph(runModel *refactoring.RunModel) *graph.DoubleConnectedGraph[*refactoring.Run] {
+	nodesMap := make(map[*refactoring.Run]*graph.Node[*refactoring.Run])
+
+	runGraph := graph.NewDoubleConnectedGraph[*refactoring.Run]()
 
 	for _, run := range runModel.Run {
-		node := graph.NewNode(run)
-		nodes = append(nodes, node)
+		node := graph.NewNode[*refactoring.Run](run)
+		runGraph.AddNode(node)
 		nodesMap[run] = node
 	}
 
-	for _, node := range nodes {
-		if len(node.self.Dependencies) == 0 {
-			roots = append(roots, node)
-		} else {
-			for _, dependency := range node.self.Dependencies {
-				dependencyNode := nodesMap[dependency]
-				if dependencyNode == nil {
-					continue // this can happen if the dependency is a run that is not part of the run model due to a filter
-				}
-				node.addDependency(dependencyNode)
+	for node := range runGraph.Nodes {
+
+		for _, dependency := range node.Self.Dependencies {
+			dependencyNode := nodesMap[dependency]
+			if dependencyNode == nil {
+				continue // this can happen if the dependency is a run that is not part of the run model due to a filter
 			}
+			runGraph.AddEdge(node, dependencyNode)
 		}
 	}
 
-	return roots
+	return runGraph
 }

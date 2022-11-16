@@ -33,6 +33,7 @@ func (parser *RefactoringParser) ParseRecipe(data *[]byte) (*recipemodel.Recipe,
 }
 
 // TODO: check dependencies (dependencies must exist, no cycles, etc.)
+// TODO: check for duplicate IDs
 func validateRecipe(recipe *recipemodel.RefactoringRecipe) error {
 	if err := validateRuns(recipe.Runs); err != nil {
 		return errors.Wrap(err, "Error validating primary parameter")

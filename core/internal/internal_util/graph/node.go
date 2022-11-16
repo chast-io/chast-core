@@ -3,39 +3,39 @@ package graph
 import log "github.com/sirupsen/logrus"
 
 type Node[T interface{}] struct {
-	self         *T
-	dependents   map[*Node[T]]bool
-	dependencies map[*Node[T]]bool
+	Self         T
+	Dependents   map[*Node[T]]bool
+	Dependencies map[*Node[T]]bool
 }
 
-func NewNode[T interface{}](run *T) *Node[T] {
+func NewNode[T interface{}](run T) *Node[T] {
 	return &Node[T]{
-		self:         run,
-		dependents:   make(map[*Node[T]]bool),
-		dependencies: make(map[*Node[T]]bool),
+		Self:         run,
+		Dependents:   make(map[*Node[T]]bool),
+		Dependencies: make(map[*Node[T]]bool),
 	}
 }
 
-func (n *Node[T]) addDependency(node *Node[T]) bool {
-	if n.dependencies[node] {
-		log.Warnf("dependency already exists: %v -> %v", n.self, node.self)
+func (n *Node[T]) AddDependency(node *Node[T]) bool {
+	if n.Dependencies[node] {
+		log.Warnf("dependency already exists: %v -> %v", n.Self, node.Self)
 
 		return false
 	}
 
-	n.dependencies[node] = true
-	node.dependents[n] = true
+	n.Dependencies[node] = true
+	node.Dependents[n] = true
 
 	return true
 }
 
-func (n *Node[T]) removeDependency(node *Node[T]) bool {
-	if !n.dependencies[node] {
+func (n *Node[T]) RemoveDependency(node *Node[T]) bool {
+	if !n.Dependencies[node] {
 		return false
 	}
 
-	delete(n.dependencies, node)
-	delete(node.dependents, n)
+	delete(n.Dependencies, node)
+	delete(node.Dependents, n)
 
 	return true
 }
