@@ -1,11 +1,11 @@
 package parser
 
 import (
-	refactroingdependencygraph "chast.io/core/internal/recipe/internal/refactoring/dependency_graph"
 	"fmt"
 	"strings"
 
 	"chast.io/core/internal/internal_util/collection"
+	refactroingdependencygraph "chast.io/core/internal/recipe/internal/refactoring/dependency_graph"
 	recipemodel "chast.io/core/internal/recipe/pkg/model"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -33,20 +33,9 @@ func (parser *RefactoringParser) ParseRecipe(data *[]byte) (*recipemodel.Recipe,
 	return &recipe, nil
 }
 
-// TODO: check dependencies
-//   - dependencies must exist
-//   - dependencies must not be circular
-//   - dependencies must not be self-referencing
-//
-// TODO: check for duplicate IDs
 func validateRecipe(recipe *recipemodel.RefactoringRecipe) error {
 	if err := validateRuns(recipe.Runs); err != nil {
 		return errors.Wrap(err, "Error validating primary parameter")
-	}
-
-	dependencyGraph := refactroingdependencygraph.BuildDependencyGraph(recipe)
-	if dependencyGraph.HasCycles() {
-		return errors.New("Recipe dependencies contains a cycle")
 	}
 
 	supportedExtensionsOfRuns := collection.Reduce(recipe.Runs, func(run recipemodel.Run, acc []string) []string {
@@ -60,14 +49,59 @@ func validateRecipe(recipe *recipemodel.RefactoringRecipe) error {
 	return nil
 }
 
+// TODO: check dependencies
+//   - dependencies must exist
+//   - dependencies must not be self-referencing
+//
+// TODO: check for duplicate IDs
 func validateRuns(runs []recipemodel.Run) error {
 	if len(runs) == 0 {
 		return errors.New("At least one run is required")
 	}
 
-	for i := range runs {
-		if err := validateRun(&runs[i]); err != nil {
+	presentRunIds := make(map[string]bool)
+	for runIndex := range runs {
+		if err := validateID(&runs[runIndex], presentRunIds); err != nil {
+			return errors.Wrap(err, "Error validating run ID")
+		}
+
+		if err := validateRun(&runs[runIndex]); err != nil {
 			return errors.Wrap(err, "Error validating run")
+		}
+	}
+
+	if err := validateDependencies(runs, presentRunIds); err != nil {
+		return errors.Wrap(err, "Error validating run dependencies")
+	}
+
+	dependencyGraph := refactroingdependencygraph.BuildDependencyGraph(runs)
+	if dependencyGraph.HasCycles() {
+		return errors.New("Recipe dependencies contains a cycle")
+	}
+
+	return nil
+}
+
+func validateID(run *recipemodel.Run, presentRunIds map[string]bool) error {
+	if presentRunIds[run.ID] {
+		return errors.New(fmt.Sprintf("Duplicate run ID '%s'", run.ID)) //nolint:revive,lll // TODO: use new error strategy #18
+	}
+
+	presentRunIds[run.ID] = true
+
+	return nil
+}
+
+func validateDependencies(runs []recipemodel.Run, presentRunIds map[string]bool) error {
+	for _, run := range runs {
+		for _, dependency := range run.Dependencies {
+			if !presentRunIds[dependency] {
+				return errors.New(fmt.Sprintf("Run '%s' depends on unknown run '%s'", run.ID, dependency)) //nolint:revive,lll // TODO: use new error strategy #18
+			}
+
+			if dependency == run.ID {
+				return errors.New(fmt.Sprintf("Run '%s' depends on itself", run.ID)) //nolint:revive,lll // TODO: use new error strategy #18
+			}
 		}
 	}
 

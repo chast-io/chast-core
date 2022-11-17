@@ -5,13 +5,13 @@ import (
 	recipemodel "chast.io/core/internal/recipe/pkg/model"
 )
 
-func BuildDependencyGraph(recipe *recipemodel.RefactoringRecipe) *graph.DoubleConnectedGraph[*recipemodel.Run] {
+func BuildDependencyGraph(runs []recipemodel.Run) *graph.DoubleConnectedGraph[*recipemodel.Run] {
 	nodesMap := make(map[string]*graph.Node[*recipemodel.Run])
 
 	runGraph := graph.NewDoubleConnectedGraph[*recipemodel.Run]()
 
-	for i, run := range recipe.Runs {
-		node := graph.NewNode(&recipe.Runs[i])
+	for i, run := range runs {
+		node := graph.NewNode(&runs[i])
 		runGraph.AddNode(node)
 		nodesMap[run.ID] = node
 	}

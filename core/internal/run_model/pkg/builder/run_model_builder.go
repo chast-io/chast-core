@@ -1,12 +1,13 @@
 package builder
 
 import (
+	"path/filepath"
+
 	recipemodel "chast.io/core/internal/recipe/pkg/model"
 	"chast.io/core/internal/run_model/internal/builder"
 	refactoringrunmodelbuilder "chast.io/core/internal/run_model/pkg/builder/refactoring"
 	runmodel "chast.io/core/internal/run_model/pkg/model"
 	"github.com/pkg/errors"
-	"path/filepath"
 )
 
 type RunModelBuilder interface {

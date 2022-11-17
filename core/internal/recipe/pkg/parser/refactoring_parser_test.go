@@ -11,7 +11,30 @@ import (
 func TestParseRecipe_Refactoring(t *testing.T) {
 	t.Parallel()
 
-	testParseRecipeRefactoringCompleteValid(t)
+	t.Run("CompleteValid", func(t *testing.T) {
+		t.Parallel()
+		testParseRecipeRefactoringCompleteValid(t)
+	})
+
+	t.Run("DuplicateIds", func(t *testing.T) {
+		t.Parallel()
+		testDuplicateIds(t)
+	})
+
+	t.Run("Invalid Dependencies", func(t *testing.T) {
+		t.Parallel()
+		testInvalidDependencies(t)
+	})
+
+	t.Run("Cyclic Dependencies", func(t *testing.T) {
+		t.Parallel()
+		testCyclicDependencies(t)
+	})
+
+	t.Run("Self Referencing Dependencies", func(t *testing.T) {
+		t.Parallel()
+		testSelfReferencingDependencies(t)
+	})
 }
 
 func testParseRecipeRefactoringCompleteValid(t *testing.T) {
@@ -75,10 +98,145 @@ func testParseRecipeRefactoringCompleteValid(t *testing.T) {
 			if recipe.Runs == nil || len(recipe.Runs) == 0 {
 				t.Error("Expected recipe runs to be set, but was nil")
 			}
+
+			if len(recipe.Runs) != 3 {
+				t.Errorf("Expected recipe runs to have 3 entries, but had %d", len(recipe.Runs))
+			}
+
+			testRun(t, &recipe.Runs[0], recipemodel.Run{
+				ID:                  "rearrange_class_members_java",
+				Dependencies:        make([]string, 0),
+				SupportedExtensions: []string{"java"},
+				Flags:               make([]recipemodel.Flag, 0),
+				Docker:              nil,
+				Local:               nil,
+				Script:              []string{"java -jar ./file.jar $inputFile $configFile > ${inputFile}.out"},
+				ChangeLocations:     make([]string, 0),
+			})
+
+			testRun(t, &recipe.Runs[1], recipemodel.Run{
+				ID:                  "mv_files",
+				Dependencies:        []string{"rearrange_class_members_java"},
+				SupportedExtensions: make([]string, 0),
+				Flags:               make([]recipemodel.Flag, 0),
+				Docker:              nil,
+				Local:               nil,
+				Script:              []string{"mv ${inputFile}.out $inputFile"},
+				ChangeLocations:     make([]string, 0),
+			})
+
+			testRun(t, &recipe.Runs[2], recipemodel.Run{
+				ID:                  "rearrange_class_members_cs",
+				Dependencies:        make([]string, 0),
+				SupportedExtensions: []string{"cs"},
+				Flags:               make([]recipemodel.Flag, 0),
+				Docker:              nil,
+				Local:               nil,
+				Script:              []string{"java -jar ./file.jar $inputFile $configFile > ${inputFile}.out", "mv ${inputFile}.out $inputFile"},
+				ChangeLocations:     make([]string, 0),
+			})
 		})
 
-		//t.Run("Tests", func(t *testing.T) {
-		//	t.Skip("TODO")
-		//})
+		// TODO: test tests section
 	})
+}
+
+func testDuplicateIds(t *testing.T) {
+	t.Helper()
+
+	fileData, err := os.ReadFile("testdata/refactoring_parser/duplicate_ids_recipe.yml")
+	if err != nil {
+		t.Fatalf("Error reading test recipe: %v", err)
+	}
+
+	refactoringParser := &parser.RefactoringParser{}
+	_, parseError := refactoringParser.ParseRecipe(&fileData)
+
+	if parseError == nil {
+		t.Fatal("Expected error, but was nil")
+	}
+}
+
+func testInvalidDependencies(t *testing.T) {
+	t.Helper()
+
+	fileData, err := os.ReadFile("testdata/refactoring_parser/invalid_dependencies_recipe.yml")
+	if err != nil {
+		t.Fatalf("Error reading test recipe: %v", err)
+	}
+
+	refactoringParser := &parser.RefactoringParser{}
+	_, parseError := refactoringParser.ParseRecipe(&fileData)
+
+	if parseError == nil {
+		t.Fatal("Expected error, but was nil")
+	}
+}
+
+func testCyclicDependencies(t *testing.T) {
+	t.Helper()
+
+	t.Run("Cyclic Dependency at Start", func(t *testing.T) {
+		t.Parallel()
+
+		fileData, err := os.ReadFile("testdata/refactoring_parser/cyclic_dependencies_recipe_start.yml")
+		if err != nil {
+			t.Fatalf("Error reading test recipe: %v", err)
+		}
+
+		refactoringParser := &parser.RefactoringParser{}
+		_, parseError := refactoringParser.ParseRecipe(&fileData)
+
+		if parseError == nil {
+			t.Fatal("Expected error, but was nil")
+		}
+	})
+
+	t.Run("Cyclic Dependency in Middle", func(t *testing.T) {
+		t.Parallel()
+
+		fileData, err := os.ReadFile("testdata/refactoring_parser/cyclic_dependencies_recipe_middle.yml")
+		if err != nil {
+			t.Fatalf("Error reading test recipe: %v", err)
+		}
+
+		refactoringParser := &parser.RefactoringParser{}
+		_, parseError := refactoringParser.ParseRecipe(&fileData)
+
+		if parseError == nil {
+			t.Fatal("Expected error, but was nil")
+		}
+	})
+
+	t.Run("Cyclic Dependency at End", func(t *testing.T) {
+		t.Parallel()
+
+		fileData, err := os.ReadFile("testdata/refactoring_parser/cyclic_dependencies_recipe_end.yml")
+		if err != nil {
+			t.Fatalf("Error reading test recipe: %v", err)
+		}
+
+		refactoringParser := &parser.RefactoringParser{}
+		_, parseError := refactoringParser.ParseRecipe(&fileData)
+
+		if parseError == nil {
+			t.Fatal("Expected error, but was nil")
+		}
+	})
+}
+
+func testSelfReferencingDependencies(t *testing.T) {
+	t.Helper()
+
+	fileData, err := os.ReadFile("testdata/refactoring_parser/self_referencing_dependencies.yml")
+	if err != nil {
+		t.Fatalf("Error reading test recipe: %v", err)
+	}
+
+	refactoringParser := &parser.RefactoringParser{}
+	_, parseError := refactoringParser.ParseRecipe(&fileData)
+
+	if parseError == nil {
+		t.Fatal("Expected error, but was nil")
+	}
 }
