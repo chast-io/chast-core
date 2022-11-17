@@ -3,10 +3,8 @@ package dependencygraph
 import (
 	"chast.io/core/internal/internal_util/graph"
 	"chast.io/core/internal/run_model/pkg/model/refactoring"
-	"github.com/pkg/errors"
+	"github.com/joomcode/errorx"
 )
-
-var ErrCyclicDependency = errors.New("cyclic dependency detected")
 
 func BuildExecutionOrder(runModel *refactoring.RunModel) ([][]*refactoring.Run, error) {
 	executionOrder := make([][]*refactoring.Run, 0)
@@ -14,7 +12,7 @@ func BuildExecutionOrder(runModel *refactoring.RunModel) ([][]*refactoring.Run, 
 	dependencyGraph := buildDependencyGraph(runModel)
 
 	if dependencyGraph.HasCycles() {
-		return nil, ErrCyclicDependency
+		return nil, errorx.InternalError.New("Cyclic dependency detected")
 	}
 
 	queue := make([]*graph.Node[*refactoring.Run], 0)

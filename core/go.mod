@@ -6,7 +6,8 @@ require (
 	github.com/containers/storage v1.43.0
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/google/uuid v1.3.0
-	github.com/pkg/errors v0.9.1
+	github.com/joomcode/errorx v1.1.0
+	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
 	github.com/sergi/go-diff v1.1.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/afero v1.2.2
@@ -19,6 +20,8 @@ require (
 
 require (
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
+	github.com/mattn/go-colorable v0.0.9 // indirect
+	github.com/mattn/go-isatty v0.0.4 // indirect
 	github.com/stretchr/testify v1.8.1 // indirect
 	golang.org/x/text v0.3.6 // indirect
 )

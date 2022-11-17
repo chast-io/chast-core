@@ -5,10 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	chastlog "chast.io/core/internal/logger"
 	uut "chast.io/core/internal/run_model/internal/extensions_detection"
-
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/joomcode/errorx"
 )
 
 func TestDetectExtensions_Valid(t *testing.T) { //nolint:gocognit // This is contains nested tests
@@ -128,6 +127,6 @@ func preparePaths(paths []string, baseDir string) error {
 
 func cleanupPaths(baseDir string) {
 	if err := os.RemoveAll(baseDir); err != nil {
-		log.Fatalln(errors.Wrap(err, "Error cleaning up paths"))
+		chastlog.Log.Fatalln(errorx.ExternalError.Wrap(err, "Error cleaning up paths"))
 	}
 }

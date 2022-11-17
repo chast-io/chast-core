@@ -1,6 +1,6 @@
 package graph
 
-import log "github.com/sirupsen/logrus"
+import chastlog "chast.io/core/internal/logger"
 
 type Node[T interface{}] struct {
 	Self         T
@@ -18,7 +18,7 @@ func NewNode[T interface{}](run T) *Node[T] {
 
 func (n *Node[T]) AddDependency(node *Node[T]) bool {
 	if n.Dependencies[node] {
-		log.Warnf("dependency already exists: %v -> %v", n.Self, node.Self)
+		chastlog.Log.Warnf("dependency already exists: %v -> %v", n.Self, node.Self)
 
 		return false
 	}

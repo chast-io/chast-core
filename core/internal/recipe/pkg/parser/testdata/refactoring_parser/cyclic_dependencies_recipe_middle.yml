@@ -34,9 +34,9 @@ run:
       - echo "Id2"
   - id: post
     dependencies:
-        - id3
+      - id3
     script:
-        - echo "Post"
+      - echo "Post"
 
 tests:
 

@@ -4,9 +4,9 @@ import (
 	"os"
 
 	"chast.io/core/internal/changeisolator/pkg/strategy"
+	chastlog "chast.io/core/internal/logger"
 	"chast.io/core/pkg/util/fs/folder"
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/joomcode/errorx"
 )
 
 type Isolator interface {
@@ -51,36 +51,40 @@ func (changeIsolator *IsolatorContext) Initialize() error {
 }
 
 func (changeIsolator *IsolatorContext) setupFolders() error {
-	log.Printf("Setting up folders: %s, %s, \n", changeIsolator.ChangeCaptureFolder, changeIsolator.OperationDirectory)
+	chastlog.Log.Printf(
+		"Setting up folders: %s, %s",
+		changeIsolator.ChangeCaptureFolder,
+		changeIsolator.OperationDirectory,
+	)
 
 	if err := os.MkdirAll(changeIsolator.ChangeCaptureFolder, 0o755); err != nil {
-		return errors.Wrap(err, "Error creating change capture folder")
+		return errorx.ExternalError.Wrap(err, "Error creating change capture folder")
 	}
 
 	if err := os.MkdirAll(changeIsolator.OperationDirectory, 0o755); err != nil {
-		return errors.Wrap(err, "Error creating operation folder")
+		return errorx.ExternalError.Wrap(err, "Error creating operation folder")
 	}
 
 	return nil
 }
 
 func (changeIsolator *IsolatorContext) CleanupInsideNS() error {
-	log.Tracef("[Inside NS] Cleaning up change isolator")
+	chastlog.Log.Tracef("[Inside NS] Cleaning up change isolator")
 
 	return nil
 }
 
 func (changeIsolator *IsolatorContext) CleanupOutsideNS() error {
-	log.Tracef("[Outside NS] Cleaning up change isolator")
+	chastlog.Log.Tracef("[Outside NS] Cleaning up change isolator")
 
 	isEmpty, isFolderEmptyError := folder.IsFolderEmpty(changeIsolator.OperationDirectory)
 	if isFolderEmptyError != nil {
-		return errors.Wrap(isFolderEmptyError, "Error checking if operation directory is empty")
+		return errorx.InternalError.Wrap(isFolderEmptyError, "Error checking if operation directory is empty")
 	}
 
 	if isEmpty {
 		if err := os.RemoveAll(changeIsolator.OperationDirectory); err != nil {
-			return errors.Wrap(err, "Error removing operation directory")
+			return errorx.ExternalError.Wrap(err, "Error removing operation directory")
 		}
 	}
 

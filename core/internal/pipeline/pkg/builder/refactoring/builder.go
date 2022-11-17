@@ -8,14 +8,14 @@ import (
 	refactoringpipelinemodel "chast.io/core/internal/pipeline/pkg/model/refactoring"
 	refactoringRunModelIsolator "chast.io/core/internal/run_model/pkg/isolator/refactoring"
 	"chast.io/core/internal/run_model/pkg/model/refactoring"
-	"github.com/pkg/errors"
+	"github.com/joomcode/errorx"
 )
 
 func BuildRunPipeline(runModel *refactoring.RunModel) (*refactoringpipelinemodel.Pipeline, error) {
 	// TODO verify id uniqueness
 	isolatedExecutionOrder, isolatedExecutionOrderBuildError := buildIsolatedExecutionOrder(runModel)
 	if isolatedExecutionOrderBuildError != nil {
-		return nil, errors.Wrap(isolatedExecutionOrderBuildError, "failed to build isolated execution order")
+		return nil, errorx.InternalError.Wrap(isolatedExecutionOrderBuildError, "failed to build isolated execution order")
 	}
 
 	// TODO make configurable
@@ -40,7 +40,7 @@ func buildIsolatedExecutionOrder(
 ) ([][]*refactoring.SingleRunModel, error) {
 	executionOrder, executionOrderBuildError := dependencygraph.BuildExecutionOrder(runModel)
 	if executionOrderBuildError != nil {
-		return nil, errors.Wrap(executionOrderBuildError, "failed to build execution order")
+		return nil, errorx.InternalError.Wrap(executionOrderBuildError, "failed to build execution order")
 	}
 
 	return collection.Map(executionOrder, func(run []*refactoring.Run) []*refactoring.SingleRunModel {

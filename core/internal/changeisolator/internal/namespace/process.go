@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"chast.io/core/internal/changeisolator/pkg/namespace"
+	chastlog "chast.io/core/internal/logger"
 	"github.com/containers/storage/pkg/reexec"
-	log "github.com/sirupsen/logrus"
 )
 
 func init() { //nolint:gochecknoinits // This function needs to register the function used for reexec
@@ -23,25 +23,23 @@ func init() { //nolint:gochecknoinits // This function needs to register the fun
 const processExecutionFunction = "nsExecution"
 
 func nsExecution() {
-	log.SetLevel(log.TraceLevel)
-
-	log.Printf("Running in isolated environment")
+	chastlog.Log.Printf("Running in isolated environment")
 
 	nsContext := loadNamespaceContext()
 
 	isolator, isolationStrategyBuildError := nsContext.BuildIsolationStrategy()
 	if isolationStrategyBuildError != nil {
-		log.Fatalf("Cannot load isolation strategy: %v", isolationStrategyBuildError)
+		chastlog.Log.Fatalf("Cannot load isolation strategy: %v", isolationStrategyBuildError)
 	}
 
 	if err := isolator.PrepareInsideNS(); err != nil {
-		log.Fatalf("Error in preparing isolation - %s", err)
+		chastlog.Log.Fatalf("Error in preparing isolation - %s", err)
 	}
 
 	nsRun(nsContext)
 
 	if err := isolator.CleanupInsideNS(); err != nil {
-		log.Fatalf("Error in cleaning up isolation - %s", err)
+		chastlog.Log.Fatalf("Error in cleaning up isolation - %s", err)
 	}
 }
 
@@ -53,12 +51,12 @@ func loadNamespaceContext() namespace.Context {
 
 	data, err := io.ReadAll(pipe)
 	if err != nil {
-		log.Fatalf("Error while reading namespace context from pipe: %v", err)
+		chastlog.Log.Fatalf("Error while reading namespace context from pipe: %v", err)
 	}
 
 	err = json.Unmarshal(data, &nsContext)
 	if err != nil {
-		log.Fatalf("Error while decoding namespace context: %v", err)
+		chastlog.Log.Fatalf("Error while decoding namespace context: %v", err)
 	}
 
 	return nsContext
@@ -67,7 +65,7 @@ func loadNamespaceContext() namespace.Context {
 func nsRun(nsContext namespace.Context) {
 	for _, command := range nsContext.Commands {
 		commandString := strings.Join(command, " ")
-		log.Debugf("Running command \"%s\" in isolated environment", commandString)
+		chastlog.Log.Debugf("Running command \"%s\" in isolated environment", commandString)
 
 		cmd := exec.Command("/bin/bash", "-c", commandString) // TODO make runner configurable
 
@@ -78,7 +76,7 @@ func nsRun(nsContext namespace.Context) {
 		cmd.Env = []string{"PS1=-[chast-ns-process]- # "}
 
 		if err := cmd.Run(); err != nil {
-			log.Warnf("Error running command: %v", err)
+			chastlog.Log.Warnf("Error running command: %v", err)
 		}
 	}
 }

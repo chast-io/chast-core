@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"chast.io/core/internal/post_processing/pipelinereport/internal/diff"
-	"github.com/pkg/errors"
+	"github.com/joomcode/errorx"
 	"github.com/ttacon/chalk"
 	"github.com/xlab/treeprint"
 )
@@ -23,7 +23,7 @@ func ToString(rootPath string, changeDiff *diff.ChangeDiff, printFullRootPath bo
 
 	tree, fileTreeBuildError := buildFileTree(rootPath, changeDiff, rootName, colorize)
 	if fileTreeBuildError != nil {
-		return "", errors.Wrap(fileTreeBuildError, "failed to build file tree")
+		return "", errorx.InternalError.Wrap(fileTreeBuildError, "failed to build file tree")
 	}
 
 	return tree.String(), nil
@@ -57,7 +57,7 @@ func buildFileTree( //nolint:ireturn // return tree of tree library
 	}
 
 	if err := filepath.Walk(rootPath, visit); err != nil {
-		return nil, errors.Wrap(err, "failed to walk file tree")
+		return nil, errorx.ExternalError.Wrap(err, "failed to walk file tree")
 	}
 
 	return tree, nil

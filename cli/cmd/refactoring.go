@@ -18,7 +18,7 @@ var refactoringCmd = &cobra.Command{ //nolint:exhaustruct // Only defining requi
 
 		file, newFileError := util.NewFile(recipeFileArg)
 		if newFileError != nil || !file.Exists() {
-			log.Fatalf("Recipe file \"%v\" does not exist.\n", file.AbsolutePath)
+			log.Fatalf("Recipe file \"%v\" does not exist.", file.AbsolutePath)
 		}
 		refactoring.Run(file, args[1:]...)
 	},

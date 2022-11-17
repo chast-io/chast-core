@@ -6,8 +6,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	chastlog "chast.io/core/internal/logger"
+	"github.com/joomcode/errorx"
 	"golang.org/x/sys/unix"
 )
 
@@ -28,7 +28,7 @@ func NewUnionFs(source string, sourceJoinFolders []string, upperDir string, targ
 }
 
 func (unionFs *UnionFsHandler) Mount() error {
-	log.Tracef("Trying to mount unionfs over %s into %s", unionFs.Source, unionFs.Target)
+	chastlog.Log.Tracef("Trying to mount unionfs over %s into %s", unionFs.Source, unionFs.Target)
 
 	if err := unionFs.setupFolders(); err != nil {
 		return err
@@ -48,10 +48,10 @@ func (unionFs *UnionFsHandler) Mount() error {
 	}
 
 	if _, err := exec.Command(command, args...).CombinedOutput(); err != nil {
-		return errors.Wrap(err, "Failed to mount unionfs")
+		return errorx.ExternalError.Wrap(err, "Failed to mount unionfs")
 	}
 
-	log.Debugf("mounted unionfs over %s into %s", unionFs.Source, unionFs.Target)
+	chastlog.Log.Debugf("mounted unionfs over %s into %s", unionFs.Source, unionFs.Target)
 
 	return nil
 }
@@ -73,21 +73,21 @@ func (unionFs *UnionFsHandler) getSourceFolders() string {
 
 func (unionFs *UnionFsHandler) setupFolders() error {
 	if err := os.MkdirAll(unionFs.Target, 0o755); err != nil {
-		return errors.Wrap(err, "Failed to create unionFs target dir")
+		return errorx.ExternalError.Wrap(err, "Failed to create unionFs target dir")
 	}
 
 	return nil
 }
 
 func (unionFs *UnionFsHandler) Unmount() error {
-	log.Tracef("Trying to unmount unionfs at %s", unionFs.Target)
+	chastlog.Log.Tracef("Trying to unmount unionfs at %s", unionFs.Target)
 
 	// unix.Unmount(unionFs.Target, 0) is results in an "Operation not permitted" error
 	if _, err := exec.Command("umount", unionFs.Target).CombinedOutput(); err != nil { //nolint:gosec // secure
-		return errors.Wrap(err, "Failed to unmount unionfs")
+		return errorx.ExternalError.Wrap(err, "Failed to unmount unionfs")
 	}
 
-	log.Debugf("UnionFs was successfully unmounted at %s", unionFs.Target)
+	chastlog.Log.Debugf("UnionFs was successfully unmounted at %s", unionFs.Target)
 
 	return nil
 }
@@ -101,13 +101,13 @@ func (unionFs *UnionFsHandler) Cleanup() error {
 }
 
 func (unionFs *UnionFsHandler) cleanupTargetDir() error {
-	log.Tracef("Trying to cleanup unionfs targert at %s", unionFs.Target)
+	chastlog.Log.Tracef("Trying to cleanup unionfs targert at %s", unionFs.Target)
 
 	if err := unix.Rmdir(unionFs.Target); err != nil {
-		return errors.Wrap(err, "Failed to remove unionfs target dir")
+		return errorx.ExternalError.Wrap(err, "Failed to remove unionfs target dir")
 	}
 
-	log.Debugf("Removed unionfs target dir (%s)", unionFs.Target)
+	chastlog.Log.Debugf("Removed unionfs target dir (%s)", unionFs.Target)
 
 	return nil
 }

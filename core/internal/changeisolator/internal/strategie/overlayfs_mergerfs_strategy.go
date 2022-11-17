@@ -5,8 +5,8 @@ import (
 
 	"chast.io/core/internal/changeisolator/internal/handler"
 	"chast.io/core/internal/changeisolator/pkg/strategy"
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	chastlog "chast.io/core/internal/logger"
+	"github.com/joomcode/errorx"
 )
 
 type OverlayFsMergerFsStrategy struct {
@@ -31,7 +31,7 @@ func (strat *OverlayFsMergerFsStrategy) GetIsolationStrategy() strategy.Isolatio
 }
 
 func (strat *OverlayFsMergerFsStrategy) Initialize() error {
-	log.Tracef("Initializing change isolator with the overlayfs mergerfs strategy")
+	chastlog.Log.Tracef("Initializing change isolator with the overlayfs mergerfs strategy")
 
 	if err := strat.IsolatorContext.Initialize(); err != nil {
 		return err
@@ -62,40 +62,40 @@ func (strat *OverlayFsMergerFsStrategy) Initialize() error {
 // === Prepare ===
 
 func (strat *OverlayFsMergerFsStrategy) PrepareOutsideNS() error {
-	log.Tracef("[Outside NS] Preparing change isolator with the overlayfs mergerfs strategy")
+	chastlog.Log.Tracef("[Outside NS] Preparing change isolator with the overlayfs mergerfs strategy")
 
 	return nil
 }
 
 func (strat *OverlayFsMergerFsStrategy) PrepareInsideNS() error {
-	log.Tracef("[Inside NS] Preparing change isolator with the overlayfs mergerfs strategy")
+	chastlog.Log.Tracef("[Inside NS] Preparing change isolator with the overlayfs mergerfs strategy")
 
 	if err := strat.mergerFsHandler.Mount(); err != nil {
-		return errors.Wrap(err, "Error mounting mergerfs")
+		return errorx.InternalError.Wrap(err, "Error mounting mergerfs")
 	}
 
 	if err := strat.overlayFsHandler.Mount(); err != nil {
-		return errors.Wrap(err, "Error mounting overlayfs")
+		return errorx.InternalError.Wrap(err, "Error mounting overlayfs")
 	}
 
 	if err := strat.devMounter.Mount(); err != nil {
-		return errors.Wrap(err, "Error mounting dev")
+		return errorx.InternalError.Wrap(err, "Error mounting dev")
 	}
 
 	if err := strat.procMounter.Mount(); err != nil {
-		return errors.Wrap(err, "Error mounting proc")
+		return errorx.InternalError.Wrap(err, "Error mounting proc")
 	}
 
 	if err := strat.tmpMounter.Mount(); err != nil {
-		return errors.Wrap(err, "Error mounting tmp")
+		return errorx.InternalError.Wrap(err, "Error mounting tmp")
 	}
 
 	if err := strat.changeRootHandler.Init(); err != nil {
-		return errors.Wrap(err, "Error initializing change root")
+		return errorx.InternalError.Wrap(err, "Error initializing change root")
 	}
 
 	if err := strat.changeRootHandler.Open(); err != nil {
-		return errors.Wrap(err, "Error open change root")
+		return errorx.InternalError.Wrap(err, "Error open change root")
 	}
 
 	return nil
@@ -104,45 +104,45 @@ func (strat *OverlayFsMergerFsStrategy) PrepareInsideNS() error {
 // === Cleanup ===
 
 func (strat *OverlayFsMergerFsStrategy) CleanupInsideNS() error {
-	log.Tracef("[Inside NS] Cleaning up change isolator with the overlayfs mergerfs strategy")
+	chastlog.Log.Tracef("[Inside NS] Cleaning up change isolator with the overlayfs mergerfs strategy")
 
 	if err := strat.changeRootHandler.Close(); err != nil {
-		return errors.Wrap(err, "Error closing change root")
+		return errorx.InternalError.Wrap(err, "Error closing change root")
 	}
 
 	if err := strat.tmpMounter.Unmount(); err != nil {
-		return errors.Wrap(err, "Error unmounting tmp")
+		return errorx.InternalError.Wrap(err, "Error unmounting tmp")
 	}
 
 	if err := strat.procMounter.Unmount(); err != nil {
-		return errors.Wrap(err, "Error unmounting proc")
+		return errorx.InternalError.Wrap(err, "Error unmounting proc")
 	}
 
 	if err := strat.devMounter.Unmount(); err != nil {
-		return errors.Wrap(err, "Error unmounting dev")
+		return errorx.InternalError.Wrap(err, "Error unmounting dev")
 	}
 
 	if err := strat.overlayFsHandler.Unmount(); err != nil {
-		return errors.Wrap(err, "Error unmounting overlayfs")
+		return errorx.InternalError.Wrap(err, "Error unmounting overlayfs")
 	}
 
 	if err := strat.overlayFsHandler.Cleanup(); err != nil {
-		return errors.Wrap(err, "Error cleaning up overlayfs")
+		return errorx.InternalError.Wrap(err, "Error cleaning up overlayfs")
 	}
 
 	if err := strat.mergerFsHandler.Unmount(); err != nil {
-		return errors.Wrap(err, "Error unmounting mergerfs")
+		return errorx.InternalError.Wrap(err, "Error unmounting mergerfs")
 	}
 
 	if err := strat.mergerFsHandler.Cleanup(); err != nil {
-		return errors.Wrap(err, "Error cleaning up mergerfs")
+		return errorx.InternalError.Wrap(err, "Error cleaning up mergerfs")
 	}
 
 	return strat.IsolatorContext.CleanupInsideNS()
 }
 
 func (strat *OverlayFsMergerFsStrategy) CleanupOutsideNS() error {
-	log.Tracef("[Outside NS] Cleaning up change isolator with the overlayfs mergerfs strategy")
+	chastlog.Log.Tracef("[Outside NS] Cleaning up change isolator with the overlayfs mergerfs strategy")
 
 	return strat.IsolatorContext.CleanupOutsideNS()
 }

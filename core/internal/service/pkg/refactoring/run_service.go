@@ -11,7 +11,7 @@ import (
 	"chast.io/core/internal/run_model/pkg/model/refactoring"
 	"chast.io/core/internal/runner/pkg/local"
 	util "chast.io/core/pkg/util/fs/file"
-	"github.com/pkg/errors"
+	"github.com/joomcode/errorx"
 )
 
 func Run(
@@ -29,7 +29,7 @@ func Run(
 
 	runModel, runModelBuildError := builder.BuildRunModel(parsedRecipe, args, mapFlags(flags), recipeFile.ParentDirectory)
 	if runModelBuildError != nil {
-		return errors.Wrap(runModelBuildError, "Failed to build run model")
+		return errorx.InternalError.Wrap(runModelBuildError, "Failed to build run model")
 	}
 
 	var pipeline *refactoringpipelinemodel.Pipeline
@@ -40,20 +40,20 @@ func Run(
 	case refactoring.RunModel:
 		pipeline, pipelineBuildError = refactoringPipelineBuilder.BuildRunPipeline(&m)
 	default:
-		return errors.Errorf("Provided recipe is not a refactoring recipe")
+		return errorx.InternalError.New("Provided recipe is not a refactoring recipe")
 	}
 
 	if pipelineBuildError != nil {
-		return errors.Wrap(pipelineBuildError, "Failed to build pipeline")
+		return errorx.InternalError.Wrap(pipelineBuildError, "Failed to build pipeline")
 	}
 
 	if err := local.NewRunner(true, false).Run(pipeline); err != nil {
-		return errors.Wrap(err, "Failed to run pipeline")
+		return errorx.InternalError.Wrap(err, "Failed to run pipeline")
 	}
 
 	report, reportError := pipelinereport.BuildReport(pipeline)
 	if reportError != nil {
-		return errors.Wrap(reportError, "Failed to generate report")
+		return errorx.InternalError.Wrap(reportError, "Failed to generate report")
 	}
 
 	report.PrintFileTree(true)

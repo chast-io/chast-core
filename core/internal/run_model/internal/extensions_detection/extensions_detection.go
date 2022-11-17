@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/joomcode/errorx"
 	"github.com/spf13/afero"
 )
 
@@ -21,7 +21,7 @@ func DetectExtensions(rootPath string) (map[string]*Extension, error) {
 	osFs := afero.NewOsFs()
 	if err := afero.Walk(osFs, rootPath, func(path string, info os.FileInfo, err error) error {
 		if info == nil {
-			return errors.New("Path does not exist")
+			return errorx.ExternalError.New("Path does not exist")
 		}
 
 		if info.IsDir() {
@@ -46,7 +46,7 @@ func DetectExtensions(rootPath string) (map[string]*Extension, error) {
 
 		return nil
 	}); err != nil {
-		return nil, errors.Wrap(err, "Could not walk through directory")
+		return nil, errorx.ExternalError.Wrap(err, "Could not walk through directory")
 	}
 
 	return extensions, nil

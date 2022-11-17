@@ -7,26 +7,28 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	chastlog "chast.io/core/internal/logger"
+	"github.com/joomcode/errorx"
 	"github.com/spf13/afero"
 )
 
 const unionFsHiddenPathSuffix = "_HIDDEN~"
 const defaultFolderPermission = 0777
 
-var errMergeOverwriteBlock = errors.New(
+var errMergeOverwriteBlock = errorx.InternalError.New(
 	"Error due to attempting to merge a file over an existing file in blockOverwrite mode",
 )
 
 func MergeFolders(sourceFolders []string, targetFolder string, blockOverwrite bool) error {
 	if err := os.MkdirAll(targetFolder, defaultFolderPermission); err != nil {
-		return errors.Wrap(err, fmt.Sprintf("failed to create target folder \"%s\"", targetFolder))
+		return errorx.InternalError.Wrap(err, fmt.Sprintf("failed to create target folder \"%s\"", targetFolder))
 	}
 
 	for _, sourceFolder := range sourceFolders {
 		if err := moveFolderContents(sourceFolder, targetFolder, blockOverwrite); err != nil {
-			return errors.Wrap(err, fmt.Sprintf("failed to merge folder \"%s\" with \"%s\"", sourceFolder, targetFolder))
+			return errorx.InternalError.Wrap(err,
+				fmt.Sprintf("failed to merge folder \"%s\" with \"%s\"", sourceFolder, targetFolder),
+			)
 		}
 	}
 
@@ -47,21 +49,21 @@ func moveFolderContents(sourceFolder string, targetFolder string, blockOverwrite
 
 		if info.IsDir() {
 			if err := createFolder(path, sourceFolder, targetFolder, osFileSystem, blockOverwrite); err != nil {
-				return errors.Wrap(err, "Failed to move folder")
+				return errorx.InternalError.Wrap(err, "Failed to move folder")
 			}
 		} else {
 			if err := moveFile(path, sourceFolder, targetFolder, osFileSystem, blockOverwrite); err != nil {
-				return errors.Wrap(err, "Failed to move file")
+				return errorx.InternalError.Wrap(err, "Failed to move file")
 			}
 		}
 
 		return nil
 	}); walkError != nil {
-		return errors.Wrap(walkError, "Failed to walk through source folder")
+		return errorx.ExternalError.Wrap(walkError, "Failed to walk through source folder")
 	}
 
 	if err := os.RemoveAll(sourceFolder); err != nil {
-		return errors.Wrap(err, "failed to remove merge source directory")
+		return errorx.ExternalError.Wrap(err, "failed to remove merge source directory")
 	}
 
 	return nil
@@ -77,12 +79,12 @@ func moveFile(
 	targetPath := targetPath(path, sourceFolder, targetFolder)
 
 	if err := handlePossibleMarkedAsDeletedPath(targetPath, osFileSystem, blockOverwrite); err != nil {
-		return errors.Wrap(err, "Failed to handle possible marked as deleted path")
+		return errorx.InternalError.Wrap(err, "Failed to handle possible marked as deleted path")
 	}
 
 	exists, existsError := afero.Exists(osFileSystem, targetPath)
 	if existsError != nil {
-		return errors.Wrap(existsError, "Failed to check if path exists")
+		return errorx.ExternalError.Wrap(existsError, "Failed to check if path exists")
 	}
 
 	if exists {
@@ -90,19 +92,19 @@ func moveFile(
 			return errMergeOverwriteBlock
 		}
 
-		log.Debugf("File overwritten during merge of folders. Affected File: %s", targetPath)
+		chastlog.Log.Debugf("File overwritten during merge of folders. Affected File: %s", targetPath)
 
 		if err := osFileSystem.Remove(targetPath); err != nil {
-			return errors.Wrap(err, "Failed to remove file")
+			return errorx.ExternalError.Wrap(err, "Failed to remove file")
 		}
 	}
 
 	if err := os.MkdirAll(filepath.Dir(targetPath), defaultFolderPermission); err != nil {
-		return errors.Wrap(err, "Failed to create target directory")
+		return errorx.ExternalError.Wrap(err, "Failed to create target directory")
 	}
 
 	if err := osFileSystem.Rename(path, targetPath); err != nil {
-		return errors.Wrap(err, "Failed to move file")
+		return errorx.ExternalError.Wrap(err, "Failed to move file")
 	}
 
 	return nil
@@ -118,11 +120,11 @@ func createFolder(
 	targetPath := targetPath(path, sourceFolder, targetFolder)
 
 	if err := handlePossibleMarkedAsDeletedPath(targetPath, osFileSystem, blockOverwrite); err != nil {
-		return errors.Wrap(err, "Failed to handle possible marked as deleted path")
+		return errorx.InternalError.Wrap(err, "Failed to handle possible marked as deleted path")
 	}
 
 	if err := osFileSystem.MkdirAll(targetPath, defaultFolderPermission); err != nil {
-		return errors.Wrap(err, fmt.Sprintf("Failed to create folder \"%s\"", targetPath))
+		return errorx.ExternalError.Wrap(err, fmt.Sprintf("Failed to create folder \"%s\"", targetPath))
 	}
 
 	return nil
@@ -140,7 +142,7 @@ func handlePossibleMarkedAsDeletedPath(targetPath string, osFileSystem afero.Fs,
 
 	exists, existsError := afero.Exists(osFileSystem, deletedTargetPath)
 	if existsError != nil {
-		return errors.Wrap(existsError, "Failed to check if path exists")
+		return errorx.ExternalError.Wrap(existsError, "Failed to check if path exists")
 	}
 
 	if exists {
@@ -149,7 +151,7 @@ func handlePossibleMarkedAsDeletedPath(targetPath string, osFileSystem afero.Fs,
 		}
 
 		if err := osFileSystem.RemoveAll(deletedTargetPath); err != nil {
-			return errors.Wrap(err, "Failed to remove marked-as-deleted flag file")
+			return errorx.ExternalError.Wrap(err, "Failed to remove marked-as-deleted flag file")
 		}
 	}
 

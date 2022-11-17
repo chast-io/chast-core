@@ -6,7 +6,7 @@ import (
 	"chast.io/core/internal/internal_util/collection"
 	recipemodel "chast.io/core/internal/recipe/pkg/model"
 	runmodel "chast.io/core/internal/run_model/pkg/model"
-	"github.com/pkg/errors"
+	"github.com/joomcode/errorx"
 )
 
 type handlePositionalArgumentsMapper interface {
@@ -25,7 +25,7 @@ func HandlePositionalArguments(
 		func(argument recipemodel.Parameter) bool { return argument.Required && argument.DefaultValue == "" },
 	)
 	if len(arguments) < requiredArgsCount {
-		return errors.Errorf(
+		return errorx.IllegalArgument.New(
 			"Not enough positional arguments passed. Expected %d, got %d",
 			len(positionalParameters),
 			len(arguments),
@@ -37,7 +37,7 @@ func HandlePositionalArguments(
 	for index, parameter := range positionalParameters {
 		if index < len(arguments) {
 			if variables.DefaultValueUsed {
-				return errors.New("After using a default value, no more required positional arguments are allowed")
+				return errorx.IllegalArgument.New("After using a default value, no more required positional arguments are allowed")
 			}
 
 			argument := arguments[index]
@@ -47,7 +47,7 @@ func HandlePositionalArguments(
 			}
 		} else if parameter.Required {
 			if parameter.DefaultValue == "" {
-				return errors.Errorf("Missing positional argument %s", parameter.ID)
+				return errorx.IllegalArgument.New("Missing positional argument %s", parameter.ID)
 			}
 
 			variables.Map[parameter.ID] = parameter.DefaultValue

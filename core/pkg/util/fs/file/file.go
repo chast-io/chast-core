@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pkg/errors"
+	"github.com/joomcode/errorx"
 )
 
 type File struct {
@@ -21,7 +21,7 @@ func NewFile(path string) (*File, error) {
 
 	absolutePath, err := filepath.Abs(path)
 	if err != nil {
-		return nil, errors.Wrap(err, "Could not load current directory")
+		return nil, errorx.ExternalError.Wrap(err, "Could not load current directory")
 	}
 
 	return &File{ //nolint:exhaustruct // data is used as cache

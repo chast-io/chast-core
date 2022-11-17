@@ -8,7 +8,7 @@ import (
 	"chast.io/core/internal/internal_util/collection"
 	recipemodel "chast.io/core/internal/recipe/pkg/model"
 	runmodel "chast.io/core/internal/run_model/pkg/model"
-	"github.com/pkg/errors"
+	"github.com/joomcode/errorx"
 )
 
 type handleFlagsMapper interface {
@@ -33,7 +33,7 @@ func HandleFlags(
 	for _, flag := range unparsedFlags {
 		flagDefinition := flagsDefinitionMap[flag.Name]
 		if flagDefinition == nil {
-			return errors.Errorf("Unknown flag %s", flag.Name)
+			return errorx.IllegalArgument.New("Unknown flag %s", flag.Name)
 		}
 
 		if flagDefinition.Required && flagDefinition.DefaultValue == "" {
@@ -55,7 +55,7 @@ func HandleFlags(
 	}
 
 	if coveredRequiredFlags != requiredFlagsCount {
-		return errors.Errorf("Not all required flags are set")
+		return errorx.IllegalFormat.New("Not all required flags are set")
 	}
 
 	return nil
@@ -71,11 +71,11 @@ func verifyFlagValue(flagDefinition *recipemodel.Flag, value string) error {
 		break
 	case "bool":
 		if !(value == "true" || value == "yes" || value == "false" || value == "no") {
-			return errors.Errorf("Flag %s is not a boolean. Passed parameter: %s", flagDefinition.Name, value)
+			return errorx.IllegalArgument.New("Flag %s is not a boolean. Passed parameter: %s", flagDefinition.Name, value)
 		}
 	case "int":
 		if _, err := strconv.Atoi(value); err != nil {
-			return errors.Errorf("Flag %s is not an integer. Passed parameter: %s", flagDefinition.Name, value)
+			return errorx.IllegalArgument.New("Flag %s is not an integer. Passed parameter: %s", flagDefinition.Name, value)
 		}
 	default:
 		if strings.HasSuffix(flagDefinition.Type, "Path") && flagDefinition.Extensions != nil {
@@ -86,7 +86,7 @@ func verifyFlagValue(flagDefinition *recipemodel.Flag, value string) error {
 			break
 		}
 
-		return errors.Errorf("Unknown flag type %v", flagDefinition.Type)
+		return errorx.IllegalArgument.New("Unknown flag type %v", flagDefinition.Type)
 	}
 
 	return nil

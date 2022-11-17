@@ -1,11 +1,11 @@
 package parser
 
 import (
-	"log"
 	"strings"
 
+	chastlog "chast.io/core/internal/logger"
 	recipemodel "chast.io/core/internal/recipe/pkg/model"
-	"github.com/pkg/errors"
+	"github.com/joomcode/errorx"
 	"gopkg.in/yaml.v3"
 )
 
@@ -22,18 +22,16 @@ func ParseRecipe(file fileReader) (*recipemodel.Recipe, error) {
 
 	parser, err := getParser(fileData)
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to get parser")
+		return nil, errorx.InternalError.Wrap(err, "Failed to get parser")
 	}
 
 	recipe, parseRecipeErr := parser.ParseRecipe(fileData)
 	if parseRecipeErr != nil {
-		return nil, errors.Wrap(parseRecipeErr, "Failed to parse recipe")
+		return nil, errorx.InternalError.Wrap(parseRecipeErr, "Failed to parse recipe")
 	}
 
 	return recipe, nil
 }
-
-var ErrUnknownConfigType = errors.New("unknown config type")
 
 func getParser(fileData *[]byte) (RecipeParser, error) { //nolint:ireturn // Factory function
 	recipeType, err := getRecipeType(fileData)
@@ -45,18 +43,16 @@ func getParser(fileData *[]byte) (RecipeParser, error) { //nolint:ireturn // Fac
 	case recipemodel.Refactoring:
 		return &RefactoringParser{}, nil
 	default:
-		return nil, errors.Wrap(ErrUnknownConfigType, "available types: refactoring")
+		return nil, errorx.UnsupportedOperation.New("Unknown config type. Available types: refactoring")
 	}
 }
-
-var ErrUnknownRefactoringVersion = errors.New("unknown refactoring version")
 
 func getRecipeType(data *[]byte) (recipemodel.ChastOperationType, error) {
 	var plainConfigRoot recipemodel.RecipeInfo
 	err := yaml.Unmarshal(*data, &plainConfigRoot)
 
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		chastlog.Log.Fatalf("error: %v", err)
 	}
 
 	switch strings.ToLower(plainConfigRoot.Type) {
@@ -65,7 +61,8 @@ func getRecipeType(data *[]byte) (recipemodel.ChastOperationType, error) {
 			return recipemodel.Refactoring, nil
 		}
 
-		return recipemodel.Refactoring, errors.Wrap(ErrUnknownRefactoringVersion, "only version 1.0 is supported")
+		return recipemodel.Refactoring,
+			errorx.UnsupportedVersion.New("Unknown refactoring version. Only version 1.0 is supported")
 
 	default:
 		return recipemodel.Unknown, nil

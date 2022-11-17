@@ -7,7 +7,7 @@ import (
 	"chast.io/core/internal/run_model/internal/builder"
 	refactoringrunmodelbuilder "chast.io/core/internal/run_model/pkg/builder/refactoring"
 	runmodel "chast.io/core/internal/run_model/pkg/model"
-	"github.com/pkg/errors"
+	"github.com/joomcode/errorx"
 )
 
 type RunModelBuilder interface {
@@ -32,18 +32,18 @@ func BuildRunModel(
 
 	absRecipeDirectory, absErr := filepath.Abs(recipeDirectory)
 	if absErr != nil {
-		return nil, errors.Wrap(absErr, "Failed to get absolute path of recipe directory")
+		return nil, errorx.ExternalError.Wrap(absErr, "Failed to get absolute path of recipe directory")
 	}
 
 	variables := runmodel.NewVariables(absRecipeDirectory)
 
 	if err := builder.HandleFlags(baseRecipe, variables, flags); err != nil {
-		return nil, errors.Wrap(err, "Failed to handle flags")
+		return nil, errorx.InternalError.Wrap(err, "Failed to handle flags")
 	}
 
 	runModel, runModelBuildError := runModelBuilder.BuildRunModel(parsedRecipe, variables, arguments, flags)
 
-	return runModel, errors.Wrap(runModelBuildError, "Failed to build run model")
+	return runModel, errorx.InternalError.Wrap(runModelBuildError, "Failed to build run model")
 }
 
 func getBuilder(parsedRecipe *recipemodel.Recipe) (RunModelBuilder, *recipemodel.BaseRecipe, error) { //nolint:lll,ireturn // This is a factory function that returns a builder for generating a run model
@@ -53,6 +53,8 @@ func getBuilder(parsedRecipe *recipemodel.Recipe) (RunModelBuilder, *recipemodel
 
 		return runModelBuilder, &concreteRecipe.BaseRecipe, nil
 	default:
-		return nil, nil, errors.Errorf("No run model builder for recipe of type %T", concreteRecipe.GetRecipeType())
+		return nil,
+			nil,
+			errorx.UnsupportedOperation.New("No run model builder for recipe of type %T", concreteRecipe.GetRecipeType())
 	}
 }

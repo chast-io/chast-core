@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	chastlog "chast.io/core/internal/logger"
 	refactoringpipelinemodel "chast.io/core/internal/pipeline/pkg/model/refactoring"
 	"chast.io/core/internal/post_processing/pipelinereport/internal/diff"
 	filetree "chast.io/core/internal/post_processing/pipelinereport/internal/tree"
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/joomcode/errorx"
 	"github.com/spf13/afero"
 )
 
@@ -29,7 +29,7 @@ func BuildReport(pipeline *refactoringpipelinemodel.Pipeline) (*Report, error) {
 			if info.IsDir() {
 				folderIsEmpty, isEmptyCheckError := afero.IsEmpty(osFileSystem, path)
 				if isEmptyCheckError != nil {
-					return errors.Wrap(isEmptyCheckError, "failed to check if folder is empty")
+					return errorx.ExternalError.Wrap(isEmptyCheckError, "failed to check if folder is empty")
 				}
 				if folderIsEmpty {
 					correctedPath := strings.TrimPrefix(path, pipeline.ChangeCaptureLocation)
@@ -43,12 +43,12 @@ func BuildReport(pipeline *refactoringpipelinemodel.Pipeline) (*Report, error) {
 			return nil
 		},
 	); walkError != nil {
-		return nil, errors.Wrap(walkError, "Failed to walk change capture folder")
+		return nil, errorx.ExternalError.Wrap(walkError, "Failed to walk change capture folder")
 	}
 
 	changeDiff, diffBuildError := diff.BuildDiff(pipeline, changedPaths)
 	if diffBuildError != nil {
-		return nil, errors.Wrap(diffBuildError, "failed to build diffs")
+		return nil, errorx.InternalError.Wrap(diffBuildError, "failed to build diffs")
 	}
 
 	return &Report{
@@ -63,13 +63,13 @@ func (report *Report) ChangedFilesRelative() ([]string, error) {
 
 	workingDirPath, getWDError := os.Getwd()
 	if getWDError != nil {
-		return nil, errors.Wrap(getWDError, "failed get working directory")
+		return nil, errorx.ExternalError.Wrap(getWDError, "failed get working directory")
 	}
 
 	for _, filePath := range report.ChangedPaths {
 		rel, relError := filepath.Rel(workingDirPath, filePath)
 		if relError != nil {
-			return nil, errors.Wrap(relError, "failed getting relative path")
+			return nil, errorx.ExternalError.Wrap(relError, "failed getting relative path")
 		}
 
 		changedFilesRelative = append(changedFilesRelative, rel)
@@ -79,9 +79,9 @@ func (report *Report) ChangedFilesRelative() ([]string, error) {
 }
 
 func (report *Report) PrintFileTree(colorize bool) {
-	log.Println(filetree.ToString(report.Pipeline.ChangeCaptureLocation, report.ChangeDiff, false, colorize))
+	chastlog.Log.Println(filetree.ToString(report.Pipeline.ChangeCaptureLocation, report.ChangeDiff, false, colorize))
 }
 
 func (report *Report) PrintChanges(colorize bool) {
-	log.Println(report.ChangeDiff.ToString(colorize))
+	chastlog.Log.Println(report.ChangeDiff.ToString(colorize))
 }

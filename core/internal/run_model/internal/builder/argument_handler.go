@@ -6,7 +6,7 @@ import (
 
 	recipemodel "chast.io/core/internal/recipe/pkg/model"
 	runmodel "chast.io/core/internal/run_model/pkg/model"
-	"github.com/pkg/errors"
+	"github.com/joomcode/errorx"
 )
 
 func handleArgument(
@@ -39,11 +39,11 @@ func verifyArgument(parameter *recipemodel.Parameter, value string) error {
 		break
 	case "bool":
 		if !(value == "true" || value == "yes" || value == "false" || value == "no") {
-			return errors.Errorf("Parameter %s is not a boolean. Passed parameter: %s", parameter.ID, value)
+			return errorx.IllegalArgument.New("Parameter %s is not a boolean. Passed parameter: %s", parameter.ID, value)
 		}
 	case "int":
 		if _, err := strconv.Atoi(value); err != nil {
-			return errors.Errorf("Parameter %s is not an integer. Passed parameter: %s", parameter.ID, value)
+			return errorx.IllegalArgument.New("Parameter %s is not an integer. Passed parameter: %s", parameter.ID, value)
 		}
 	default:
 		if strings.HasSuffix(parameter.Type, "Path") {
@@ -54,7 +54,7 @@ func verifyArgument(parameter *recipemodel.Parameter, value string) error {
 			return nil
 		}
 
-		return errors.Errorf("Unknown parameter type %v", parameter.Type)
+		return errorx.IllegalArgument.New("Unknown parameter type %v", parameter.Type)
 	}
 
 	return nil

@@ -13,7 +13,7 @@ import (
 	"chast.io/core/internal/changeisolator/pkg/namespace"
 	"chast.io/core/pkg/util/fs/folder"
 	"github.com/containers/storage/pkg/reexec"
-	"github.com/pkg/errors"
+	"github.com/joomcode/errorx"
 )
 
 type UserNamespaceRunnerContext struct {
@@ -30,12 +30,12 @@ func New(nsContext *namespace.Context) *UserNamespaceRunnerContext {
 
 func (nsrc *UserNamespaceRunnerContext) Initialize() error {
 	if !folder.DoesFolderExist(nsrc.nsContext.RootFolder) {
-		return errors.Errorf("Root folder %s does not exist", nsrc.nsContext.RootFolder)
+		return errorx.DataUnavailable.New("Root folder %s does not exist", nsrc.nsContext.RootFolder)
 	}
 
 	isolator, err := nsrc.nsContext.BuildIsolationStrategy()
 	if err != nil {
-		return errors.Wrap(err, "Error building isolation strategy")
+		return errorx.InternalError.Wrap(err, "Error building isolation strategy")
 	}
 
 	nsrc.isolator = isolator
@@ -47,19 +47,19 @@ func (nsrc *UserNamespaceRunnerContext) Run() error {
 	isolator := nsrc.isolator
 
 	if err := isolator.Initialize(); err != nil {
-		return errors.Wrap(err, "Error initializing isolator")
+		return errorx.InternalError.Wrap(err, "Error initializing isolator")
 	}
 
 	if err := isolator.PrepareOutsideNS(); err != nil {
-		return errors.Wrap(err, "Error running preparation work outside namespace")
+		return errorx.InternalError.Wrap(err, "Error running preparation work outside namespace")
 	}
 
 	if err := nsrc.launchProcess(); err != nil {
-		return errors.Wrap(err, "Error launching process")
+		return errorx.InternalError.Wrap(err, "Error launching process")
 	}
 
 	if err := isolator.CleanupOutsideNS(); err != nil {
-		return errors.Wrap(err, "Error running cleanup work outside namespace")
+		return errorx.InternalError.Wrap(err, "Error running cleanup work outside namespace")
 	}
 
 	return nil
@@ -72,11 +72,11 @@ func (nsrc *UserNamespaceRunnerContext) launchProcess() error {
 	}
 
 	if err := cmd.Start(); err != nil {
-		return errors.Errorf("error starting the reexec.Command - %s", err)
+		return errorx.ExternalError.New("error starting the reexec.Command - %s", err)
 	}
 
 	if err := cmd.Wait(); err != nil {
-		return errors.Errorf("error waiting for the reexec.Command - %s", err)
+		return errorx.ExternalError.New("error waiting for the reexec.Command - %s", err)
 	}
 
 	return nil
@@ -96,7 +96,7 @@ func (nsrc *UserNamespaceRunnerContext) setupCommand() (*exec.Cmd, error) {
 	cmd.SysProcAttr = buildSysProcAttr(false)
 
 	// https://github.com/containers/buildah/blob/main/run_common.go#L1126
-	// cmd.Env = util.MergeEnv(os.Environ(), []string{fmt.Sprintf("LOGLEVEL=%d", log.GetLevel())})
+	// cmd.Env = util.MergeEnv(os.Environ(), []string{fmt.Sprintf("LOGLEVEL=%d",  chastlog.Log.GetLevel())})
 
 	namespaceContextFile, err := buildNamespaceContextFile(nsContext)
 	if err != nil {
@@ -155,7 +155,7 @@ func buildNamespaceContextFile(nsContext *namespace.Context) (*os.File, error) {
 	}
 
 	if err := pipeWriter.Close(); err != nil {
-		return nil, errors.Wrap(err, "Error closing config pipe writer")
+		return nil, errorx.ExternalError.Wrap(err, "Error closing config pipe writer")
 	}
 
 	return pipeReader, nil

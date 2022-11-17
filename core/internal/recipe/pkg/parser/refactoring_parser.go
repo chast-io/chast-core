@@ -5,10 +5,10 @@ import (
 	"strings"
 
 	"chast.io/core/internal/internal_util/collection"
+	chastlog "chast.io/core/internal/logger"
 	refactroingdependencygraph "chast.io/core/internal/recipe/internal/refactoring/dependency_graph"
 	recipemodel "chast.io/core/internal/recipe/pkg/model"
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/joomcode/errorx"
 	"gopkg.in/yaml.v3"
 )
 
@@ -21,11 +21,11 @@ func (parser *RefactoringParser) ParseRecipe(data *[]byte) (*recipemodel.Recipe,
 	decoder.KnownFields(true)
 
 	if err := decoder.Decode(&refactoringRecipe); err != nil {
-		return nil, errors.Wrap(err, "Error parsing refactoring recipe")
+		return nil, errorx.Decorate(err, "Error parsing refactoring recipe")
 	}
 
 	if err := validateRecipe(refactoringRecipe); err != nil {
-		return nil, errors.Wrap(err, "Error validating refactoring recipe")
+		return nil, errorx.Decorate(err, "Error validating refactoring recipe")
 	}
 
 	var recipe recipemodel.Recipe = refactoringRecipe
@@ -35,7 +35,7 @@ func (parser *RefactoringParser) ParseRecipe(data *[]byte) (*recipemodel.Recipe,
 
 func validateRecipe(recipe *recipemodel.RefactoringRecipe) error {
 	if err := validateRuns(recipe.Runs); err != nil {
-		return errors.Wrap(err, "Error validating primary parameter")
+		return errorx.Decorate(err, "Error validating primary parameter")
 	}
 
 	supportedExtensionsOfRuns := collection.Reduce(recipe.Runs, func(run recipemodel.Run, acc []string) []string {
@@ -43,40 +43,35 @@ func validateRecipe(recipe *recipemodel.RefactoringRecipe) error {
 	}, make([]string, 0))
 
 	if err := validatePrimaryParameter(recipe.PrimaryParameter, supportedExtensionsOfRuns); err != nil {
-		return errors.Wrap(err, "Error validating primary parameter")
+		return errorx.Decorate(err, "Error validating primary parameter")
 	}
 
 	return nil
 }
 
-// TODO: check dependencies
-//   - dependencies must exist
-//   - dependencies must not be self-referencing
-//
-// TODO: check for duplicate IDs
 func validateRuns(runs []recipemodel.Run) error {
 	if len(runs) == 0 {
-		return errors.New("At least one run is required")
+		return errorx.IllegalFormat.New("At least one run is required")
 	}
 
 	presentRunIds := make(map[string]bool)
 	for runIndex := range runs {
 		if err := validateID(&runs[runIndex], presentRunIds); err != nil {
-			return errors.Wrap(err, "Error validating run ID")
+			return errorx.Decorate(err, "Error validating run ID")
 		}
 
 		if err := validateRun(&runs[runIndex]); err != nil {
-			return errors.Wrap(err, "Error validating run")
+			return errorx.Decorate(err, "Error validating run")
 		}
 	}
 
 	if err := validateDependencies(runs, presentRunIds); err != nil {
-		return errors.Wrap(err, "Error validating run dependencies")
+		return errorx.Decorate(err, "Error validating run dependencies")
 	}
 
 	dependencyGraph := refactroingdependencygraph.BuildDependencyGraph(runs)
 	if dependencyGraph.HasCycles() {
-		return errors.New("Recipe dependencies contains a cycle")
+		return errorx.IllegalArgument.New("Recipe dependencies contains a cycle")
 	}
 
 	return nil
@@ -84,7 +79,7 @@ func validateRuns(runs []recipemodel.Run) error {
 
 func validateID(run *recipemodel.Run, presentRunIds map[string]bool) error {
 	if presentRunIds[run.ID] {
-		return errors.New(fmt.Sprintf("Duplicate run ID '%s'", run.ID)) //nolint:revive,lll // TODO: use new error strategy #18
+		return errorx.IllegalArgument.New(fmt.Sprintf("Duplicate run ID '%s'", run.ID))
 	}
 
 	presentRunIds[run.ID] = true
@@ -96,11 +91,11 @@ func validateDependencies(runs []recipemodel.Run, presentRunIds map[string]bool)
 	for _, run := range runs {
 		for _, dependency := range run.Dependencies {
 			if !presentRunIds[dependency] {
-				return errors.New(fmt.Sprintf("Run '%s' depends on unknown run '%s'", run.ID, dependency)) //nolint:revive,lll // TODO: use new error strategy #18
+				return errorx.IllegalArgument.New(fmt.Sprintf("Run '%s' depends on unknown run '%s'", run.ID, dependency))
 			}
 
 			if dependency == run.ID {
-				return errors.New(fmt.Sprintf("Run '%s' depends on itself", run.ID)) //nolint:revive,lll // TODO: use new error strategy #18
+				return errorx.IllegalArgument.New(fmt.Sprintf("Run '%s' depends on itself", run.ID))
 			}
 		}
 	}
@@ -110,13 +105,13 @@ func validateDependencies(runs []recipemodel.Run, presentRunIds map[string]bool)
 
 func validateRun(run *recipemodel.Run) error {
 	if run == nil {
-		return errors.New("Run cannot be nil")
+		return errorx.IllegalFormat.New("Run cannot be nil")
 	}
 
 	// VALIDATE FLAGS
 
 	if run.Script == nil || len(run.Script) == 0 {
-		return errors.New("Run script is required")
+		return errorx.IllegalFormat.New("Run script is required")
 	}
 
 	// TODO add change locations
@@ -124,16 +119,14 @@ func validateRun(run *recipemodel.Run) error {
 	return nil
 }
 
-var errInvalidPrimaryParameter = errors.New("Invalid primary parameter error: ")
-
 func validatePrimaryParameter(parameter *recipemodel.Parameter, supportedExtensions []string) error {
 	if parameter == nil {
-		return errors.New("Primary parameter is required")
+		return errorx.IllegalFormat.New("Primary parameter is required")
 	}
 
 	if parameter.ID == "" {
 		parameter.ID = "primaryParameter" // TODO make this configurable
-		log.Printf("Primary parameter ID is not set and falls back to '%s'\n", parameter.ID)
+		chastlog.Log.Printf("Primary parameter ID is not set and falls back to '%s'", parameter.ID)
 	}
 
 	if !parameter.RequiredExtension.Required {
@@ -144,27 +137,23 @@ func validatePrimaryParameter(parameter *recipemodel.Parameter, supportedExtensi
 	// TODO make this configurable
 	options := []string{"filePath", "folderPath", "wildcardPath", "string", "int", "boolean"}
 	if parameter.TypeExtension.Type == "" {
-		return errors.Wrap(
-			errInvalidPrimaryParameter,
-			fmt.Sprintf("Primary parameter type is required. Options: %s", options),
-		)
+		return errorx.IllegalFormat.New(fmt.Sprintf("Primary parameter type is required. Options: %s", options))
 	}
 
 	if !collection.Include(options, parameter.TypeExtension.Type) {
-		return errors.Wrap(errInvalidPrimaryParameter, fmt.Sprintf("Must be of type %s", options))
+		return errorx.IllegalFormat.New(fmt.Sprintf("Must be of type %s", options))
 	}
 
 	if parameter.TypeExtension.Extensions == nil || len(parameter.TypeExtension.Extensions) == 0 {
 		parameter.TypeExtension.Extensions = supportedExtensions
 	} else {
-		return errors.Wrap(
-			errInvalidPrimaryParameter,
+		return errorx.IllegalFormat.New(
 			"Primary parameter can not contain extensions as they are defined by the supported extensions of the runs",
 		)
 	}
 
 	if parameter.DescriptionExtension.Description == "" {
-		log.Println("It is advised to provide a description for the primary parameter.")
+		chastlog.Log.Println("It is advised to provide a description for the primary parameter.")
 	}
 
 	return nil

@@ -1,13 +1,13 @@
 package local
 
 import (
-	"chast.io/core/internal/changeisolator/pkg"
+	changeisolator "chast.io/core/internal/changeisolator/pkg"
 	"chast.io/core/internal/changeisolator/pkg/namespace"
 	"chast.io/core/internal/changeisolator/pkg/strategy"
+	chastlog "chast.io/core/internal/logger"
 	refactoringPipelineModel "chast.io/core/internal/pipeline/pkg/model/refactoring"
 	refactoringpipelinecleanup "chast.io/core/internal/post_processing/cleanup/refactoring"
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/joomcode/errorx"
 )
 
 type Runner struct {
@@ -23,30 +23,30 @@ func NewRunner(isolated bool, parallel bool) *Runner {
 }
 
 func (r *Runner) Run(pipeline *refactoringPipelineModel.Pipeline) error {
-	log.Printf("Running pipeline %s", pipeline.UUID)
+	chastlog.Log.Printf("Running pipeline %s", pipeline.UUID)
 
 	if r.isolated && !r.parallel {
 		return sequentialRun(pipeline)
 	}
 
-	return errors.Errorf("Unisolated and parallel execution is not yet implemented")
+	return errorx.NotImplemented.New("Unisolated and parallel execution is not yet implemented")
 }
 
 func sequentialRun(pipeline *refactoringPipelineModel.Pipeline) error {
 	for _, stage := range pipeline.Stages {
 		for _, step := range stage.Steps {
 			if err := runIsolated(step, stage, pipeline); err != nil {
-				return errors.Wrap(err, "Error running isolated")
+				return errorx.InternalError.Wrap(err, "Error running isolated")
 			}
 		}
 
 		if err := refactoringpipelinecleanup.CleanupStage(stage); err != nil {
-			return errors.Wrap(err, "Error cleaning up stage")
+			return errorx.InternalError.Wrap(err, "Error cleaning up stage")
 		}
 	}
 
 	if err := refactoringpipelinecleanup.CleanupPipeline(pipeline); err != nil {
-		return errors.Wrap(err, "Failed to cleanup pipeline")
+		return errorx.InternalError.Wrap(err, "Failed to cleanup pipeline")
 	}
 
 	return nil
@@ -67,8 +67,8 @@ func runIsolated(
 		strategy.UnionFS,
 	)
 
-	if err := pkg.RunCommandInIsolatedEnvironment(nsContext); err != nil {
-		return errors.Errorf("Error running command in isolated environment - %s", err)
+	if err := changeisolator.RunCommandInIsolatedEnvironment(nsContext); err != nil {
+		return errorx.InternalError.New("Error running command in isolated environment - %s", err)
 	}
 
 	return nil

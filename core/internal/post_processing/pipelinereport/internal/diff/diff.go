@@ -6,7 +6,7 @@ import (
 
 	refactoringpipelinemodel "chast.io/core/internal/pipeline/pkg/model/refactoring"
 	gitDiff "github.com/go-git/go-git/v5/utils/diff"
-	"github.com/pkg/errors"
+	"github.com/joomcode/errorx"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/spf13/afero"
 	"github.com/ttacon/chalk"
@@ -34,7 +34,7 @@ func BuildDiff(pipeline *refactoringpipelinemodel.Pipeline, changedFiles []strin
 
 		originalExists, originalExistsError := afero.Exists(osFileSystem, originalFilePath)
 		if originalExistsError != nil {
-			return nil, errors.Wrap(originalExistsError, "failed to check if original file exists")
+			return nil, errorx.ExternalError.Wrap(originalExistsError, "failed to check if original file exists")
 		}
 
 		if !originalExists {
@@ -45,7 +45,7 @@ func BuildDiff(pipeline *refactoringpipelinemodel.Pipeline, changedFiles []strin
 
 		isDir, originalIsDirCheckError := afero.IsDir(osFileSystem, originalFilePath)
 		if originalIsDirCheckError != nil {
-			return nil, errors.Wrap(originalIsDirCheckError, "failed to check if original file is a directory")
+			return nil, errorx.ExternalError.Wrap(originalIsDirCheckError, "failed to check if original file is a directory")
 		}
 
 		if isDir {
@@ -58,12 +58,12 @@ func BuildDiff(pipeline *refactoringpipelinemodel.Pipeline, changedFiles []strin
 
 		originalFileContent, originalReadError := afero.ReadFile(osFileSystem, originalFilePath)
 		if originalReadError != nil {
-			return nil, errors.Wrap(originalReadError, "failed to read original file")
+			return nil, errorx.ExternalError.Wrap(originalReadError, "failed to read original file")
 		}
 
 		newFileContent, newReadError := afero.ReadFile(osFileSystem, newFilePath)
 		if newReadError != nil {
-			return nil, errors.Wrap(newReadError, "failed to read new file")
+			return nil, errorx.ExternalError.Wrap(newReadError, "failed to read new file")
 		}
 
 		fileDiff := gitDiff.Do(string(originalFileContent), string(newFileContent))

@@ -5,14 +5,14 @@ import (
 	"strings"
 
 	recipemodel "chast.io/core/internal/recipe/pkg/model"
-	"github.com/pkg/errors"
+	"github.com/joomcode/errorx"
 )
 
 func absolutizePath(flagValue string, typeExtension recipemodel.TypeExtension, wordingDir string) (string, error) {
 	if strings.HasSuffix(typeExtension.Type, "Path") && !strings.HasPrefix(flagValue, "/") {
 		abs, err := filepath.Abs(filepath.Join(wordingDir, flagValue))
 
-		return abs, errors.Wrap(err, "Could not absolutize path")
+		return abs, errorx.ExternalError.Wrap(err, "Could not absolutize path")
 	}
 
 	return flagValue, nil
@@ -29,5 +29,5 @@ func verifyPathExtension(value string, extensions []string) error {
 		}
 	}
 
-	return errors.Errorf("Path %s does not have a valid extension. Valid extensions: %v", value, extensions)
+	return errorx.IllegalFormat.New("Path %s does not have a valid extension. Valid extensions: %v", value, extensions)
 }

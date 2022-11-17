@@ -3,7 +3,7 @@ package namespace
 import (
 	"chast.io/core/internal/changeisolator/internal/strategie"
 	"chast.io/core/internal/changeisolator/pkg/strategy"
-	"github.com/pkg/errors"
+	"github.com/joomcode/errorx"
 )
 
 type Context struct {
@@ -53,11 +53,11 @@ func (nsc *Context) BuildIsolationStrategy() (strategie.Isolator, error) { //nol
 	case strategy.UnionFS:
 		isolator = strategie.NewUnionFsStrategy(isolatorContext)
 	default:
-		return nil, errors.Errorf("unknown isolation strategy")
+		return nil, errorx.WithPayload(errorx.UnsupportedOperation.New("Unknown isolation strategy"), nsc.IsolationStrategy)
 	}
 
 	if err := isolator.Initialize(); err != nil {
-		return nil, errors.Wrap(err, "Error initializing isolation strategy")
+		return nil, errorx.InternalError.Wrap(err, "Error initializing isolation strategy")
 	}
 
 	return isolator, nil

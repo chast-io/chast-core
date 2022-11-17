@@ -10,7 +10,7 @@ import (
 	extensionsdetection "chast.io/core/internal/run_model/internal/extensions_detection"
 	runmodel "chast.io/core/internal/run_model/pkg/model"
 	"chast.io/core/internal/run_model/pkg/model/refactoring"
-	"github.com/pkg/errors"
+	"github.com/joomcode/errorx"
 )
 
 type RunModelBuilder struct{}
@@ -29,7 +29,7 @@ func (parser *RunModelBuilder) BuildRunModel(
 	case *recipemodel.RefactoringRecipe:
 		return parser.buildRunModel(m, variables, unparsedArguments, unparsedFlags)
 	default:
-		return nil, errors.New("Not a refactoring recipe")
+		return nil, errorx.WithPayload(errorx.IllegalArgument.New("Not a refactoring recipe"), m)
 	}
 }
 
@@ -40,22 +40,22 @@ func (parser *RunModelBuilder) buildRunModel(
 	unparsedFlags []runmodel.UnparsedFlag,
 ) (*runmodel.RunModel, error) {
 	if err := builder.HandlePrimaryArgument(recipeModel.PrimaryParameter, variables, unparsedArguments[0]); err != nil {
-		return nil, errors.Wrap(err, "Failed to handle primary argument")
+		return nil, errorx.InternalError.Wrap(err, "Failed to handle primary argument")
 	}
 
 	if err := builder.HandlePositionalArguments(recipeModel, variables, unparsedArguments[1:]); err != nil {
-		return nil, errors.Wrap(err, "Failed to handle positional arguments")
+		return nil, errorx.InternalError.Wrap(err, "Failed to handle positional arguments")
 	}
 
 	if err := builder.HandleFlags(recipeModel, variables, unparsedFlags); err != nil {
-		return nil, errors.Wrap(err, "Failed to handle flags")
+		return nil, errorx.InternalError.Wrap(err, "Failed to handle flags")
 	}
 
 	var runModel runmodel.RunModel
 
 	filteredRuns, runsFilterError := filterRuns(recipeModel.Runs, variables)
 	if runsFilterError != nil {
-		return nil, errors.Wrap(runsFilterError, "Failed to filter runs")
+		return nil, errorx.InternalError.Wrap(runsFilterError, "Failed to filter runs")
 	}
 
 	namedRuns := make(map[string]*refactoring.Run)
@@ -73,7 +73,7 @@ func (parser *RunModelBuilder) buildRunModel(
 func filterRuns(runs []recipemodel.Run, variables *runmodel.Variables) ([]recipemodel.Run, error) {
 	extensions, extensionDetectionError := extensionsdetection.DetectExtensions(variables.TypeDetectionPath)
 	if extensionDetectionError != nil {
-		return nil, errors.Wrap(extensionDetectionError, "Failed to detect extensions")
+		return nil, errorx.InternalError.Wrap(extensionDetectionError, "Failed to detect extensions")
 	}
 
 	filteredRuns := make([]recipemodel.Run, 0)

@@ -4,9 +4,9 @@ import (
 	"strconv"
 	"testing"
 
+	chastlog "chast.io/core/internal/logger"
 	uut "chast.io/core/internal/pipeline/pkg/builder/refactoring"
 	"chast.io/core/internal/run_model/pkg/model/refactoring"
-	log "github.com/sirupsen/logrus"
 )
 
 func BenchmarkBuildExecutionOrder(b *testing.B) {
@@ -36,10 +36,10 @@ func BenchmarkBuildExecutionOrder(b *testing.B) {
 
 	b.ResetTimer()
 
-	logLevel := log.GetLevel()
-	log.SetLevel(log.FatalLevel)
+	logLevel := chastlog.Log.GetLevel()
+	chastlog.Log.SetLevel(chastlog.FatalLevel)
 
 	_, _ = uut.BuildRunPipeline(runModel)
 
-	log.SetLevel(logLevel)
+	chastlog.Log.SetLevel(logLevel)
 }

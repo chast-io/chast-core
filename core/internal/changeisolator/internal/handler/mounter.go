@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	chastlog "chast.io/core/internal/logger"
+	"github.com/joomcode/errorx"
 	"golang.org/x/sys/unix"
 )
 
@@ -24,7 +24,7 @@ func NewMounter(folder string, root string, target string) *Mounter {
 }
 
 func (mntr *Mounter) Mount() error {
-	log.Tracef("Trying to mount %s into %s", mntr.Source, mntr.Target)
+	chastlog.Log.Tracef("Trying to mount %s into %s", mntr.Source, mntr.Target)
 
 	fstype := ""
 
@@ -36,22 +36,22 @@ func (mntr *Mounter) Mount() error {
 	data := ""
 
 	if err := syscall.Mount(mntr.Source, mntr.Target, fstype, uintptr(flags), data); err != nil {
-		return errors.Wrap(err, "Failed to mount")
+		return errorx.ExternalError.Wrap(err, "Failed to mount")
 	}
 
-	log.Tracef("Mounted %s into %s", mntr.Source, mntr.Target)
+	chastlog.Log.Tracef("Mounted %s into %s", mntr.Source, mntr.Target)
 
 	return nil
 }
 
 func (mntr *Mounter) Unmount() error {
-	log.Tracef("Trying to unmount %s lazily", mntr.Target)
+	chastlog.Log.Tracef("Trying to unmount %s lazily", mntr.Target)
 
 	if err := syscall.Unmount(mntr.Target, unix.MNT_DETACH); err != nil {
-		return errors.Wrap(err, "Failed to unmount lazily")
+		return errorx.ExternalError.Wrap(err, "Failed to unmount lazily")
 	}
 
-	log.Tracef("Unmounte %s", mntr.Target)
+	chastlog.Log.Tracef("Unmounte %s", mntr.Target)
 
 	return nil
 }
