@@ -19,62 +19,24 @@ positionalParameters:
     description: Config file defining the order of the class members.
     longDescription: ./configFile.md
 
-flags:
-  - name: test
-    shortName: test
-    required: false
-    defaultValue: false
-    type: boolean
-    description: Test flag
-    longDescription: Test flag description
-
 run:
-  - id: rearrange_class_members
+  - id: rearrange_class_members_java
     supportedExtensions:
       - java
-      - cs
-    flags:
-      - name: configFile
-        shortName: c
-        type: filePath
-        extensions:
-          - yaml
-          - yml
-        description: Config file defining the order of the class members.
-        longDescription: ./configFile.md
-    #    nix:
-    #      - ....
-    docker:
-      dockerImage: java:17
-    local:
-      requiredTools:
-        - description: java
-          checkCmd: java -version
     script:
-      - java -jar ./rearrange_class_members-1.0-SNAPSHOT-all.jar $inputFile $configFile > ${inputFile}.out
-    changeLocations:
-      - $inputFile
+      - java -jar ./file.jar $inputFile $configFile > ${inputFile}.out
   - id: mv_files
     dependencies:
-      - rearrange_class_members
+      - rearrange_class_members_java
     script:
       - mv ${inputFile}.out $inputFile
-      #      - /bin/bash
-      - rm -rf ../../build/
-    changeLocations:
-      - $inputFile
-  - id: test1
-    dependencies:
-      - mv_files
+  - id: rearrange_class_members_cs
+    supportedExtensions:
+      - cs
     script:
-      - echo "test" > ${inputFile}.out
-      - mkdir ../../build/
-    #      - /bin/bash
-    changeLocations:
-      - $inputFile
-
+      - java -jar ./file.jar $inputFile $configFile > ${inputFile}.out
+      - mv ${inputFile}.out $inputFile
 
 tests:
-
 
 documentation:

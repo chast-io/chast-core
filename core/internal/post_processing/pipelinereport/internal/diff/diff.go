@@ -47,8 +47,10 @@ func BuildDiff(pipeline *refactoringpipelinemodel.Pipeline, changedFiles []strin
 		if originalIsDirCheckError != nil {
 			return nil, errors.Wrap(originalIsDirCheckError, "failed to check if original file is a directory")
 		}
+
 		if isDir {
 			changeDiff.Diffs[newFilePath] = FsDiff{FileStatus: Modified, Diffs: nil}
+
 			continue
 		}
 

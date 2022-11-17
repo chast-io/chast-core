@@ -1,0 +1,43 @@
+version: 1
+type: refactoring
+name: RearrangeClassMembers
+maintainer: Raphael Jenni
+
+primaryParameter:
+  id: inputFile
+  type: filePath # Path, filePath, folderPath, wildcardPath, string, int, boolean
+  defaultValue: ./src/main/java
+
+positionalParameters:
+  - id: configFile
+    type: filePath
+
+run:
+  - id: pre
+    script:
+      - echo "Pre"
+  - id: id1
+    dependencies:
+      - pre
+      - id3
+    script:
+      - echo "Id1"
+  - id: id2
+    dependencies:
+      - id1
+    script:
+      - echo "Id2"
+  - id: id3
+    dependencies:
+      - id2
+    script:
+      - echo "Id2"
+  - id: post
+    dependencies:
+        - id3
+    script:
+        - echo "Post"
+
+tests:
+
+documentation:
