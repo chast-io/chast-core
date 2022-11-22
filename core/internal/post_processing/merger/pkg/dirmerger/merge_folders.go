@@ -13,7 +13,7 @@ import (
 )
 
 const unionFsHiddenPathSuffix = "_HIDDEN~"
-const defaultFolderPermission = 0777
+const defaultFolderPermission = os.ModePerm
 
 var errMergeOverwriteBlock = errorx.InternalError.New(
 	"Error due to attempting to merge a file over an existing file in blockOverwrite mode",
