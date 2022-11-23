@@ -12,15 +12,15 @@ import (
 
 type mergeFoldersTestCase struct {
 	name                  string
-	args                  args
+	args                  mergeFoldersArgs
 	sourceFileStructure   []string
 	targetFileStructure   []string
 	expectedFileStructure []string
 	wantErr               bool
 }
 
-type args struct {
-	blockOverwrite bool
+type mergeFoldersArgs struct {
+	getMergeOptions func() *dirmerger.MergeOptions
 }
 
 const unionFsHiddenPathSuffix = "_HIDDEN~"
@@ -29,8 +29,12 @@ func TestMergeFolders(t *testing.T) {
 	tests := []mergeFoldersTestCase{
 		{
 			name: "Merge two empty folders",
-			args: args{
-				blockOverwrite: false,
+			args: mergeFoldersArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+
+					return options
+				},
 			},
 			sourceFileStructure: []string{},
 			targetFileStructure: []string{},
@@ -38,8 +42,12 @@ func TestMergeFolders(t *testing.T) {
 		},
 		{
 			name: "Merge two folders with one file each [non conflicting]",
-			args: args{
-				blockOverwrite: false,
+			args: mergeFoldersArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+
+					return options
+				},
 			},
 			sourceFileStructure:   []string{"/file1"},
 			targetFileStructure:   []string{"/file2"},
@@ -48,8 +56,13 @@ func TestMergeFolders(t *testing.T) {
 		},
 		{
 			name: "Merge two folders with one file each [conflicting - blockOverwrite = false]",
-			args: args{
-				blockOverwrite: false,
+			args: mergeFoldersArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.BlockOverwrite = false
+
+					return options
+				},
 			},
 			sourceFileStructure:   []string{"/file1"},
 			targetFileStructure:   []string{"/file1"},
@@ -58,8 +71,13 @@ func TestMergeFolders(t *testing.T) {
 		},
 		{
 			name: "Merge two folders with one file each [conflicting - blockOverwrite = true]",
-			args: args{
-				blockOverwrite: true,
+			args: mergeFoldersArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.BlockOverwrite = true
+
+					return options
+				},
 			},
 			sourceFileStructure:   []string{"/file1"},
 			targetFileStructure:   []string{"/file1"},
@@ -67,51 +85,211 @@ func TestMergeFolders(t *testing.T) {
 			wantErr:               true,
 		},
 		{
-			name: "Merge deleted files [blockOverwrite = false]",
-			args: args{
-				blockOverwrite: false,
+			name: "Merge deleted file with file [blockOverwrite = false]",
+			args: mergeFoldersArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.BlockOverwrite = false
+
+					return options
+				},
 			},
 			sourceFileStructure:   []string{"/file1" + unionFsHiddenPathSuffix},
 			targetFileStructure:   []string{"/file1"},
-			expectedFileStructure: []string{"/file1", "/file1" + unionFsHiddenPathSuffix},
+			expectedFileStructure: []string{"/file1" + unionFsHiddenPathSuffix},
 			wantErr:               false,
 		},
 		{
-			name: "Merge deleted files [blockOverwrite = true]",
-			args: args{
-				blockOverwrite: true,
+			name: "Merge file with deleted file [blockOverwrite = false]",
+			args: mergeFoldersArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.BlockOverwrite = false
+
+					return options
+				},
+			},
+			sourceFileStructure:   []string{"/file1"},
+			targetFileStructure:   []string{"/file1" + unionFsHiddenPathSuffix},
+			expectedFileStructure: []string{"/file1"},
+			wantErr:               false,
+		},
+		{
+			name: "Merge deleted file with file [blockOverwrite = true]",
+			args: mergeFoldersArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.BlockOverwrite = true
+
+					return options
+				},
 			},
 			sourceFileStructure:   []string{"/file1" + unionFsHiddenPathSuffix},
 			targetFileStructure:   []string{"/file1"},
-			expectedFileStructure: []string{"/file1", "/file1" + unionFsHiddenPathSuffix},
-			wantErr:               false,
+			expectedFileStructure: []string{"/file1"},
+			wantErr:               true,
 		},
 		{
-			name: "Merge deleted folder [blockOverwrite = false]",
-			args: args{
-				blockOverwrite: false,
+			name: "Merge file with deleted file [blockOverwrite = true]",
+			args: mergeFoldersArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.BlockOverwrite = true
+
+					return options
+				},
+			},
+			sourceFileStructure:   []string{"/file1"},
+			targetFileStructure:   []string{"/file1" + unionFsHiddenPathSuffix},
+			expectedFileStructure: []string{"/file1" + unionFsHiddenPathSuffix},
+			wantErr:               true,
+		},
+		{
+			name: "Merge deleted folder with folder [blockOverwrite = false]",
+			args: mergeFoldersArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.BlockOverwrite = false
+
+					return options
+				},
 			},
 			sourceFileStructure:   []string{"/folder1" + unionFsHiddenPathSuffix + "/"},
 			targetFileStructure:   []string{"/folder1/"},
-			expectedFileStructure: []string{"/folder1/", "/folder1" + unionFsHiddenPathSuffix + "/"},
+			expectedFileStructure: []string{"/folder1" + unionFsHiddenPathSuffix + "/"},
 			wantErr:               false,
 		},
 		{
-			name: "Merge deleted folder [blockOverwrite = true]",
-			args: args{
-				blockOverwrite: true,
+			name: "Merge folder with deleted folder [blockOverwrite = false]",
+			args: mergeFoldersArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.BlockOverwrite = false
+
+					return options
+				},
+			},
+			sourceFileStructure:   []string{"/folder1/"},
+			targetFileStructure:   []string{"/folder1" + unionFsHiddenPathSuffix + "/"},
+			expectedFileStructure: []string{"/folder1/"},
+			wantErr:               false,
+		},
+		{
+			name: "Merge deleted folder with folder [blockOverwrite = true]",
+			args: mergeFoldersArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.BlockOverwrite = true
+
+					return options
+				},
 			},
 			sourceFileStructure:   []string{"/folder1" + unionFsHiddenPathSuffix + "/"},
 			targetFileStructure:   []string{"/folder1/"},
-			expectedFileStructure: []string{"/folder1/", "/folder1" + unionFsHiddenPathSuffix + "/"},
+			expectedFileStructure: []string{"/folder1/"},
+			wantErr:               true,
+		},
+		{
+			name: "Merge folder with deleted folder [blockOverwrite = true]",
+			args: mergeFoldersArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.BlockOverwrite = true
+
+					return options
+				},
+			},
+			sourceFileStructure:   []string{"/folder1/"},
+			targetFileStructure:   []string{"/folder1" + unionFsHiddenPathSuffix + "/"},
+			expectedFileStructure: []string{"/folder1" + unionFsHiddenPathSuffix + "/"},
+			wantErr:               true,
+		},
+		{
+			name: "Delete folders that are marked as deleted after merge",
+			args: mergeFoldersArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.DeleteMarkedAsDeletedPaths = true
+
+					return options
+				},
+			},
+			sourceFileStructure:   []string{"/folder1" + unionFsHiddenPathSuffix + "/"},
+			targetFileStructure:   []string{"/folder1/"},
+			expectedFileStructure: []string{},
 			wantErr:               false,
+		},
+		{
+			name: "Delete files that are marked as deleted after merge",
+			args: mergeFoldersArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.DeleteMarkedAsDeletedPaths = true
+
+					return options
+				},
+			},
+			sourceFileStructure:   []string{"/folder1/file1" + unionFsHiddenPathSuffix},
+			targetFileStructure:   []string{"/folder1/file1"},
+			expectedFileStructure: []string{"/folder1/"},
+			wantErr:               false,
+		},
+		{
+			name: "Delete empty folders",
+			args: mergeFoldersArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.DeleteEmptyFolders = true
+
+					return options
+				},
+			},
+			sourceFileStructure: []string{
+				"/folder1/folder1/",
+				"/folder1/folder2/file1",
+			},
+			targetFileStructure: []string{"/folder2/file1"},
+			expectedFileStructure: []string{
+				"/folder1/folder2/file1",
+				"/folder2/file1",
+			},
+			wantErr: false,
+		},
+		{
+			name: "Delete folders that are marked as deleted after merge and delete empty folders",
+			args: mergeFoldersArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.DeleteMarkedAsDeletedPaths = true
+					options.DeleteEmptyFolders = true
+
+					return options
+				},
+			},
+			sourceFileStructure: []string{
+				"/folder1/folder1/",
+				"/folder1/folder2" + unionFsHiddenPathSuffix + "/",
+				"/folder1/folder3/file1",
+			},
+			targetFileStructure: []string{
+				"/folder1/folder2/file1",
+			},
+			expectedFileStructure: []string{
+				"/folder1/folder3/file1",
+			},
+			wantErr: false,
 		},
 
 		// TODO: Add test cases.
 	}
 
-	for _, testCase := range tests {
+	t.Parallel()
+
+	for i := range tests {
+		testCase := tests[i]
 		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
 			sourceFolder := fileStructureCreator(testCase.sourceFileStructure)
 			targetFolder := fileStructureCreator(testCase.targetFileStructure)
 
@@ -120,36 +298,36 @@ func TestMergeFolders(t *testing.T) {
 				_ = os.RemoveAll(targetFolder)
 			})
 
-			if err := dirmerger.MergeFolders([]string{sourceFolder}, targetFolder, testCase.args.blockOverwrite); (err != nil) != testCase.wantErr {
+			if err := dirmerger.MergeFolders([]string{sourceFolder}, targetFolder, testCase.args.getMergeOptions()); (err != nil) != testCase.wantErr {
 				t.Errorf("MergeFolders() error = %v, wantErr %v", err, testCase.wantErr)
 			}
 
-			checkFolderEquality(t, testCase, targetFolder)
+			checkFolderEquality(t, testCase.expectedFileStructure, targetFolder)
 		})
 	}
 }
 
-func checkFolderEquality(t *testing.T, testCase mergeFoldersTestCase, targetFolder string) {
+func checkFolderEquality(t *testing.T, expectedFileStructure []string, checkFolder string) {
 	t.Helper()
 
 	t.Run("Check file structure equality", func(t *testing.T) {
 		t.Parallel()
 
-		actualFileStructure, err := collectPathsInFolder(targetFolder)
+		actualFileStructure, err := collectPathsInFolder(checkFolder)
 		if err != nil {
-			t.Fatalf("Could not collect paths in folder %s: %v", targetFolder, err)
+			t.Fatalf("Could not collect paths in folder %s: %v", checkFolder, err)
 		}
 
-		if len(testCase.expectedFileStructure) != len(actualFileStructure) {
-			t.Fatalf("MergeFolders() expected %v, got %v", testCase.expectedFileStructure, actualFileStructure)
+		if len(expectedFileStructure) != len(actualFileStructure) {
+			t.Fatalf("MergeFolders() expected %v, got %v", expectedFileStructure, actualFileStructure)
 		}
 
-		sort.Strings(testCase.expectedFileStructure)
+		sort.Strings(expectedFileStructure)
 		sort.Strings(actualFileStructure)
 
-		for i := range testCase.expectedFileStructure {
-			if testCase.expectedFileStructure[i] != actualFileStructure[i] {
-				t.Errorf("MergeFolders() expected %v, got %v", testCase.expectedFileStructure, actualFileStructure)
+		for i := range expectedFileStructure {
+			if expectedFileStructure[i] != actualFileStructure[i] {
+				t.Errorf("MergeFolders() expected %v, got %v", expectedFileStructure, actualFileStructure)
 			}
 		}
 	})
@@ -192,4 +370,191 @@ func fileStructureCreator(filesAndFolders []string) string {
 	}
 
 	return targetFolder
+}
+
+type areMergeableTestCase struct {
+	name                string
+	args                areMergeableArgs
+	sourceFileStructure []string
+	targetFileStructure []string
+	expectedMergeable   bool
+	wantErr             bool
+}
+type areMergeableArgs struct {
+	getMergeOptions func() *dirmerger.MergeOptions
+}
+
+func TestAreMergeable(t *testing.T) {
+	tests := []areMergeableTestCase{
+		{
+			name:                "Merge two non conflicting files [blockOverwrite = false]",
+			sourceFileStructure: []string{"folder1/file1"},
+			targetFileStructure: []string{"folder1/file2"},
+			expectedMergeable:   true,
+			wantErr:             false,
+			args: areMergeableArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.BlockOverwrite = false
+
+					return options
+				},
+			},
+		},
+		{
+			name:                "Merge two conflicting files [blockOverwrite = false]",
+			sourceFileStructure: []string{"folder1/file1"},
+			targetFileStructure: []string{"folder1/file1"},
+			expectedMergeable:   true,
+			wantErr:             false,
+			args: areMergeableArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.BlockOverwrite = false
+
+					return options
+				},
+			},
+		},
+		{
+			name:                "Merge deleted file with file [blockOverwrite = false]",
+			sourceFileStructure: []string{"folder1/file1" + unionFsHiddenPathSuffix},
+			targetFileStructure: []string{"folder1/file1"},
+			expectedMergeable:   true,
+			wantErr:             false,
+			args: areMergeableArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.BlockOverwrite = false
+
+					return options
+				},
+			},
+		},
+		{
+			name:                "Merge file with deleted file [blockOverwrite = false]",
+			sourceFileStructure: []string{"folder1/file1"},
+			targetFileStructure: []string{"folder1/file1" + unionFsHiddenPathSuffix},
+			expectedMergeable:   true,
+			wantErr:             false,
+			args: areMergeableArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.BlockOverwrite = false
+
+					return options
+				},
+			},
+		},
+		// === blockOverwrite = true ===
+		{
+			name:                "Merge two non conflicting files [blockOverwrite = true]",
+			sourceFileStructure: []string{"folder1/file1"},
+			targetFileStructure: []string{"folder1/file2"},
+			expectedMergeable:   true,
+			wantErr:             false,
+			args: areMergeableArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.BlockOverwrite = true
+
+					return options
+				},
+			},
+		},
+		{
+			name:                "Merge two conflicting files [blockOverwrite = true]",
+			sourceFileStructure: []string{"folder1/file1"},
+			targetFileStructure: []string{"folder1/file1"},
+			expectedMergeable:   false,
+			wantErr:             false,
+			args: areMergeableArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.BlockOverwrite = true
+
+					return options
+				},
+			},
+		},
+		{
+			name:                "Merge deleted file with file [blockOverwrite = true]",
+			sourceFileStructure: []string{"folder1/file1" + unionFsHiddenPathSuffix},
+			targetFileStructure: []string{"folder1/file1"},
+			expectedMergeable:   false,
+			wantErr:             false,
+			args: areMergeableArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.BlockOverwrite = true
+
+					return options
+				},
+			},
+		},
+		{
+			name:                "Merge file with deleted file [blockOverwrite = true]",
+			sourceFileStructure: []string{"folder1/file1"},
+			targetFileStructure: []string{"folder1/file1" + unionFsHiddenPathSuffix},
+			expectedMergeable:   false,
+			wantErr:             false,
+			args: areMergeableArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.BlockOverwrite = true
+
+					return options
+				},
+			},
+		},
+		{
+			name:                "Overwrites dry run option",
+			sourceFileStructure: []string{"folder1/file1"},
+			targetFileStructure: []string{"folder1/file2"},
+			expectedMergeable:   true,
+			wantErr:             false,
+			args: areMergeableArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.DryRun = false
+
+					return options
+				},
+			},
+		},
+	}
+
+	t.Parallel()
+
+	for i := range tests {
+		testCase := tests[i]
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			sourceFolder := fileStructureCreator(testCase.sourceFileStructure)
+			targetFolder := fileStructureCreator(testCase.targetFileStructure)
+
+			sourceFileStructure, _ := collectPathsInFolder(sourceFolder)
+			targetFileStructure, _ := collectPathsInFolder(targetFolder)
+
+			t.Cleanup(func() {
+				_ = os.RemoveAll(sourceFolder)
+				_ = os.RemoveAll(targetFolder)
+			})
+
+			mergeable, err := dirmerger.AreMergeable([]string{sourceFolder}, targetFolder, testCase.args.getMergeOptions())
+			if (err != nil) != testCase.wantErr {
+				t.Errorf("MergeFolders() error = %v, wantErr %v", err, testCase.wantErr)
+			}
+
+			if mergeable != testCase.expectedMergeable {
+				t.Errorf("MergeFolders() expected %v, got %v", testCase.expectedMergeable, mergeable)
+			}
+
+			checkFolderEquality(t, sourceFileStructure, sourceFolder)
+			checkFolderEquality(t, targetFileStructure, targetFolder)
+		})
+	}
+
+	// TODO check if options are not modified
 }

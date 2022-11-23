@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-func MergeDeletions(targetFolder string) error {
+func removeMarkedAsDeletedPaths(targetFolder string, options *MergeOptions) error {
 	osFileSystem := afero.NewOsFs()
 
 	targetExists, targetExistsError := afero.Exists(osFileSystem, targetFolder)
@@ -25,9 +25,11 @@ func MergeDeletions(targetFolder string) error {
 			return nil
 		}
 
-		mergeDeletedPathError := mergeDeletedPath(path, osFileSystem)
-		if mergeDeletedPathError != nil {
-			return errorx.InternalError.Wrap(mergeDeletedPathError, "Failed to merge deleted path")
+		if strings.HasSuffix(path, unionFsHiddenPathSuffix) {
+			mergeDeletedPathError := removeMarkedAsDeletedPath(path, osFileSystem, options)
+			if mergeDeletedPathError != nil {
+				return errorx.InternalError.Wrap(mergeDeletedPathError, "Failed to merge deleted path")
+			}
 		}
 
 		return nil
@@ -38,24 +40,25 @@ func MergeDeletions(targetFolder string) error {
 	return nil
 }
 
-func mergeDeletedPath(
+func removeMarkedAsDeletedPath(
 	path string,
 	osFileSystem afero.Fs,
+	options *MergeOptions,
 ) error {
-	if !strings.HasSuffix(path, unionFsHiddenPathSuffix) {
-		return nil
-	}
-
-	undeletedTargetPath := strings.TrimSuffix(path, unionFsHiddenPathSuffix)
-
-	exists, existsError := afero.Exists(osFileSystem, undeletedTargetPath)
+	exists, existsError := afero.Exists(osFileSystem, path)
 	if existsError != nil {
 		return errorx.ExternalError.Wrap(existsError, "Failed to check if path exists")
 	}
 
 	if exists {
-		if err := osFileSystem.RemoveAll(undeletedTargetPath); err != nil {
-			return errorx.ExternalError.Wrap(err, "Failed to remove file")
+		if options.BlockOverwrite {
+			return errMergeOverwriteBlock
+		}
+
+		if !options.DryRun {
+			if err := osFileSystem.RemoveAll(path); err != nil {
+				return errorx.ExternalError.Wrap(err, "Failed to remove file")
+			}
 		}
 	}
 

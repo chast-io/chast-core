@@ -39,12 +39,18 @@ func (parser *RunModelBuilder) buildRunModel(
 	unparsedArguments []string,
 	unparsedFlags []runmodel.UnparsedFlag,
 ) (*runmodel.RunModel, error) {
-	if err := builder.HandlePrimaryArgument(recipeModel.PrimaryParameter, variables, unparsedArguments[0]); err != nil {
-		return nil, errorx.InternalError.Wrap(err, "Failed to handle primary argument")
-	}
+	if len(unparsedFlags) > 0 {
+		if err := builder.HandlePrimaryArgument(recipeModel.PrimaryParameter, variables, unparsedArguments[0]); err != nil {
+			return nil, errorx.InternalError.Wrap(err, "Failed to handle primary argument")
+		}
 
-	if err := builder.HandlePositionalArguments(recipeModel, variables, unparsedArguments[1:]); err != nil {
-		return nil, errorx.InternalError.Wrap(err, "Failed to handle positional arguments")
+		if err := builder.HandlePositionalArguments(recipeModel, variables, unparsedArguments[1:]); err != nil {
+			return nil, errorx.InternalError.Wrap(err, "Failed to handle positional arguments")
+		}
+	} else {
+		if err := builder.HandlePrimaryArgument(recipeModel.PrimaryParameter, variables, ""); err != nil {
+			return nil, errorx.InternalError.Wrap(err, "Failed to handle positional arguments")
+		}
 	}
 
 	if err := builder.HandleFlags(recipeModel, variables, unparsedFlags); err != nil {

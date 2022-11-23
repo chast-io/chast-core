@@ -25,8 +25,13 @@ func HandlePrimaryArgument(
 			return errorx.IllegalArgument.New("Missing primary parameter")
 		}
 
-		variables.Map[primaryParameter.ID] = primaryParameter.DefaultValue
-		variables.TypeDetectionPath = primaryParameter.DefaultValue
+		absoluteDefaultValue, absError := filepath.Abs(primaryParameter.DefaultValue)
+		if absError != nil {
+			return errorx.ExternalError.Wrap(absError, "Could not absolutize default primary argument path")
+		}
+
+		variables.Map[primaryParameter.ID] = absoluteDefaultValue
+		variables.TypeDetectionPath = absoluteDefaultValue
 		variables.DefaultValueUsed = true
 
 		return nil
