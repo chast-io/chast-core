@@ -1,7 +1,6 @@
 package dirmerger
 
 import (
-	chastlog "chast.io/core/internal/logger"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -9,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	chastlog "chast.io/core/internal/logger"
 	"github.com/joomcode/errorx"
 	"github.com/spf13/afero"
 )
@@ -16,24 +16,6 @@ import (
 var errMergeOverwriteBlock = errorx.InternalError.New(
 	"Error due to attempting to merge a file over an existing file in blockOverwrite mode",
 )
-
-func MergeFolders(sourceFolders []string, targetFolder string, options *MergeOptions) error {
-	if !options.DryRun {
-		if err := os.MkdirAll(targetFolder, defaultFolderPermission); err != nil {
-			return errorx.ExternalError.Wrap(err, fmt.Sprintf("failed to create target folder \"%s\"", targetFolder))
-		}
-	}
-
-	for _, sourceFolder := range sourceFolders {
-		if err := mergeFolders(sourceFolder, targetFolder, options); err != nil {
-			return errorx.InternalError.Wrap(err,
-				fmt.Sprintf("failed to merge folder \"%s\" with \"%s\"", sourceFolder, targetFolder),
-			)
-		}
-	}
-
-	return nil
-}
 
 func AreMergeable(sourceFolders []string, targetFolder string, options *MergeOptions) (bool, error) {
 	augmentedMergeOptions := *options
@@ -52,6 +34,24 @@ func AreMergeable(sourceFolders []string, targetFolder string, options *MergeOpt
 	}
 
 	return true, nil
+}
+
+func MergeFolders(sourceFolders []string, targetFolder string, options *MergeOptions) error {
+	if !options.DryRun {
+		if err := os.MkdirAll(targetFolder, options.FolderPermission); err != nil {
+			return errorx.ExternalError.Wrap(err, fmt.Sprintf("failed to create target folder \"%s\"", targetFolder))
+		}
+	}
+
+	for _, sourceFolder := range sourceFolders {
+		if err := mergeFolders(sourceFolder, targetFolder, options); err != nil {
+			return errorx.InternalError.Wrap(err,
+				fmt.Sprintf("failed to merge folder \"%s\" with \"%s\"", sourceFolder, targetFolder),
+			)
+		}
+	}
+
+	return nil
 }
 
 func mergeFolders(sourceFolder string, targetFolder string, options *MergeOptions) error {
@@ -96,7 +96,13 @@ func mergeSourceIntoTarget(sourceFolder string, targetFolder string, options *Me
 
 	if walkError := afero.Walk(osFileSystem, sourceFolder, func(path string, info fs.FileInfo, _ error) error {
 		if info == nil {
-			return nil
+			return nil // exit if the file does not exist - this can happen due to a removal in a previous iteration
+		}
+
+		if options.ShouldSkip(path) {
+			chastlog.Log.Debugf("Skipping path \"%s\" due to being excluded or not included", path)
+
+			return nil // exit if the path is to be skipped
 		}
 
 		if info.IsDir() {
@@ -141,6 +147,7 @@ func moveFolder(
 
 	if !isEmpty {
 		chastlog.Log.Debugf("Folder \"%s\" is not empty, skipping -> will be handled later", sourcePath)
+
 		return nil
 	}
 
@@ -177,7 +184,7 @@ func moveFile(
 	}
 
 	if !options.DryRun {
-		if err := os.MkdirAll(filepath.Dir(targetPath), defaultFolderPermission); err != nil {
+		if err := os.MkdirAll(filepath.Dir(targetPath), options.FolderPermission); err != nil {
 			return errorx.ExternalError.Wrap(err, "Failed to create target directory")
 		}
 

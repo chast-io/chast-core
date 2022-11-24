@@ -25,7 +25,7 @@ func removeMarkedAsDeletedPaths(targetFolder string, options *MergeOptions) erro
 			return nil
 		}
 
-		if strings.HasSuffix(path, unionFsHiddenPathSuffix) {
+		if strings.HasSuffix(path, options.MetaFilesDeletedExtension) {
 			mergeDeletedPathError := removeMarkedAsDeletedPath(path, osFileSystem, options)
 			if mergeDeletedPathError != nil {
 				return errorx.InternalError.Wrap(mergeDeletedPathError, "Failed to merge deleted path")

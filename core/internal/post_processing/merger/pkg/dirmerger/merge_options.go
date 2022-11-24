@@ -1,6 +1,8 @@
 package dirmerger
 
-import "os"
+import (
+	"os"
+)
 
 const unionFsMetaFolder = ".unionfs-fuse"
 const unionFsHiddenPathSuffix = "_HIDDEN~"
@@ -15,10 +17,8 @@ type MergeOptions struct {
 	MetaFilesLocation          string
 	MetaFilesDeletedExtension  string
 	FolderPermission           os.FileMode
-	SkipLocations              []WildcardString
-	SkipExtensions             []WildcardString
-	IncludeLocations           []WildcardString
-	IncludeExtensions          []WildcardString
+	Exclusions                 []*WildcardString
+	Inclusions                 []*WildcardString
 }
 
 func NewMergeOptions() *MergeOptions {
@@ -34,10 +34,35 @@ func NewMergeOptions() *MergeOptions {
 		MetaFilesDeletedExtension: unionFsHiddenPathSuffix,
 		FolderPermission:          defaultFolderPermission,
 
-		SkipLocations:  []WildcardString{},
-		SkipExtensions: []WildcardString{},
-
-		IncludeLocations:  []WildcardString{},
-		IncludeExtensions: []WildcardString{},
+		Exclusions: []*WildcardString{},
+		Inclusions: []*WildcardString{},
 	}
+}
+
+func (o *MergeOptions) ShouldSkip(location string) bool {
+	if len(o.Inclusions) > 0 {
+		hasMatch := false
+
+		for _, includeLocation := range o.Inclusions {
+			if includeLocation.Matches(location) {
+				hasMatch = true
+
+				break
+			}
+		}
+
+		if !hasMatch {
+			return true
+		}
+	}
+
+	// continue to check if it is excluded
+
+	for _, skipLocation := range o.Exclusions {
+		if skipLocation.MatchesPath(location) {
+			return true
+		}
+	}
+
+	return false
 }

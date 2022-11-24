@@ -2,7 +2,6 @@ package dirmerger
 
 import (
 	"io/fs"
-	"os"
 	"path/filepath"
 
 	chastlog "chast.io/core/internal/logger"
@@ -11,7 +10,7 @@ import (
 )
 
 func removeEmptyFolders(
-	folder string,
+	folderPath string,
 	options *MergeOptions,
 ) error {
 	if options.DryRun {
@@ -20,13 +19,15 @@ func removeEmptyFolders(
 
 	osFileSystem := afero.NewOsFs()
 
-	if walkError := afero.Walk(osFileSystem, folder, func(path string, info fs.FileInfo, _ error) error {
+	folderPath = filepath.Clean(folderPath)
+
+	if walkError := afero.Walk(osFileSystem, folderPath, func(path string, info fs.FileInfo, _ error) error {
 		if info == nil {
 			return nil
 		}
 
 		if info.IsDir() {
-			if err := removeFolderAndParentsIfEmpty(path); err != nil {
+			if err := removeFolderAndParentsIfEmpty(path, folderPath); err != nil {
 				return err
 			}
 		}
@@ -39,7 +40,11 @@ func removeEmptyFolders(
 	return nil
 }
 
-func removeFolderAndParentsIfEmpty(path string) error {
+func removeFolderAndParentsIfEmpty(path string, rootPath string) error {
+	if path == rootPath {
+		return nil
+	}
+
 	osFileSystem := afero.NewOsFs()
 
 	exists, existsCheckErr := afero.Exists(osFileSystem, path)
@@ -73,9 +78,5 @@ func removeFolderAndParentsIfEmpty(path string) error {
 		}
 	}
 
-	if path == string(os.PathSeparator) {
-		return nil
-	}
-
-	return removeFolderAndParentsIfEmpty(filepath.Dir(path))
+	return removeFolderAndParentsIfEmpty(filepath.Dir(path), rootPath)
 }

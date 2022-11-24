@@ -12,9 +12,9 @@ import (
 func CleanupPipeline(pipeline *refactoringpipelinemodel.Pipeline) error {
 	targetFolder := pipeline.ChangeCaptureLocation
 
-	stageMergeOptions := dirmerger.NewMergeOptions()
-	stageMergeOptions.BlockOverwrite = false
-	stageMergeOptions.MergeMetaFilesFolder = false
+	stageToPipelineMergeOptions := dirmerger.NewMergeOptions()
+	stageToPipelineMergeOptions.BlockOverwrite = false
+	stageToPipelineMergeOptions.MergeMetaFilesFolder = false
 
 	for _, stage := range pipeline.Stages {
 		if err := CleanupStage(stage); err != nil {
@@ -22,19 +22,22 @@ func CleanupPipeline(pipeline *refactoringpipelinemodel.Pipeline) error {
 		}
 
 		// merge stage to target dir and allow overwrites
-		if err := dirmerger.MergeFolders([]string{stage.ChangeCaptureLocation}, targetFolder, stageMergeOptions); err != nil {
+		if err := dirmerger.MergeFolders(
+			[]string{stage.ChangeCaptureLocation},
+			targetFolder, stageToPipelineMergeOptions,
+		); err != nil {
 			return errorx.InternalError.Wrap(err, "failed to cleanup stage")
 		}
 	}
 
-	pipelineEndMergeOptions := dirmerger.NewMergeOptions()
-	pipelineEndMergeOptions.BlockOverwrite = false
-	pipelineEndMergeOptions.DeleteEmptyFolders = true
-	pipelineEndMergeOptions.DeleteMarkedAsDeletedPaths = false
+	pipelineToOutputMergeOptions := dirmerger.NewMergeOptions()
+	pipelineToOutputMergeOptions.BlockOverwrite = false
+	pipelineToOutputMergeOptions.DeleteEmptyFolders = true
+	pipelineToOutputMergeOptions.DeleteMarkedAsDeletedPaths = false
 
 	if err := dirmerger.MergeFolders(
 		[]string{pipeline.ChangeCaptureLocation},
-		targetFolder, pipelineEndMergeOptions,
+		targetFolder, pipelineToOutputMergeOptions,
 	); err != nil {
 		return errorx.InternalError.Wrap(err, "failed to cleanup pipeline")
 	}
@@ -47,9 +50,9 @@ func CleanupPipeline(pipeline *refactoringpipelinemodel.Pipeline) error {
 }
 
 func CleanupStage(stage *refactoringpipelinemodel.Stage) error {
-	stepsMergeOptions := dirmerger.NewMergeOptions()
-	stepsMergeOptions.BlockOverwrite = true
-	stepsMergeOptions.MergeMetaFilesFolder = false
+	stepToStageMergeOptions := dirmerger.NewMergeOptions()
+	stepToStageMergeOptions.BlockOverwrite = true
+	stepToStageMergeOptions.MergeMetaFilesFolder = false
 
 	sourceFolders := make([]string, 0)
 	for _, step := range stage.Steps {
@@ -57,7 +60,7 @@ func CleanupStage(stage *refactoringpipelinemodel.Stage) error {
 	}
 
 	// merge steps in stage and prevent overwrites
-	if err := dirmerger.MergeFolders(sourceFolders, stage.ChangeCaptureLocation, stepsMergeOptions); err != nil {
+	if err := dirmerger.MergeFolders(sourceFolders, stage.ChangeCaptureLocation, stepToStageMergeOptions); err != nil {
 		return errorx.InternalError.Wrap(err, "failed to cleanup stage")
 	}
 

@@ -1,13 +1,14 @@
 package dirmerger_test
 
 import (
-	"chast.io/core/internal/post_processing/merger/pkg/dirmerger"
-	"github.com/spf13/afero"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
+
+	"chast.io/core/internal/post_processing/merger/pkg/dirmerger"
+	"github.com/spf13/afero"
 )
 
 type mergeFoldersTestCase struct {
@@ -254,6 +255,25 @@ func TestMergeFolders(t *testing.T) {
 				"/folder2/file1",
 			},
 			wantErr: false,
+		},
+		{
+			name: "Delete empty folders except root",
+			args: mergeFoldersArgs{
+				getMergeOptions: func() *dirmerger.MergeOptions {
+					options := dirmerger.NewMergeOptions()
+					options.DeleteEmptyFolders = true
+
+					return options
+				},
+			},
+			sourceFileStructure: []string{
+				"/folder1/folder1/",
+			},
+			targetFileStructure: []string{
+				"/folder1/folder2/",
+			},
+			expectedFileStructure: make([]string, 0),
+			wantErr:               false,
 		},
 		{
 			name: "Delete folders that are marked as deleted after merge and delete empty folders",
