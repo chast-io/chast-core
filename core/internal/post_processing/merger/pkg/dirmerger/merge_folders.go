@@ -65,15 +65,15 @@ func mergeFolders(sourceFolder string, targetFolder string, options *MergeOption
 		return errorx.InternalError.Wrap(err, "failed to merge source into target")
 	}
 
-	if options.DeleteMarkedAsDeletedPaths {
-		if err := removeMarkedAsDeletedPaths(targetFolder, options); err != nil {
-			return errorx.InternalError.Wrap(err, "failed to remove marked as deleted paths")
-		}
-	}
-
 	if options.DeleteEmptyFolders {
 		if err := removeEmptyFolders(targetFolder, options); err != nil {
 			return errorx.InternalError.Wrap(err, "failed to remove empty folders")
+		}
+	}
+
+	if options.DeleteMarkedAsDeletedPaths {
+		if err := removeMarkedAsDeletedPaths(targetFolder, options); err != nil {
+			return errorx.InternalError.Wrap(err, "failed to remove marked as deleted paths")
 		}
 	}
 
@@ -120,7 +120,7 @@ func mergeSourceIntoTarget(sourceFolder string, targetFolder string, options *Me
 		return errorx.ExternalError.Wrap(walkError, "Failed to walk through source folder")
 	}
 
-	if !options.DryRun {
+	if !options.DryRun && sourceFolder != targetFolder {
 		if err := os.RemoveAll(sourceFolder); err != nil {
 			return errorx.ExternalError.Wrap(err, "failed to remove merge source directory")
 		}
@@ -146,7 +146,7 @@ func moveFolder(
 	}
 
 	if !isEmpty {
-		chastlog.Log.Debugf("Folder \"%s\" is not empty, skipping -> will be handled later", sourcePath)
+		chastlog.Log.Tracef("Folder \"%s\" is not empty, skipping -> will be handled later", sourcePath)
 
 		return nil
 	}

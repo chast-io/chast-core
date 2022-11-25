@@ -53,7 +53,7 @@ func (s *Stage) withPipeline(targetPipeline *Pipeline) {
 }
 
 func (s *Stage) setStageDetails() {
-	s.ChangeCaptureLocation = filepath.Join(s.pipeline.ChangeCaptureLocation, "tmp", s.UUID)
+	s.ChangeCaptureLocation = filepath.Join(s.pipeline.GetTempChangeCaptureLocation(), s.UUID)
 	s.OperationLocation = filepath.Join(s.pipeline.OperationLocation, s.UUID)
 }
 

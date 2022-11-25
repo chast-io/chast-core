@@ -26,6 +26,10 @@ func BuildReport(pipeline *refactoringpipelinemodel.Pipeline) (*Report, error) {
 	osFileSystem := afero.NewOsFs()
 	if walkError := afero.Walk(osFileSystem, pipeline.ChangeCaptureLocation,
 		func(path string, info fs.FileInfo, _ error) error {
+			if info == nil {
+				return nil
+			}
+
 			if info.IsDir() {
 				folderIsEmpty, isEmptyCheckError := afero.IsEmpty(osFileSystem, path)
 				if isEmptyCheckError != nil {

@@ -39,7 +39,7 @@ func (parser *RunModelBuilder) buildRunModel(
 	unparsedArguments []string,
 	unparsedFlags []runmodel.UnparsedFlag,
 ) (*runmodel.RunModel, error) {
-	if len(unparsedFlags) > 0 {
+	if len(unparsedArguments) > 0 {
 		if err := builder.HandlePrimaryArgument(recipeModel.PrimaryParameter, variables, unparsedArguments[0]); err != nil {
 			return nil, errorx.InternalError.Wrap(err, "Failed to handle primary argument")
 		}

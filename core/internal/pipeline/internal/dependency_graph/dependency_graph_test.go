@@ -194,6 +194,81 @@ func TestBuildExecutionOrder_MultipleRuns_WithStages(t *testing.T) {
 
 // endregion
 
+// region BuildRunPipeline [Missing Dependencies]
+
+func TestBuildExecutionOrder_MissingDependencies(t *testing.T) {
+	t.Parallel()
+
+	runFilteredOut := &refactoring.Run{
+		ID:                 "runFilteredOut",
+		Dependencies:       []*refactoring.Run{},
+		SupportedLanguages: []string{},
+		Docker:             &refactoring.Docker{},  //nolint:exhaustruct // not required for test
+		Local:              &refactoring.Local{},   //nolint:exhaustruct // not required for test
+		Command:            &refactoring.Command{}, //nolint:exhaustruct // not required for test
+	}
+
+	run1DependingOnFilteredOut := &refactoring.Run{
+		ID:                 "run1DependingOnFilteredOut",
+		Dependencies:       []*refactoring.Run{runFilteredOut},
+		SupportedLanguages: []string{},
+		Docker:             &refactoring.Docker{},  //nolint:exhaustruct // not required for test
+		Local:              &refactoring.Local{},   //nolint:exhaustruct // not required for test
+		Command:            &refactoring.Command{}, //nolint:exhaustruct // not required for test
+	}
+
+	run2 := &refactoring.Run{
+		ID:                 "run2",
+		Dependencies:       []*refactoring.Run{run1DependingOnFilteredOut},
+		SupportedLanguages: []string{},
+		Docker:             &refactoring.Docker{},  //nolint:exhaustruct // not required for test
+		Local:              &refactoring.Local{},   //nolint:exhaustruct // not required for test
+		Command:            &refactoring.Command{}, //nolint:exhaustruct // not required for test
+	}
+
+	runIndependent := &refactoring.Run{
+		ID:                 "runIndependent",
+		Dependencies:       []*refactoring.Run{},
+		SupportedLanguages: []string{},
+		Docker:             &refactoring.Docker{},  //nolint:exhaustruct // not required for test
+		Local:              &refactoring.Local{},   //nolint:exhaustruct // not required for test
+		Command:            &refactoring.Command{}, //nolint:exhaustruct // not required for test
+	}
+
+	runModel := &refactoring.RunModel{
+		Run: []*refactoring.Run{
+			run1DependingOnFilteredOut,
+			run2,
+			runIndependent,
+		},
+	}
+
+	executionOrder, _ := uut.BuildExecutionOrder(runModel)
+
+	t.Run("should set stages", func(t *testing.T) {
+		t.Parallel()
+		if len(executionOrder) != 1 {
+			t.Fatalf("expected execution order to contain 1 stages but was %d", len(executionOrder))
+		}
+	})
+
+	t.Run("should set stage 1", func(t *testing.T) {
+		t.Parallel()
+		if len(executionOrder[0]) != 1 {
+			t.Fatalf("expected execution order to contain 1 run in stage 1 but was %d", len(executionOrder[0]))
+		}
+	})
+
+	t.Run("should set stage 1 step 1", func(t *testing.T) {
+		t.Parallel()
+		if executionOrder[0][0] != runIndependent {
+			t.Errorf("expected execution order to contain runIndependent in stage 1 step 1 but was %s", executionOrder[0][0].ID)
+		}
+	})
+}
+
+// endregion
+
 // region Cyclic Dependency Detection
 
 func TestBuildExecutionOrder_CyclicDependencyDetection(t *testing.T) {

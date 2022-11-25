@@ -34,6 +34,10 @@ func NewPipeline(
 	}
 }
 
+func (p *Pipeline) GetTempChangeCaptureLocation() string {
+	return filepath.Join(p.ChangeCaptureLocation, "tmp")
+}
+
 func (p *Pipeline) AddStage(stage *Stage) {
 	stage.withPipeline(p)
 

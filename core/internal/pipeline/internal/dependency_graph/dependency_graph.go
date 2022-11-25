@@ -60,7 +60,9 @@ func buildDependencyGraph(runModel *refactoring.RunModel) *graph.DoubleConnected
 		for _, dependency := range node.Self.Dependencies {
 			dependencyNode := nodesMap[dependency]
 			if dependencyNode == nil {
-				continue // this can happen if the dependency is a run that is not part of the run model due to a filter
+				runGraph.RemoveNode(node)
+				// this can happen if the dependency is a run that is not part of the run model due to a filter
+				break
 			}
 
 			runGraph.AddEdge(node, dependencyNode)

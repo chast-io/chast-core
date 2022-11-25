@@ -3,6 +3,7 @@ package dirmerger
 import (
 	"io/fs"
 	"path/filepath"
+	"strings"
 
 	chastlog "chast.io/core/internal/logger"
 	"github.com/joomcode/errorx"
@@ -27,7 +28,7 @@ func removeEmptyFolders(
 		}
 
 		if info.IsDir() {
-			if err := removeFolderAndParentsIfEmpty(path, folderPath); err != nil {
+			if err := removeFolderAndParentsIfEmpty(path, folderPath, options); err != nil {
 				return err
 			}
 		}
@@ -40,8 +41,12 @@ func removeEmptyFolders(
 	return nil
 }
 
-func removeFolderAndParentsIfEmpty(path string, rootPath string) error {
+func removeFolderAndParentsIfEmpty(path string, rootPath string, options *MergeOptions) error {
 	if path == rootPath {
+		return nil
+	}
+
+	if strings.HasSuffix(path, options.MetaFilesDeletedExtension) {
 		return nil
 	}
 
@@ -78,5 +83,5 @@ func removeFolderAndParentsIfEmpty(path string, rootPath string) error {
 		}
 	}
 
-	return removeFolderAndParentsIfEmpty(filepath.Dir(path), rootPath)
+	return removeFolderAndParentsIfEmpty(filepath.Dir(path), rootPath, options)
 }

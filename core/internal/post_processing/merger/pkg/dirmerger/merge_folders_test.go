@@ -26,7 +26,7 @@ type mergeFoldersArgs struct {
 
 const unionFsHiddenPathSuffix = "_HIDDEN~"
 
-func TestMergeFolders(t *testing.T) {
+func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 	tests := []mergeFoldersTestCase{
 		{
 			name: "Merge two empty folders",
@@ -576,5 +576,26 @@ func TestAreMergeable(t *testing.T) {
 		})
 	}
 
-	// TODO check if options are not modified
+	t.Run("Check if options are not modified", func(t *testing.T) {
+		t.Parallel()
+
+		sourceFolder := fileStructureCreator([]string{"folder1/file1"})
+		targetFolder := fileStructureCreator([]string{"folder1/file2"})
+
+		t.Cleanup(func() {
+			_ = os.RemoveAll(sourceFolder)
+			_ = os.RemoveAll(targetFolder)
+		})
+
+		options := dirmerger.NewMergeOptions()
+		options.DryRun = false
+		options.BlockOverwrite = true
+		options.DeleteMarkedAsDeletedPaths = true
+
+		_, _ = dirmerger.AreMergeable([]string{sourceFolder}, targetFolder, options)
+
+		if options.DryRun != false || options.BlockOverwrite != true || options.DeleteMarkedAsDeletedPaths != true {
+			t.Errorf("MergeFolders() options were modified")
+		}
+	})
 }
