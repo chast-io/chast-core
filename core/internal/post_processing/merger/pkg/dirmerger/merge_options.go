@@ -14,6 +14,7 @@ type MergeOptions struct {
 	MergeMetaFilesFolder       bool
 	DeleteEmptyFolders         bool
 	DeleteMarkedAsDeletedPaths bool
+	CopyMode                   bool
 	MetaFilesLocation          string
 	MetaFilesDeletedExtension  string
 	FolderPermission           os.FileMode
@@ -29,6 +30,7 @@ func NewMergeOptions() *MergeOptions {
 		MergeMetaFilesFolder:       true,
 		DeleteEmptyFolders:         false,
 		DeleteMarkedAsDeletedPaths: false,
+		CopyMode:                   false,
 
 		MetaFilesLocation:         unionFsMetaFolder,
 		MetaFilesDeletedExtension: unionFsHiddenPathSuffix,

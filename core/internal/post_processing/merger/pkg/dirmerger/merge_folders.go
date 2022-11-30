@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"chast.io/core/internal/internal_util/collection"
 	chastlog "chast.io/core/internal/logger"
 	"github.com/joomcode/errorx"
 	"github.com/spf13/afero"
@@ -17,13 +18,13 @@ var errMergeOverwriteBlock = errorx.InternalError.New(
 	"Error due to attempting to merge a file over an existing file in blockOverwrite mode",
 )
 
-func AreMergeable(sourceFolders []string, targetFolder string, options *MergeOptions) (bool, error) {
+func AreMergeable(mergeEntities []MergeEntity, targetFolder string, options *MergeOptions) (bool, error) {
 	augmentedMergeOptions := *options
 	augmentedMergeOptions.DryRun = true
 	augmentedMergeOptions.DeleteEmptyFolders = false
 	augmentedMergeOptions.DeleteMarkedAsDeletedPaths = false
 
-	mergeError := MergeFolders(sourceFolders, targetFolder, &augmentedMergeOptions)
+	mergeError := MergeFolders(mergeEntities, targetFolder, &augmentedMergeOptions)
 
 	if mergeError != nil {
 		if errors.Is(mergeError, errMergeOverwriteBlock) {
@@ -36,17 +37,17 @@ func AreMergeable(sourceFolders []string, targetFolder string, options *MergeOpt
 	return true, nil
 }
 
-func MergeFolders(sourceFolders []string, targetFolder string, options *MergeOptions) error {
+func MergeFolders(mergeEntities []MergeEntity, targetFolder string, options *MergeOptions) error {
 	if !options.DryRun {
 		if err := os.MkdirAll(targetFolder, options.FolderPermission); err != nil {
 			return errorx.ExternalError.Wrap(err, fmt.Sprintf("failed to create target folder \"%s\"", targetFolder))
 		}
 	}
 
-	for _, sourceFolder := range sourceFolders {
-		if err := mergeFolders(sourceFolder, targetFolder, options); err != nil {
+	for _, mergeEntity := range mergeEntities {
+		if err := mergeFolders(mergeEntity, targetFolder, options); err != nil {
 			return errorx.InternalError.Wrap(err,
-				fmt.Sprintf("failed to merge folder \"%s\" with \"%s\"", sourceFolder, targetFolder),
+				fmt.Sprintf("failed to merge folder \"%s\" with \"%s\"", mergeEntity.SourcePath, targetFolder),
 			)
 		}
 	}
@@ -54,25 +55,37 @@ func MergeFolders(sourceFolders []string, targetFolder string, options *MergeOpt
 	return nil
 }
 
-func mergeFolders(sourceFolder string, targetFolder string, options *MergeOptions) error {
-	if options.MergeMetaFilesFolder {
-		if err := mergeMetaFolderIntoSource(sourceFolder, options); err != nil {
+func mergeFolders(mergeEntity MergeEntity, targetFolder string, options *MergeOptions) error {
+	entityMergeOptions := *options
+	entityMergeOptions.Inclusions = append(
+		entityMergeOptions.Inclusions,
+		collection.Map(mergeEntity.ChangeLocations.Include, NewWildcardString)...,
+	)
+	entityMergeOptions.Exclusions = append(
+		entityMergeOptions.Exclusions,
+		collection.Map(mergeEntity.ChangeLocations.Exclude, NewWildcardString)...,
+	)
+
+	sourceFolder := mergeEntity.SourcePath
+
+	if entityMergeOptions.MergeMetaFilesFolder {
+		if err := mergeMetaFolderIntoSource(sourceFolder, &entityMergeOptions); err != nil {
 			return errorx.InternalError.Wrap(err, "failed to merge meta folder into source")
 		}
 	}
 
-	if err := mergeSourceIntoTarget(sourceFolder, targetFolder, options); err != nil {
+	if err := mergeSourceIntoTarget(sourceFolder, targetFolder, &entityMergeOptions); err != nil {
 		return errorx.InternalError.Wrap(err, "failed to merge source into target")
 	}
 
-	if options.DeleteEmptyFolders {
-		if err := removeEmptyFolders(targetFolder, options); err != nil {
+	if entityMergeOptions.DeleteEmptyFolders {
+		if err := removeEmptyFolders(targetFolder, &entityMergeOptions); err != nil {
 			return errorx.InternalError.Wrap(err, "failed to remove empty folders")
 		}
 	}
 
-	if options.DeleteMarkedAsDeletedPaths {
-		if err := removeMarkedAsDeletedPaths(targetFolder, options); err != nil {
+	if entityMergeOptions.DeleteMarkedAsDeletedPaths {
+		if err := removeMarkedAsDeletedPaths(targetFolder, &entityMergeOptions); err != nil {
 			return errorx.InternalError.Wrap(err, "failed to remove marked as deleted paths")
 		}
 	}
@@ -99,8 +112,8 @@ func mergeSourceIntoTarget(sourceFolder string, targetFolder string, options *Me
 			return nil // exit if the file does not exist - this can happen due to a removal in a previous iteration
 		}
 
-		if options.ShouldSkip(path) {
-			chastlog.Log.Debugf("Skipping path \"%s\" due to being excluded or not included", path)
+		if options.ShouldSkip(strings.TrimPrefix(path, sourceFolder)) {
+			chastlog.Log.Tracef("Skipping path \"%s\" due to being excluded or not included", path)
 
 			return nil // exit if the path is to be skipped
 		}
@@ -120,9 +133,9 @@ func mergeSourceIntoTarget(sourceFolder string, targetFolder string, options *Me
 		return errorx.ExternalError.Wrap(walkError, "Failed to walk through source folder")
 	}
 
-	if !options.DryRun && sourceFolder != targetFolder {
-		if err := os.RemoveAll(sourceFolder); err != nil {
-			return errorx.ExternalError.Wrap(err, "failed to remove merge source directory")
+	if !options.DryRun && sourceFolder != targetFolder && !options.CopyMode {
+		if err := cleanupPath(sourceFolder, osFileSystem, options); err != nil {
+			return err
 		}
 	}
 
@@ -161,6 +174,12 @@ func moveFolder(
 		if err := osFileSystem.MkdirAll(targetPath, options.FolderPermission); err != nil {
 			return errorx.ExternalError.Wrap(err, fmt.Sprintf("Failed to create folder \"%s\"", targetPath))
 		}
+
+		if !options.CopyMode {
+			if err := cleanupPath(sourcePath, osFileSystem, options); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -183,11 +202,19 @@ func moveFile(
 		return err
 	}
 
-	if !options.DryRun {
-		if err := os.MkdirAll(filepath.Dir(targetPath), options.FolderPermission); err != nil {
-			return errorx.ExternalError.Wrap(err, "Failed to create target directory")
-		}
+	if options.DryRun {
+		return nil
+	}
 
+	if err := os.MkdirAll(filepath.Dir(targetPath), options.FolderPermission); err != nil {
+		return errorx.ExternalError.Wrap(err, "Failed to create target directory")
+	}
+
+	if options.CopyMode {
+		if err := os.Link(sourcePath, targetPath); err != nil {
+			return errorx.ExternalError.Wrap(err, "Failed to link file")
+		}
+	} else {
 		if err := osFileSystem.Rename(sourcePath, targetPath); err != nil {
 			return errorx.ExternalError.Wrap(err, "Failed to move file")
 		}
@@ -249,4 +276,12 @@ func targetPath(path string, sourceFolder string, targetFolder string) string {
 	targetPath := filepath.Join(targetFolder, correctedPath)
 
 	return targetPath
+}
+
+func cleanupPath(path string, _ afero.Fs, _ *MergeOptions) error {
+	if err := os.RemoveAll(path); err != nil {
+		return errorx.ExternalError.Wrap(err, "failed to remove merge source directory")
+	}
+
+	return nil
 }

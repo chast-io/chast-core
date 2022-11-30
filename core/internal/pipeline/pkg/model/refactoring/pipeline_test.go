@@ -2,7 +2,7 @@ package refactoringpipelinemodel_test
 
 import (
 	"path/filepath"
-	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -15,19 +15,20 @@ func pipelineDummyPipeline() *uut.Pipeline {
 	return uut.NewPipeline("/operationLocation", "/changeCaptureLocation", "/rootFileSystemLocation")
 }
 
-func pipelineDummyStage() *uut.Stage {
-	return uut.NewStage("test-name")
+func pipelineDummyExecutionGroup() *uut.ExecutionGroup {
+	return uut.NewExecutionGroup()
 }
 
-func pipelineDummyStep() *uut.Step {
+func pipelineDummyStep(nr int) *uut.Step {
 	runModel := &refactoring.SingleRunModel{
 		Run: &refactoring.Run{
-			ID:                 "runId",
+			ID:                 "runId" + strconv.Itoa(nr),
 			Dependencies:       make([]*refactoring.Run, 0),
 			SupportedLanguages: []string{"java"},
-			Docker:             &refactoring.Docker{},  //nolint:exhaustruct // not required for test
-			Local:              &refactoring.Local{},   //nolint:exhaustruct // not required for test
-			Command:            &refactoring.Command{}, //nolint:exhaustruct // not required for test
+			Docker:             &refactoring.Docker{},          //nolint:exhaustruct // not required for test
+			Local:              &refactoring.Local{},           //nolint:exhaustruct // not required for test
+			Command:            &refactoring.Command{},         //nolint:exhaustruct // not required for test
+			ChangeLocations:    &refactoring.ChangeLocations{}, //nolint:exhaustruct // not required for test
 		},
 	}
 
@@ -49,14 +50,14 @@ func TestNewPipeline(t *testing.T) {
 	t.Run("should set UUID prefix", func(t *testing.T) {
 		t.Parallel()
 		if strings.HasPrefix(actualPipeline.UUID, "PIPELINE-") == false {
-			t.Errorf("Expected pipeline UUID to start with 'PIPELINE-', but was '%s'", actualPipeline.UUID)
+			t.Errorf("Expected Pipeline UUID to start with 'PIPELINE-', but was '%s'", actualPipeline.UUID)
 		}
 	})
 
 	t.Run("should set correct UUID", func(t *testing.T) {
 		t.Parallel()
 		if len(actualPipeline.UUID) != len("PIPELINE-")+len("00000000-0000-0000-0000-000000000000") {
-			t.Errorf("Expected pipeline UUID to be 36 characters long, but was %d", len(actualPipeline.UUID))
+			t.Errorf("Expected Pipeline UUID to be 36 characters long, but was %d", len(actualPipeline.UUID))
 		}
 	})
 
@@ -71,154 +72,156 @@ func TestNewPipeline(t *testing.T) {
 		t.Parallel()
 		expectedChangeCaptureLocation := filepath.Join(changeCaptureLocation, actualPipeline.UUID)
 		if actualPipeline.ChangeCaptureLocation != expectedChangeCaptureLocation {
-			t.Errorf("Expected pipeline ChangeCaptureLocation to be '%s', but was '%s'", expectedChangeCaptureLocation, actualPipeline.ChangeCaptureLocation)
+			t.Errorf("Expected Pipeline ChangeCaptureLocation to be '%s', but was '%s'", expectedChangeCaptureLocation, actualPipeline.ChangeCaptureLocation)
 		}
 	})
 
 	t.Run("should set root file system location", func(t *testing.T) {
 		t.Parallel()
 		if actualPipeline.RootFileSystemLocation != rootFileSystemLocation {
-			t.Errorf("Expected pipeline RootFileSystemLocation to be '%s', but was '%s'", rootFileSystemLocation, actualPipeline.RootFileSystemLocation)
+			t.Errorf("Expected Pipeline RootFileSystemLocation to be '%s', but was '%s'", rootFileSystemLocation, actualPipeline.RootFileSystemLocation)
 		}
 	})
 
-	t.Run("should set initial stages size", func(t *testing.T) {
+	t.Run("should set initial executionGroups size", func(t *testing.T) {
 		t.Parallel()
-		if len(actualPipeline.Stages) != 1 {
-			t.Errorf("Expected pipeline to have 1 stage, but had %d", len(actualPipeline.Stages))
+		if len(actualPipeline.ExecutionGroups) != 1 {
+			t.Errorf("Expected Pipeline to have 1 executionGroup, but had %d", len(actualPipeline.ExecutionGroups))
 		}
 	})
 }
 
 // endregion
 
-// region AddStage
+// region AddExecutionGroup
 
-func TestAddStage(t *testing.T) {
+func TestAddExecutionGroup(t *testing.T) {
 	t.Parallel()
 
-	t.Run("should add stage", func(t *testing.T) {
+	t.Run("should add execution group", func(t *testing.T) {
 		t.Parallel()
-		pipeline := pipelineDummyPipeline()
-		stage := pipelineDummyStage()
-		pipeline.AddStage(stage)
 
-		if pipeline.Stages[0] != stage {
-			t.Errorf("Expected pipeline to have stage %v, but had %v", stage, pipeline.Stages[0])
+		pipeline := pipelineDummyPipeline()
+		executionGroup := pipelineDummyExecutionGroup()
+		pipeline.AddExecutionGroup(executionGroup)
+
+		if pipeline.ExecutionGroups[0] != executionGroup {
+			t.Errorf("Expected Pipeline to have executionGroup %v, but had %v", executionGroup, pipeline.ExecutionGroups[0])
 		}
-	})
-
-	t.Run("should set change capture location on stage", func(t *testing.T) {
-		t.Parallel()
-		pipeline := pipelineDummyPipeline()
-		stage := pipelineDummyStage()
-		pipeline.AddStage(stage)
-
-		expectedChangeCaptureLocation := filepath.Join(pipeline.ChangeCaptureLocation, "tmp", stage.UUID)
-		if stage.ChangeCaptureLocation != expectedChangeCaptureLocation {
-			t.Errorf("Expected stage ChangeCaptureLocation to be '%s', but was '%s'", expectedChangeCaptureLocation, stage.ChangeCaptureLocation)
-		}
-	})
-
-	t.Run("should set operation location on stage", func(t *testing.T) {
-		t.Parallel()
-		pipeline := pipelineDummyPipeline()
-		stage := pipelineDummyStage()
-		pipeline.AddStage(stage)
-
-		expectedOperationLocation := filepath.Join(pipeline.OperationLocation, stage.UUID)
-		if stage.OperationLocation != expectedOperationLocation {
-			t.Errorf("Expected stage OperationLocation to be '%s', but was '%s'", expectedOperationLocation, stage.OperationLocation)
-		}
-	})
-
-	t.Run("should set prev stage on stage", func(t *testing.T) {
-		t.Parallel()
-		pipeline := pipelineDummyPipeline()
-		stage1 := uut.NewStage("stage1")
-		pipeline.AddStage(stage1)
-		stage2 := uut.NewStage("stage2")
-		pipeline.AddStage(stage2)
-
-		t.Run("should not set prev on first", func(t *testing.T) {
-			t.Parallel()
-			if len(stage1.GetPrevChangeCaptureLocations()) != 0 {
-				t.Errorf("Expected stage1 to have 0 prev change capture locations, but had %d", len(stage1.GetPrevChangeCaptureLocations()))
-			}
-		})
-
-		t.Run("should set prev on second", func(t *testing.T) {
-			t.Parallel()
-			if len(stage2.GetPrevChangeCaptureLocations()) != 1 {
-				t.Errorf("Expected stage2 to have 1 prev change capture location, but had %d", len(stage2.GetPrevChangeCaptureLocations()))
-			}
-		})
 	})
 
 	t.Run("should set operation location on already added steps", func(t *testing.T) {
 		t.Parallel()
-		stage := pipelineDummyStage()
-		step1 := pipelineDummyStep()
-		stage.AddStep(step1)
-		step2 := pipelineDummyStep()
-		stage.AddStep(step2)
+
+		executionGroup := pipelineDummyExecutionGroup()
+		step1 := pipelineDummyStep(1)
+		executionGroup.AddStep(step1)
+		step2 := pipelineDummyStep(2)
+		executionGroup.AddStep(step2)
 
 		pipeline := pipelineDummyPipeline()
-		pipeline.AddStage(stage)
+		pipeline.AddExecutionGroup(executionGroup)
 
-		expectedOperationLocation1 := filepath.Join(stage.OperationLocation, step1.UUID)
+		expectedOperationLocation1 := filepath.Join(pipeline.OperationLocation, step1.UUID)
 		if step1.OperationLocation != expectedOperationLocation1 {
 			t.Errorf("Expected step OperationLocation to be '%s', but was '%s'", expectedOperationLocation1, step1.OperationLocation)
 		}
 
-		expectedOperationLocation2 := filepath.Join(stage.OperationLocation, step2.UUID)
+		expectedOperationLocation2 := filepath.Join(pipeline.OperationLocation, step2.UUID)
 		if step2.OperationLocation != expectedOperationLocation2 {
 			t.Errorf("Expected step OperationLocation to be '%s', but was '%s'", expectedOperationLocation2, step2.OperationLocation)
+		}
+	})
+
+	t.Run("should accept multiple groups", func(t *testing.T) {
+		t.Parallel()
+
+		pipeline := pipelineDummyPipeline()
+		executionGroup1 := pipelineDummyExecutionGroup()
+		pipeline.AddExecutionGroup(executionGroup1)
+		executionGroup2 := pipelineDummyExecutionGroup()
+		pipeline.AddExecutionGroup(executionGroup2)
+
+		if pipeline.ExecutionGroups[0] != executionGroup1 {
+			t.Errorf("Expected Pipeline to have executionGroup %v, but had %v", executionGroup1, pipeline.ExecutionGroups[0])
+		}
+		if pipeline.ExecutionGroups[1] != executionGroup2 {
+			t.Errorf("Expected Pipeline to have executionGroup %v, but had %v", executionGroup2, pipeline.ExecutionGroups[1])
 		}
 	})
 }
 
 // endregion
 
-// region GetPrevChangeCaptureLocations
+// region GetTempChangeCaptureLocation
 
-func TestGetPrevChangeCaptureLocations(t *testing.T) {
+func TestGetTempChangeCaptureLocation(t *testing.T) {
 	t.Parallel()
 
-	t.Run("should return prev change capture locations in correct order", func(t *testing.T) {
+	t.Run("should return correct location", func(t *testing.T) {
 		t.Parallel()
-		stage1 := pipelineDummyStage()
-		stage2 := pipelineDummyStage()
-		stage3 := pipelineDummyStage()
-		stage4 := pipelineDummyStage()
 		pipeline := pipelineDummyPipeline()
-		pipeline.AddStage(stage1)
-		pipeline.AddStage(stage2)
-		pipeline.AddStage(stage3)
-		pipeline.AddStage(stage4)
+		actualLocation := pipeline.GetTempChangeCaptureLocation()
+		expectedLocation := filepath.Join(pipeline.ChangeCaptureLocation, "tmp")
+		if actualLocation != expectedLocation {
+			t.Errorf("Expected location to be '%s', but was '%s'", expectedLocation, actualLocation)
+		}
+	})
+}
 
-		if len(stage1.GetPrevChangeCaptureLocations()) != 0 {
-			t.Errorf("Expected stage1 to have 0 prev change capture locations, but had %d", len(stage1.GetPrevChangeCaptureLocations()))
-		}
-		if len(stage2.GetPrevChangeCaptureLocations()) != 1 {
-			t.Errorf("Expected stage2 to have 1 prev change capture location, but had %d", len(stage2.GetPrevChangeCaptureLocations()))
-		}
-		if len(stage3.GetPrevChangeCaptureLocations()) != 2 {
-			t.Errorf("Expected stage3 to have 2 prev change capture locations, but had %d", len(stage3.GetPrevChangeCaptureLocations()))
-		}
-		if len(stage4.GetPrevChangeCaptureLocations()) != 3 {
-			t.Errorf("Expected stage4 to have 3 prev change capture locations, but had %d", len(stage4.GetPrevChangeCaptureLocations()))
+// endregion
+
+// region GetFinalSteps
+
+func TestGetFinalSteps(t *testing.T) {
+	t.Parallel()
+
+	t.Run("should return correct steps", func(t *testing.T) {
+		t.Parallel()
+
+		pipeline := pipelineDummyPipeline()
+		executionGroup := pipelineDummyExecutionGroup()
+		step1 := pipelineDummyStep(1)
+		executionGroup.AddStep(step1)
+		step2 := pipelineDummyStep(2)
+		executionGroup.AddStep(step2)
+		pipeline.AddExecutionGroup(executionGroup)
+
+		actualSteps := pipeline.GetFinalSteps()
+
+		if len(actualSteps) != 2 {
+			t.Fatalf("Expected 2 steps, but had %d", len(actualSteps))
 		}
 
-		expected := []string{
-			stage1.ChangeCaptureLocation,
-			stage2.ChangeCaptureLocation,
-			stage3.ChangeCaptureLocation,
+		if actualSteps[0] != step1 {
+			t.Errorf("Expected step to be %v, but was %v", step1, actualSteps[0])
 		}
-		actual := stage4.GetPrevChangeCaptureLocations()
 
-		if !reflect.DeepEqual(actual, expected) {
-			t.Errorf("Expected prev change capture locations to be %v, but was %v", expected, actual)
+		if actualSteps[1] != step2 {
+			t.Errorf("Expected step to be %v, but was %v", step2, actualSteps[1])
+		}
+	})
+
+	t.Run("should return correct steps with dependencies", func(t *testing.T) {
+		t.Parallel()
+
+		pipeline := pipelineDummyPipeline()
+		executionGroup := pipelineDummyExecutionGroup()
+		step1 := pipelineDummyStep(1)
+		executionGroup.AddStep(step1)
+		step2 := pipelineDummyStep(2)
+		step2.AddDependency(step1)
+		executionGroup.AddStep(step2)
+		pipeline.AddExecutionGroup(executionGroup)
+
+		actualSteps := pipeline.GetFinalSteps()
+
+		if len(actualSteps) != 1 {
+			t.Fatalf("Expected 1 steps, but had %d", len(actualSteps))
+		}
+
+		if actualSteps[0] != step2 {
+			t.Errorf("Expected step to be %v, but was %v", step2, actualSteps[0])
 		}
 	})
 }

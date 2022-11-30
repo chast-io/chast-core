@@ -46,7 +46,7 @@ func wildCardToRegexp(pattern string) string {
 	components := strings.Split(pattern, "*")
 	if len(components) == 1 {
 		// if len is 1, there are no *'s, return exact match pattern
-		return "^" + pattern + "$"
+		return "^" + regexp.QuoteMeta(pattern) + "$"
 	}
 
 	var result strings.Builder

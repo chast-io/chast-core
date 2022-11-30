@@ -25,5 +25,6 @@ func init() {
 	formatter := TextFormatter{} //nolint:exhaustruct // using defaults
 	Log.SetFormatter(&formatter)
 
-	Log.SetLevel(TraceLevel)
+	//Log.SetLevel(TraceLevel)
+	Log.SetLevel(DebugLevel)
 }

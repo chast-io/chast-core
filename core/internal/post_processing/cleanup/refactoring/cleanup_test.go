@@ -16,7 +16,7 @@ import (
 )
 
 // region Helpers
-func dummyPipeline(stages []*refactoringpipelinemodel.Stage) *refactoringpipelinemodel.Pipeline {
+func dummyPipeline(executionGroups []*refactoringpipelinemodel.ExecutionGroup) *refactoringpipelinemodel.Pipeline {
 	temp, err := os.MkdirTemp("", "cleanup_test_dummyPipeline")
 	if err != nil {
 		panic(err)
@@ -27,15 +27,15 @@ func dummyPipeline(stages []*refactoringpipelinemodel.Stage) *refactoringpipelin
 		filepath.Join(temp, "changeCaptureLocation"),
 		filepath.Join(temp, "rootFileSystemLocation"))
 
-	for _, stage := range stages {
-		pipeline.AddStage(stage)
+	for _, executionGroup := range executionGroups {
+		pipeline.AddExecutionGroup(executionGroup)
 	}
 
 	return pipeline
 }
 
-func dummyStage(nr int, steps []*refactoringpipelinemodel.Step) *refactoringpipelinemodel.Stage {
-	stage := refactoringpipelinemodel.NewStage("stage_name" + strconv.Itoa(nr))
+func dummyExecutionGroup(steps []*refactoringpipelinemodel.Step) *refactoringpipelinemodel.ExecutionGroup {
+	stage := refactoringpipelinemodel.NewExecutionGroup()
 
 	for _, step := range steps {
 		stage.AddStep(step)
@@ -67,7 +67,7 @@ func createFolders(pipeline *refactoringpipelinemodel.Pipeline) {
 	_ = os.MkdirAll(filepath.Join(pipeline.RootFileSystemLocation, "tmp"), os.ModePerm)
 	_ = os.MkdirAll(filepath.Join(pipeline.RootFileSystemLocation, "var"), os.ModePerm)
 
-	for _, stage := range pipeline.Stages {
+	for _, stage := range pipeline.ExecutionGroups {
 		for _, step := range stage.Steps {
 			_ = os.MkdirAll(step.OperationLocation, os.ModePerm)
 			_ = os.MkdirAll(step.ChangeCaptureLocation, os.ModePerm)
@@ -76,12 +76,12 @@ func createFolders(pipeline *refactoringpipelinemodel.Pipeline) {
 }
 
 func createSubPaths(pipeline *refactoringpipelinemodel.Pipeline, paths [][]string) {
-	stageIndex := 0
+	executionGroupIndex := 0
 	stepIndex := 0
 
-	for _, stageStep := range paths {
-		for _, path := range stageStep {
-			location := filepath.Join(pipeline.Stages[stageIndex].Steps[stepIndex].ChangeCaptureLocation, path)
+	for _, executionGroup := range paths {
+		for _, path := range executionGroup {
+			location := filepath.Join(pipeline.ExecutionGroups[executionGroupIndex].Steps[stepIndex].ChangeCaptureLocation, path)
 			if strings.HasSuffix(path, "/") {
 				_ = os.MkdirAll(location, os.ModePerm)
 			} else {
@@ -91,9 +91,9 @@ func createSubPaths(pipeline *refactoringpipelinemodel.Pipeline, paths [][]strin
 		}
 
 		stepIndex++
-		if stepIndex >= len(pipeline.Stages[stageIndex].Steps) {
+		if stepIndex >= len(pipeline.ExecutionGroups[executionGroupIndex].Steps) {
 			stepIndex = 0
-			stageIndex++
+			executionGroupIndex++
 		}
 	}
 }
@@ -158,24 +158,24 @@ func TestCleanupPipeline(t *testing.T) {
 			expectedFileStructure: nil,
 		},
 		{
-			name: "should merge stages and steps folders and files",
+			name: "should merge steps folders and files",
 			args: args{
 				getPipeline: func() *refactoringpipelinemodel.Pipeline {
 					return dummyPipeline(
-						[]*refactoringpipelinemodel.Stage{
-							dummyStage(1,
+						[]*refactoringpipelinemodel.ExecutionGroup{
+							dummyExecutionGroup(
 								[]*refactoringpipelinemodel.Step{
 									dummyStep(1),
 									dummyStep(2),
 								},
 							),
-							dummyStage(2,
+							dummyExecutionGroup(
 								[]*refactoringpipelinemodel.Step{
 									dummyStep(3),
 									dummyStep(4),
 								},
 							),
-							dummyStage(3,
+							dummyExecutionGroup(
 								[]*refactoringpipelinemodel.Step{
 									dummyStep(5),
 									dummyStep(6),
@@ -208,24 +208,24 @@ func TestCleanupPipeline(t *testing.T) {
 			},
 		},
 		{
-			name: "should merge stages and steps and delete empty folders",
+			name: "should merge steps and delete empty folders",
 			args: args{
 				getPipeline: func() *refactoringpipelinemodel.Pipeline {
 					return dummyPipeline(
-						[]*refactoringpipelinemodel.Stage{
-							dummyStage(1,
+						[]*refactoringpipelinemodel.ExecutionGroup{
+							dummyExecutionGroup(
 								[]*refactoringpipelinemodel.Step{
 									dummyStep(1),
 									dummyStep(2),
 								},
 							),
-							dummyStage(2,
+							dummyExecutionGroup(
 								[]*refactoringpipelinemodel.Step{
 									dummyStep(3),
 									dummyStep(4),
 								},
 							),
-							dummyStage(3,
+							dummyExecutionGroup(
 								[]*refactoringpipelinemodel.Step{
 									dummyStep(5),
 									dummyStep(6),
@@ -255,28 +255,32 @@ func TestCleanupPipeline(t *testing.T) {
 			},
 		},
 		{
-			name: "should merge stages and steps and keep marked as deleted paths",
+			name: "should merge steps and keep marked as deleted paths",
 			args: args{
 				getPipeline: func() *refactoringpipelinemodel.Pipeline {
+					step1 := dummyStep(1)
+					step2 := dummyStep(2)
+					step3 := dummyStep(3)
+					step4 := dummyStep(4)
+					step5 := dummyStep(5)
+					step6 := dummyStep(6)
+
+					step3.AddDependency(step2)
+					step4.AddDependency(step1)
+
+					step5.AddDependency(step4)
+					step6.AddDependency(step3)
+
 					return dummyPipeline(
-						[]*refactoringpipelinemodel.Stage{
-							dummyStage(1,
-								[]*refactoringpipelinemodel.Step{
-									dummyStep(1),
-									dummyStep(2),
-								},
+						[]*refactoringpipelinemodel.ExecutionGroup{
+							dummyExecutionGroup(
+								[]*refactoringpipelinemodel.Step{step1, step2},
 							),
-							dummyStage(2,
-								[]*refactoringpipelinemodel.Step{
-									dummyStep(3),
-									dummyStep(4),
-								},
+							dummyExecutionGroup(
+								[]*refactoringpipelinemodel.Step{step3, step4},
 							),
-							dummyStage(3,
-								[]*refactoringpipelinemodel.Step{
-									dummyStep(5),
-									dummyStep(6),
-								},
+							dummyExecutionGroup(
+								[]*refactoringpipelinemodel.Step{step5, step6},
 							),
 						},
 					)
@@ -307,8 +311,8 @@ func TestCleanupPipeline(t *testing.T) {
 			args: args{
 				getPipeline: func() *refactoringpipelinemodel.Pipeline {
 					return dummyPipeline(
-						[]*refactoringpipelinemodel.Stage{
-							dummyStage(1,
+						[]*refactoringpipelinemodel.ExecutionGroup{
+							dummyExecutionGroup(
 								[]*refactoringpipelinemodel.Step{
 									dummyStep(1),
 									dummyStep(2),
@@ -330,8 +334,8 @@ func TestCleanupPipeline(t *testing.T) {
 			args: args{
 				getPipeline: func() *refactoringpipelinemodel.Pipeline {
 					return dummyPipeline(
-						[]*refactoringpipelinemodel.Stage{
-							dummyStage(1,
+						[]*refactoringpipelinemodel.ExecutionGroup{
+							dummyExecutionGroup(
 								[]*refactoringpipelinemodel.Step{
 									dummyStep(1),
 									dummyStep(2),
@@ -383,40 +387,8 @@ func TestCleanupPipeline(t *testing.T) {
 				checkFolderEquality(t, testCase.expectedFileStructure, pipeline.ChangeCaptureLocation)
 			}
 
-			operationLocationsShouldBeDeleted(t, pipeline)
+			operationLocationsShouldBeEmpty(t, pipeline)
 			rootFileSystemShouldBeUnaltered(t, pipeline)
-		})
-	}
-}
-
-// endregion
-
-// region CleanupStage
-
-func TestCleanupStage(t *testing.T) {
-	t.Parallel()
-
-	type args struct {
-		stage *refactoringpipelinemodel.Stage
-	}
-
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-
-	for i := range tests {
-		testCase := tests[i]
-
-		t.Run(testCase.name, func(t *testing.T) {
-			t.Parallel()
-
-			if err := uut.CleanupStage(testCase.args.stage); (err != nil) != testCase.wantErr {
-				t.Errorf("CleanupStage() error = %v, wantErr %v", err, testCase.wantErr)
-			}
 		})
 	}
 }
@@ -454,7 +426,7 @@ func checkFolderEquality(t *testing.T, expectedFileStructure []string, checkFold
 	})
 }
 
-func operationLocationsShouldBeDeleted(t *testing.T, pipeline *refactoringpipelinemodel.Pipeline) {
+func operationLocationsShouldBeEmpty(t *testing.T, pipeline *refactoringpipelinemodel.Pipeline) {
 	t.Helper()
 
 	t.Run("Operation locations should be empty", func(t *testing.T) {
@@ -462,13 +434,13 @@ func operationLocationsShouldBeDeleted(t *testing.T, pipeline *refactoringpipeli
 
 		fs := afero.NewOsFs()
 
-		exists, err := afero.Exists(fs, pipeline.OperationLocation)
+		empty, err := afero.IsEmpty(fs, pipeline.OperationLocation)
 		if err != nil {
-			t.Fatalf("Could not check if operation location exists: %v", err)
+			t.Fatalf("Could not check if operation location is empty: %v", err)
 		}
 
-		if exists {
-			t.Errorf("Operation locations should be deleted")
+		if !empty {
+			t.Errorf("Operation locations should be empty")
 		}
 	})
 }

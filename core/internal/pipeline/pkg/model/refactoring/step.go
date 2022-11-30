@@ -12,6 +12,10 @@ type Step struct {
 	UUID                  string
 	ChangeCaptureLocation string
 	OperationLocation     string
+
+	Pipeline     *Pipeline
+	Dependencies []*Step
+	Dependents   []*Step
 }
 
 func NewStep(runModel *refactoring.SingleRunModel) *Step {
@@ -23,7 +27,29 @@ func NewStep(runModel *refactoring.SingleRunModel) *Step {
 	}
 }
 
-func (s *Step) withStage(stage *Stage) {
-	s.ChangeCaptureLocation = filepath.Join(stage.ChangeCaptureLocation, s.UUID)
-	s.OperationLocation = filepath.Join(stage.OperationLocation, s.UUID)
+func (s *Step) withPipeline(pipeline *Pipeline) {
+	s.ChangeCaptureLocation = filepath.Join(pipeline.GetTempChangeCaptureLocation(), s.UUID)
+	s.OperationLocation = filepath.Join(pipeline.OperationLocation, s.UUID)
+	s.Pipeline = pipeline
+}
+
+func (s *Step) AddDependency(dependency *Step) {
+	s.Dependencies = append(s.Dependencies, dependency)
+	dependency.Dependents = append(dependency.Dependents, s)
+}
+
+func (s *Step) IsFinalStep() bool {
+	return len(s.Dependents) == 0
+}
+
+func (s *Step) GetFinalChangesLocation() string {
+	return s.ChangeCaptureLocation + "-final"
+}
+
+func (s *Step) GetPreviousChangesLocation() string {
+	return s.ChangeCaptureLocation + "-prev"
+}
+
+func (s *Step) ChangeFilteringLocations() *refactoring.ChangeLocations {
+	return s.RunModel.Run.ChangeLocations
 }

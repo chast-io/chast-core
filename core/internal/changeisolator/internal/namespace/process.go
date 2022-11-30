@@ -2,6 +2,7 @@ package namespace
 
 import (
 	"encoding/json"
+	"github.com/ttacon/chalk"
 	"io"
 	"os"
 	"os/exec"
@@ -65,7 +66,7 @@ func loadNamespaceContext() namespace.Context {
 func nsRun(nsContext namespace.Context) {
 	for _, command := range nsContext.Commands {
 		commandString := strings.Join(command, " ")
-		chastlog.Log.Debugf("Running command \"%s\" in isolated environment", commandString)
+		chastlog.Log.Debugf("Running command \"%s\" in isolated environment", chalk.Blue.Color(commandString))
 
 		cmd := exec.Command("/bin/bash", "-c", commandString) // TODO make runner configurable
 
@@ -78,5 +79,7 @@ func nsRun(nsContext namespace.Context) {
 		if err := cmd.Run(); err != nil {
 			chastlog.Log.Warnf("Error running command: %v", err)
 		}
+
+		chastlog.Log.Debugf("Running command done!")
 	}
 }

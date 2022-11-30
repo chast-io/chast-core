@@ -51,7 +51,7 @@ func (changeIsolator *IsolatorContext) Initialize() error {
 }
 
 func (changeIsolator *IsolatorContext) setupFolders() error {
-	chastlog.Log.Printf(
+	chastlog.Log.Debugf(
 		"Setting up folders: %s, %s",
 		changeIsolator.ChangeCaptureFolder,
 		changeIsolator.OperationDirectory,

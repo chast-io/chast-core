@@ -331,6 +331,26 @@ func TestWildcardString_Matches(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			name: "No wildcard but regex special characters 1 [not equal]",
+			fields: fields{
+				pattern: "test",
+			},
+			args: args{
+				value: "test.",
+			},
+			want: false,
+		},
+		{
+			name: "No wildcard but regex special characters 2 [not equal]",
+			fields: fields{
+				pattern: "test",
+			},
+			args: args{
+				value: "test.out",
+			},
+			want: false,
+		},
 	}
 
 	for i := range tests {
@@ -604,6 +624,26 @@ func TestWildcardString_MatchesPath(t *testing.T) {
 			},
 			args: args{
 				value: "/folder1/subfolder1/file1",
+			},
+			want: false,
+		},
+		{
+			name: "No wildcard but regex special characters 1 [not equal]",
+			fields: fields{
+				pattern: "/folder/test",
+			},
+			args: args{
+				value: "/folder/test.",
+			},
+			want: false,
+		},
+		{
+			name: "No wildcard but regex special characters 2 [not equal]",
+			fields: fields{
+				pattern: "/folder/test",
+			},
+			args: args{
+				value: "/folder/test.out",
 			},
 			want: false,
 		},

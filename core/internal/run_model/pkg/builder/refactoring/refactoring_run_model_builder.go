@@ -115,6 +115,7 @@ func convertRun(
 	newRun.Command = convertCommand(run.Script, variables)
 	newRun.Docker = convertDocker(run.Docker)
 	newRun.Local = convertLocal(run.Local)
+	newRun.ChangeLocations = convertChangeLocations(run, variables)
 
 	return newRun
 }
@@ -202,5 +203,20 @@ func convertRequiredTool(requiredTool recipemodel.RequiredTool) refactoring.Requ
 	return refactoring.RequiredTool{
 		Description: requiredTool.Description,
 		CheckCmd:    requiredTool.CheckCmd,
+	}
+}
+
+func convertChangeLocations(run recipemodel.Run, variables *runmodel.Variables) *refactoring.ChangeLocations {
+	includeLocations := collection.Map(run.IncludeChangeLocations, func(changeLocation string) string {
+		return replaceVariablesWithValues(changeLocation, variables.Map)
+	})
+
+	excludeLocations := collection.Map(run.ExcludeChangeLocations, func(changeLocation string) string {
+		return replaceVariablesWithValues(changeLocation, variables.Map)
+	})
+
+	return &refactoring.ChangeLocations{
+		Include: includeLocations,
+		Exclude: excludeLocations,
 	}
 }

@@ -1,6 +1,8 @@
 package local
 
 import (
+	"os"
+
 	changeisolator "chast.io/core/internal/changeisolator/pkg"
 	"chast.io/core/internal/changeisolator/pkg/namespace"
 	"chast.io/core/internal/changeisolator/pkg/strategy"
@@ -33,15 +35,13 @@ func (r *Runner) Run(pipeline *refactoringPipelineModel.Pipeline) error {
 }
 
 func sequentialRun(pipeline *refactoringPipelineModel.Pipeline) error {
-	for _, stage := range pipeline.Stages {
+	for _, stage := range pipeline.ExecutionGroups {
 		for _, step := range stage.Steps {
-			if err := runIsolated(step, stage, pipeline); err != nil {
+			chastlog.Log.Printf("Running step %s", step.UUID)
+
+			if err := runIsolated(step); err != nil {
 				return errorx.InternalError.Wrap(err, "Error running isolated")
 			}
-		}
-
-		if err := refactoringpipelinecleanup.CleanupStage(stage); err != nil {
-			return errorx.InternalError.Wrap(err, "Error cleaning up stage")
 		}
 	}
 
@@ -54,12 +54,14 @@ func sequentialRun(pipeline *refactoringPipelineModel.Pipeline) error {
 
 func runIsolated(
 	step *refactoringPipelineModel.Step,
-	stage *refactoringPipelineModel.Stage,
-	pipeline *refactoringPipelineModel.Pipeline,
 ) error {
+	if err := os.MkdirAll(step.GetPreviousChangesLocation(), os.ModePerm); err != nil {
+		return errorx.ExternalError.Wrap(err, "Failed to create previous changes directory")
+	}
+
 	var nsContext = namespace.NewContext(
-		pipeline.RootFileSystemLocation,
-		stage.GetPrevChangeCaptureLocations(),
+		step.Pipeline.RootFileSystemLocation,
+		[]string{step.GetPreviousChangesLocation()},
 		step.ChangeCaptureLocation,
 		step.OperationLocation,
 		step.RunModel.Run.Command.WorkingDirectory,
@@ -69,6 +71,10 @@ func runIsolated(
 
 	if err := changeisolator.RunCommandInIsolatedEnvironment(nsContext); err != nil {
 		return errorx.InternalError.New("Error running command in isolated environment - %s", err)
+	}
+
+	if err := refactoringpipelinecleanup.CleanupStep(step); err != nil {
+		return errorx.InternalError.Wrap(err, "Failed to cleanup pipeline")
 	}
 
 	return nil

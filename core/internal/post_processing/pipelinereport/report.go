@@ -82,8 +82,12 @@ func (report *Report) ChangedFilesRelative() ([]string, error) {
 	return changedFilesRelative, nil
 }
 
+func (report *Report) FileTreeToString(colorize bool) (string, error) {
+	return filetree.ToString(report.Pipeline.ChangeCaptureLocation, report.ChangeDiff, false, colorize)
+}
+
 func (report *Report) PrintFileTree(colorize bool) {
-	chastlog.Log.Println(filetree.ToString(report.Pipeline.ChangeCaptureLocation, report.ChangeDiff, false, colorize))
+	chastlog.Log.Println(report.FileTreeToString(colorize))
 }
 
 func (report *Report) PrintChanges(colorize bool) {

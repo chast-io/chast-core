@@ -18,6 +18,12 @@ type Run struct {
 	Docker             *Docker
 	Local              *Local
 	Command            *Command
+	ChangeLocations    *ChangeLocations
+}
+
+type ChangeLocations struct {
+	Include []string
+	Exclude []string
 }
 
 func (run *Run) GetUUID() string {

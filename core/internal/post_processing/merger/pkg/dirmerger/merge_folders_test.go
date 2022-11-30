@@ -300,7 +300,7 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 			wantErr: false,
 		},
 
-		// TODO: Add test cases.
+		// TODO: Skip locations
 	}
 
 	t.Parallel()
@@ -318,13 +318,86 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 				_ = os.RemoveAll(targetFolder)
 			})
 
-			if err := dirmerger.MergeFolders([]string{sourceFolder}, targetFolder, testCase.args.getMergeOptions()); (err != nil) != testCase.wantErr {
+			mergeEntities := dirmerger.NewMergeEntity(sourceFolder, nil)
+
+			if err := dirmerger.MergeFolders([]dirmerger.MergeEntity{mergeEntities}, targetFolder, testCase.args.getMergeOptions()); (err != nil) != testCase.wantErr {
 				t.Errorf("MergeFolders() error = %v, wantErr %v", err, testCase.wantErr)
 			}
 
 			checkFolderEquality(t, testCase.expectedFileStructure, targetFolder)
 		})
 	}
+
+	t.Run("Copy mode", func(t *testing.T) {
+		t.Parallel()
+
+		t.Run("Should copy folders", func(t *testing.T) {
+			t.Parallel()
+			options := dirmerger.NewMergeOptions()
+			options.CopyMode = true
+
+			sourceFileStructure := []string{
+				"/folder1/folder1/",
+			}
+			targetFileStructure := make([]string, 0)
+			expectedFileStructure := []string{
+				"/folder1/folder1/",
+			}
+			expectedSourceFileStructure := []string{
+				"/folder1/folder1/",
+			}
+
+			sourceFolder := fileStructureCreator(sourceFileStructure)
+			targetFolder := fileStructureCreator(targetFileStructure)
+
+			t.Cleanup(func() {
+				_ = os.RemoveAll(sourceFolder)
+				_ = os.RemoveAll(targetFolder)
+			})
+
+			mergeEntities := dirmerger.NewMergeEntity(sourceFolder, nil)
+
+			if err := dirmerger.MergeFolders([]dirmerger.MergeEntity{mergeEntities}, targetFolder, options); err != nil {
+				t.Errorf("MergeFolders() error = %v, wantErr %v", err, false)
+			}
+
+			checkFolderEquality(t, expectedSourceFileStructure, sourceFolder)
+			checkFolderEquality(t, expectedFileStructure, targetFolder)
+		})
+		t.Run("Should copy files", func(t *testing.T) {
+			t.Parallel()
+			options := dirmerger.NewMergeOptions()
+			options.CopyMode = true
+
+			sourceFileStructure := []string{
+				"/folder1/folder1/file",
+			}
+			targetFileStructure := make([]string, 0)
+			expectedFileStructure := []string{
+				"/folder1/folder1/file",
+			}
+			expectedSourceFileStructure := []string{
+				"/folder1/folder1/file",
+			}
+
+			sourceFolder := fileStructureCreator(sourceFileStructure)
+			targetFolder := fileStructureCreator(targetFileStructure)
+
+			t.Cleanup(func() {
+				_ = os.RemoveAll(sourceFolder)
+				_ = os.RemoveAll(targetFolder)
+			})
+
+			mergeEntities := dirmerger.NewMergeEntity(sourceFolder, nil)
+
+			if err := dirmerger.MergeFolders([]dirmerger.MergeEntity{mergeEntities}, targetFolder, options); err != nil {
+				t.Errorf("MergeFolders() error = %v, wantErr %v", err, false)
+			}
+
+			checkFolderEquality(t, expectedSourceFileStructure, sourceFolder)
+			checkFolderEquality(t, expectedFileStructure, targetFolder)
+		})
+	})
 }
 
 func checkFolderEquality(t *testing.T, expectedFileStructure []string, checkFolder string) {
@@ -562,7 +635,9 @@ func TestAreMergeable(t *testing.T) {
 				_ = os.RemoveAll(targetFolder)
 			})
 
-			mergeable, err := dirmerger.AreMergeable([]string{sourceFolder}, targetFolder, testCase.args.getMergeOptions())
+			mergeEntities := dirmerger.NewMergeEntity(sourceFolder, nil)
+
+			mergeable, err := dirmerger.AreMergeable([]dirmerger.MergeEntity{mergeEntities}, targetFolder, testCase.args.getMergeOptions())
 			if (err != nil) != testCase.wantErr {
 				t.Errorf("MergeFolders() error = %v, wantErr %v", err, testCase.wantErr)
 			}
@@ -592,7 +667,9 @@ func TestAreMergeable(t *testing.T) {
 		options.BlockOverwrite = true
 		options.DeleteMarkedAsDeletedPaths = true
 
-		_, _ = dirmerger.AreMergeable([]string{sourceFolder}, targetFolder, options)
+		mergeEntities := dirmerger.NewMergeEntity(sourceFolder, nil)
+
+		_, _ = dirmerger.AreMergeable([]dirmerger.MergeEntity{mergeEntities}, targetFolder, options)
 
 		if options.DryRun != false || options.BlockOverwrite != true || options.DeleteMarkedAsDeletedPaths != true {
 			t.Errorf("MergeFolders() options were modified")

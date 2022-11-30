@@ -104,36 +104,39 @@ func testParseRecipeRefactoringCompleteValid(t *testing.T) {
 			}
 
 			testRun(t, &recipe.Runs[0], recipemodel.Run{
-				ID:                  "rearrange_class_members_java",
-				Dependencies:        make([]string, 0),
-				SupportedExtensions: []string{"java"},
-				Flags:               make([]recipemodel.Flag, 0),
-				Docker:              nil,
-				Local:               nil,
-				Script:              []string{"java -jar ./file.jar $inputFile $configFile > ${inputFile}.out"},
-				ChangeLocations:     make([]string, 0),
+				ID:                     "rearrange_class_members_java",
+				Dependencies:           make([]string, 0),
+				SupportedExtensions:    []string{"java"},
+				Flags:                  make([]recipemodel.Flag, 0),
+				Docker:                 nil,
+				Local:                  nil,
+				Script:                 []string{"java -jar ./file.jar $inputFile $configFile > ${inputFile}.out"},
+				IncludeChangeLocations: make([]string, 0),
+				ExcludeChangeLocations: make([]string, 0),
 			})
 
 			testRun(t, &recipe.Runs[1], recipemodel.Run{
-				ID:                  "mv_files",
-				Dependencies:        []string{"rearrange_class_members_java"},
-				SupportedExtensions: make([]string, 0),
-				Flags:               make([]recipemodel.Flag, 0),
-				Docker:              nil,
-				Local:               nil,
-				Script:              []string{"mv ${inputFile}.out $inputFile"},
-				ChangeLocations:     make([]string, 0),
+				ID:                     "mv_files",
+				Dependencies:           []string{"rearrange_class_members_java"},
+				SupportedExtensions:    make([]string, 0),
+				Flags:                  make([]recipemodel.Flag, 0),
+				Docker:                 nil,
+				Local:                  nil,
+				Script:                 []string{"mv ${inputFile}.out $inputFile"},
+				IncludeChangeLocations: make([]string, 0),
+				ExcludeChangeLocations: make([]string, 0),
 			})
 
 			testRun(t, &recipe.Runs[2], recipemodel.Run{
-				ID:                  "rearrange_class_members_cs",
-				Dependencies:        make([]string, 0),
-				SupportedExtensions: []string{"cs"},
-				Flags:               make([]recipemodel.Flag, 0),
-				Docker:              nil,
-				Local:               nil,
-				Script:              []string{"java -jar ./file.jar $inputFile $configFile > ${inputFile}.out", "mv ${inputFile}.out $inputFile"},
-				ChangeLocations:     make([]string, 0),
+				ID:                     "rearrange_class_members_cs",
+				Dependencies:           make([]string, 0),
+				SupportedExtensions:    []string{"cs"},
+				Flags:                  make([]recipemodel.Flag, 0),
+				Docker:                 nil,
+				Local:                  nil,
+				Script:                 []string{"java -jar ./file.jar $inputFile $configFile > ${inputFile}.out", "mv ${inputFile}.out $inputFile"},
+				IncludeChangeLocations: make([]string, 0),
+				ExcludeChangeLocations: make([]string, 0),
 			})
 		})
 
