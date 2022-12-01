@@ -213,6 +213,11 @@ func handleConflictingFolder(
 		return nil
 	}
 
+	if options.BlockOverwrite {
+		return errorx.InternalError.Wrap(errMergeOverwriteBlock,
+			"Cannot overwrite conflicting path \"%s\" with \"%s\"", conflictingPath, sourcePath)
+	}
+
 	// cases:
 	// 1. source folder does not exist -> copy
 	// 2. folder -> deleted:
