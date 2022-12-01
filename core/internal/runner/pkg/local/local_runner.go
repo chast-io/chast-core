@@ -1,6 +1,8 @@
 package local
 
 import (
+	pipelinepostprocessor "chast.io/core/internal/post_processing/pipeline_post_processor/pkg/refactoring"
+	steppostprocessor "chast.io/core/internal/post_processing/step_post_processor/pkg/refactoring"
 	"os"
 
 	changeisolator "chast.io/core/internal/changeisolator/pkg"
@@ -8,7 +10,6 @@ import (
 	"chast.io/core/internal/changeisolator/pkg/strategy"
 	chastlog "chast.io/core/internal/logger"
 	refactoringPipelineModel "chast.io/core/internal/pipeline/pkg/model/refactoring"
-	refactoringpipelinecleanup "chast.io/core/internal/post_processing/cleanup/refactoring"
 	"github.com/joomcode/errorx"
 )
 
@@ -45,8 +46,8 @@ func sequentialRun(pipeline *refactoringPipelineModel.Pipeline) error {
 		}
 	}
 
-	if err := refactoringpipelinecleanup.CleanupPipeline(pipeline); err != nil {
-		return errorx.InternalError.Wrap(err, "Failed to cleanup pipeline")
+	if err := pipelinepostprocessor.Process(pipeline); err != nil {
+		return errorx.InternalError.Wrap(err, "Error running post processing")
 	}
 
 	return nil
@@ -55,13 +56,13 @@ func sequentialRun(pipeline *refactoringPipelineModel.Pipeline) error {
 func runIsolated(
 	step *refactoringPipelineModel.Step,
 ) error {
-	if err := os.MkdirAll(step.GetPreviousChangesLocation(), os.ModePerm); err != nil {
+	if err := os.MkdirAll(step.GetMergedPreviousChangesLocation(), os.ModePerm); err != nil {
 		return errorx.ExternalError.Wrap(err, "Failed to create previous changes directory")
 	}
 
 	var nsContext = namespace.NewContext(
 		step.Pipeline.RootFileSystemLocation,
-		[]string{step.GetPreviousChangesLocation()},
+		step.GetPreviousChangesLocations(),
 		step.ChangeCaptureLocation,
 		step.OperationLocation,
 		step.RunModel.Run.Command.WorkingDirectory,
@@ -73,8 +74,8 @@ func runIsolated(
 		return errorx.InternalError.New("Error running command in isolated environment - %s", err)
 	}
 
-	if err := refactoringpipelinecleanup.CleanupStep(step); err != nil {
-		return errorx.InternalError.Wrap(err, "Failed to cleanup pipeline")
+	if err := steppostprocessor.Process(step); err != nil {
+		return errorx.InternalError.Wrap(err, "Error running post processing")
 	}
 
 	return nil

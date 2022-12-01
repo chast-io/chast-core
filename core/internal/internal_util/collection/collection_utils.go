@@ -77,3 +77,11 @@ func Reduce[S interface{}, T interface{}](source []S, f func(S, T) T, initial T)
 
 	return accumulator
 }
+
+func Prepend[S interface{}](source []S, elements ...S) []S {
+	return append(elements, source...)
+}
+
+func Append[S interface{}](source []S, elements ...S) []S {
+	return append(source, elements...)
+}

@@ -1,6 +1,7 @@
-package refactoringpipelinecleanup_test
+package pipelinepostprocessor_test
 
 import (
+	steppostprocessor "chast.io/core/internal/post_processing/step_post_processor/pkg/refactoring"
 	"os"
 	"path/filepath"
 	"sort"
@@ -10,14 +11,14 @@ import (
 
 	chastlog "chast.io/core/internal/logger"
 	refactoringpipelinemodel "chast.io/core/internal/pipeline/pkg/model/refactoring"
-	uut "chast.io/core/internal/post_processing/cleanup/refactoring"
+	uut "chast.io/core/internal/post_processing/pipeline_post_processor/pkg/refactoring"
 	"chast.io/core/internal/run_model/pkg/model/refactoring"
 	"github.com/spf13/afero"
 )
 
 // region Helpers
 func dummyPipeline(executionGroups []*refactoringpipelinemodel.ExecutionGroup) *refactoringpipelinemodel.Pipeline {
-	temp, err := os.MkdirTemp("", "cleanup_test_dummyPipeline")
+	temp, err := os.MkdirTemp("", "pipeline_post_processor_test_dummyPipeline")
 	if err != nil {
 		panic(err)
 	}
@@ -50,9 +51,10 @@ func dummyStep(nr int) *refactoringpipelinemodel.Step {
 			ID:                 "runId" + strconv.Itoa(nr),
 			Dependencies:       make([]*refactoring.Run, 0),
 			SupportedLanguages: []string{"java"},
-			Docker:             &refactoring.Docker{},  //nolint:exhaustruct // not required for test
-			Local:              &refactoring.Local{},   //nolint:exhaustruct // not required for test
-			Command:            &refactoring.Command{}, //nolint:exhaustruct // not required for test
+			Docker:             &refactoring.Docker{},          //nolint:exhaustruct // not required for test
+			Local:              &refactoring.Local{},           //nolint:exhaustruct // not required for test
+			Command:            &refactoring.Command{},         //nolint:exhaustruct // not required for test
+			ChangeLocations:    &refactoring.ChangeLocations{}, //nolint:exhaustruct // not required for test
 		},
 	}
 
@@ -135,7 +137,8 @@ func collectPathsInFolder(targetFolder string) ([]string, error) {
 
 // region CleanupPipeline
 
-func TestCleanupPipeline(t *testing.T) {
+//nolint:gocognit
+func TestProcess(t *testing.T) { //nolint:maintidx // nested test cases
 	t.Parallel()
 
 	type args struct {
@@ -152,7 +155,9 @@ func TestCleanupPipeline(t *testing.T) {
 		{
 			name: "should fail if pipeline is nil",
 			args: args{
-				getPipeline: nil,
+				getPipeline: func() *refactoringpipelinemodel.Pipeline {
+					return nil
+				},
 			},
 			wantErr:               true,
 			expectedFileStructure: nil,
@@ -202,53 +207,6 @@ func TestCleanupPipeline(t *testing.T) {
 
 				"/folder3/file.go",
 				"/folder4/file.go",
-
-				"/folder5/file.go",
-				"/folder6/file.go",
-			},
-		},
-		{
-			name: "should merge steps and delete empty folders",
-			args: args{
-				getPipeline: func() *refactoringpipelinemodel.Pipeline {
-					return dummyPipeline(
-						[]*refactoringpipelinemodel.ExecutionGroup{
-							dummyExecutionGroup(
-								[]*refactoringpipelinemodel.Step{
-									dummyStep(1),
-									dummyStep(2),
-								},
-							),
-							dummyExecutionGroup(
-								[]*refactoringpipelinemodel.Step{
-									dummyStep(3),
-									dummyStep(4),
-								},
-							),
-							dummyExecutionGroup(
-								[]*refactoringpipelinemodel.Step{
-									dummyStep(5),
-									dummyStep(6),
-								},
-							),
-						},
-					)
-				},
-			},
-			wantErr: false,
-			changedPaths: [][]string{
-				{"/folder1/file.go"},
-				{"/folder2/file.go"},
-
-				{"/folder3/"},
-				{"/folder4/"},
-
-				{"/folder5/file.go"},
-				{"/folder6/file.go"},
-			},
-			expectedFileStructure: []string{
-				"/folder1/file.go",
-				"/folder2/file.go",
 
 				"/folder5/file.go",
 				"/folder6/file.go",
@@ -352,6 +310,44 @@ func TestCleanupPipeline(t *testing.T) {
 			},
 			expectedFileStructure: nil,
 		},
+		{
+			name: "should be able to create deleted path",
+			args: args{
+				getPipeline: func() *refactoringpipelinemodel.Pipeline {
+					step1 := dummyStep(1)
+					step2 := dummyStep(2)
+					step3 := dummyStep(3)
+
+					step2.AddDependency(step1)
+					step3.AddDependency(step2)
+
+					return dummyPipeline(
+						[]*refactoringpipelinemodel.ExecutionGroup{
+							dummyExecutionGroup(
+								[]*refactoringpipelinemodel.Step{step1},
+							),
+							dummyExecutionGroup(
+								[]*refactoringpipelinemodel.Step{step2},
+							),
+							dummyExecutionGroup(
+								[]*refactoringpipelinemodel.Step{step3},
+							),
+						},
+					)
+				},
+			},
+			wantErr: false,
+			changedPaths: [][]string{
+				{"/folder1/file.go"},
+
+				{"/.unionfs-fuse/folder1_HIDDEN~/"},
+
+				{"/folder1/"},
+			},
+			expectedFileStructure: []string{
+				"/folder1/",
+			},
+		},
 	}
 
 	for i := range tests {
@@ -360,20 +356,25 @@ func TestCleanupPipeline(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			var pipeline *refactoringpipelinemodel.Pipeline
-
-			if testCase.args.getPipeline != nil {
-				pipeline = testCase.args.getPipeline()
-
+			pipeline := testCase.args.getPipeline()
+			if pipeline != nil {
 				createFolders(pipeline)
 				if testCase.changedPaths != nil {
 					createSubPaths(pipeline, testCase.changedPaths)
 				}
 
 				t.Cleanup(func() { cleanupCleanup(pipeline) })
+
+				for _, executionGroup := range pipeline.ExecutionGroups {
+					for _, step := range executionGroup.Steps {
+						if err := steppostprocessor.Process(step); err != nil {
+							t.Fatalf("unexpected error: %v", err)
+						}
+					}
+				}
 			}
 
-			if err := uut.CleanupPipeline(pipeline); (err != nil) != testCase.wantErr {
+			if err := uut.Process(pipeline); (err != nil) != testCase.wantErr {
 				t.Errorf("CleanupPipeline() error = %v, wantErr %v", err, testCase.wantErr)
 			} else if err != nil {
 				chastlog.Log.Debugf("Reported error: %v", err)
@@ -391,6 +392,15 @@ func TestCleanupPipeline(t *testing.T) {
 			rootFileSystemShouldBeUnaltered(t, pipeline)
 		})
 	}
+}
+
+// endregion
+
+// region CleanupStep
+
+func TestUnionFSCleanupStep(t *testing.T) {
+	t.Parallel()
+	// TODO cases where meta folders are not initially merged
 }
 
 // endregion

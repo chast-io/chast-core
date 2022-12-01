@@ -52,7 +52,7 @@ func removeMarkedAsDeletedPath(
 
 	if exists {
 		if options.BlockOverwrite {
-			return errorx.InternalError.Wrap(errMergeOverwriteBlock, "Failed to remove marked as deleted path")
+			return errorx.InternalError.Wrap(errMergeOverwriteBlock, "Failed to remove marked as deleted path: %s", path)
 		}
 
 		if !options.DryRun {

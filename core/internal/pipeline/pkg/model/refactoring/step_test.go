@@ -232,7 +232,7 @@ func TestStep_GetFinalChangesLocation(t *testing.T) {
 
 // endregion
 
-// region GetPreviousChangesLocation
+// region GetMergedPreviousChangesLocation
 
 func TestStep_GetPreviousChangesLocation(t *testing.T) {
 	t.Parallel()
@@ -243,7 +243,7 @@ func TestStep_GetPreviousChangesLocation(t *testing.T) {
 		step := stepDummyStep()
 		step.ChangeCaptureLocation = "changeCaptureLocation"
 
-		if step.GetPreviousChangesLocation() != step.ChangeCaptureLocation+"-prev" {
+		if step.GetMergedPreviousChangesLocation() != step.ChangeCaptureLocation+"-prev" {
 			t.Errorf("Expected previous changes location to be '%s', but was '%s'", step.ChangeCaptureLocation+"-prev", step.GetFinalChangesLocation())
 		}
 	})

@@ -1,6 +1,7 @@
 package refactoringpipelinemodel
 
 import (
+	"chast.io/core/internal/internal_util/collection"
 	"path/filepath"
 
 	"chast.io/core/internal/run_model/pkg/model/refactoring"
@@ -46,8 +47,29 @@ func (s *Step) GetFinalChangesLocation() string {
 	return s.ChangeCaptureLocation + "-final"
 }
 
-func (s *Step) GetPreviousChangesLocation() string {
+func (s *Step) GetChangesStagingLocation() string {
+	return s.ChangeCaptureLocation + "-staging"
+}
+
+func (s *Step) GetMergedPreviousChangesLocation() string {
 	return s.ChangeCaptureLocation + "-prev"
+}
+
+func (s *Step) GetPreviousChangesLocations() []string {
+	locations := make([]string, 0)
+	steps := make([]*Step, 0)
+
+	steps = append(steps, s.Dependencies...)
+
+	i := 0
+	for i < len(steps) {
+		step := steps[i]
+		locations = collection.Prepend(locations, step.ChangeCaptureLocation)
+		steps = append(steps, step.Dependencies...)
+		i++
+	}
+
+	return locations
 }
 
 func (s *Step) ChangeFilteringLocations() *refactoring.ChangeLocations {

@@ -68,14 +68,14 @@ func mergeFolders(mergeEntity MergeEntity, targetFolder string, options *MergeOp
 
 	sourceFolder := mergeEntity.SourcePath
 
-	if entityMergeOptions.MergeMetaFilesFolder {
-		if err := mergeMetaFolderIntoSource(sourceFolder, &entityMergeOptions); err != nil {
-			return errorx.InternalError.Wrap(err, "failed to merge meta folder into source")
-		}
-	}
-
 	if err := mergeSourceIntoTarget(sourceFolder, targetFolder, &entityMergeOptions); err != nil {
 		return errorx.InternalError.Wrap(err, "failed to merge source into target")
+	}
+
+	if entityMergeOptions.MergeMetaFilesFolder {
+		if err := flattenMetaFolder(targetFolder, &entityMergeOptions); err != nil {
+			return errorx.InternalError.Wrap(err, "failed to merge meta folder into source")
+		}
 	}
 
 	if entityMergeOptions.DeleteEmptyFolders {
@@ -93,23 +93,16 @@ func mergeFolders(mergeEntity MergeEntity, targetFolder string, options *MergeOp
 	return nil
 }
 
-func mergeMetaFolderIntoSource(sourceFolder string, options *MergeOptions) error {
-	metaFolderOptions := *options
-	metaFolderOptions.BlockOverwrite = true
-
-	return mergeSourceIntoTarget(
-		filepath.Join(sourceFolder, metaFolderOptions.MetaFilesLocation),
-		sourceFolder,
-		&metaFolderOptions,
-	)
-}
-
 func mergeSourceIntoTarget(sourceFolder string, targetFolder string, options *MergeOptions) error {
 	osFileSystem := afero.NewOsFs()
 
 	if walkError := afero.Walk(osFileSystem, sourceFolder, func(path string, info fs.FileInfo, _ error) error {
 		if info == nil {
 			return nil // exit if the file does not exist - this can happen due to a removal in a previous iteration
+		}
+
+		if path == sourceFolder {
+			return nil // skip the root folder
 		}
 
 		if options.ShouldSkip(strings.TrimPrefix(path, sourceFolder)) {
@@ -166,8 +159,10 @@ func moveFolder(
 
 	targetPath := targetPath(sourcePath, sourceRootFolder, targetRootFolder)
 
-	if err := handleConflictingMovePaths(sourcePath, targetPath, osFileSystem, options); err != nil {
-		return err
+	if !strings.HasPrefix(strings.TrimPrefix(sourcePath, sourceRootFolder), "/"+options.MetaFilesLocation) { // TODO cleanup
+		if err := handleConflictingFolder(sourcePath, targetPath, osFileSystem, options); err != nil {
+			return err
+		}
 	}
 
 	if !options.DryRun {
@@ -179,6 +174,60 @@ func moveFolder(
 			if err := cleanupPath(sourcePath, osFileSystem, options); err != nil {
 				return err
 			}
+		}
+	}
+
+	return nil
+}
+
+func handleConflictingFolder(
+	sourcePath string,
+	targetPath string,
+	osFileSystem afero.Fs,
+	options *MergeOptions,
+) error {
+	isDeletedPath := strings.HasSuffix(sourcePath, options.MetaFilesDeletedExtension)
+
+	var conflictingPath string
+	if isDeletedPath { // is a deleted path
+		conflictingPath = strings.TrimSuffix(targetPath, options.MetaFilesDeletedExtension)
+	} else { // is a normal path
+		conflictingPath = targetPath + options.MetaFilesDeletedExtension
+	}
+
+	conflictingPathExists, conflictingPathExistsError := afero.Exists(osFileSystem, conflictingPath)
+	if conflictingPathExistsError != nil {
+		return errorx.ExternalError.Wrap(conflictingPathExistsError, "Failed to check if conflicting path exists")
+	}
+
+	if !conflictingPathExists {
+		return nil // nothing to do
+	}
+
+	conflictingPathIsEmpty, conflictingPathIsEmptyError := afero.IsEmpty(osFileSystem, conflictingPath)
+	if conflictingPathIsEmptyError != nil {
+		return errorx.ExternalError.Wrap(conflictingPathIsEmptyError, "Failed to check if conflicting path is empty")
+	}
+
+	if options.DryRun {
+		return nil
+	}
+
+	// cases:
+	// 1. source folder does not exist -> copy
+	// 2. folder -> deleted:
+	//    a. target folder is empty, delete it
+	//    b. target folder is not empty, rename it
+	// 3. deleted -> folder:
+	//    a. target folder is empty, rename it
+	//    b. target folder is not empty, delete folder
+	if conflictingPathIsEmpty || isDeletedPath {
+		if err := cleanupPath(conflictingPath, osFileSystem, options); err != nil {
+			return errorx.InternalError.Wrap(err, "Failed to cleanup conflicting path")
+		}
+	} else {
+		if err := os.Rename(conflictingPath, targetPath); err != nil {
+			return errorx.ExternalError.Wrap(err, fmt.Sprintf("Failed to rename conflicting path \"%s\"", conflictingPath))
 		}
 	}
 
@@ -198,7 +247,7 @@ func moveFile(
 
 	targetPath := targetPath(sourcePath, sourceRootFolder, targetRootFolder)
 
-	if err := handleConflictingMovePaths(sourcePath, targetPath, osFileSystem, options); err != nil {
+	if err := handleConflictingFile(sourcePath, targetPath, osFileSystem, options); err != nil {
 		return err
 	}
 
@@ -223,17 +272,18 @@ func moveFile(
 	return nil
 }
 
-func handleConflictingMovePaths(
+func handleConflictingFile(
 	sourcePath string,
 	targetPath string,
 	osFileSystem afero.Fs,
 	options *MergeOptions,
 ) error {
-	var conflictingPath string
+	isDeletedPath := strings.HasSuffix(sourcePath, options.MetaFilesDeletedExtension)
 
-	if strings.HasSuffix(sourcePath, options.MetaFilesDeletedExtension) {
+	var conflictingPath string
+	if isDeletedPath { // is a deleted path
 		conflictingPath = strings.TrimSuffix(targetPath, options.MetaFilesDeletedExtension)
-	} else {
+	} else { // is a normal path
 		conflictingPath = targetPath + options.MetaFilesDeletedExtension
 	}
 
@@ -245,20 +295,17 @@ func handleConflictingMovePaths(
 		)
 	}
 
-	undeletedCounterpartExists, undeletedCounterpartExistenceCheckError := afero.Exists(osFileSystem, conflictingPath)
-	if undeletedCounterpartExistenceCheckError != nil {
+	deletionCounterpartExists, deletionCounterpartExistenceCheckError := afero.Exists(osFileSystem, conflictingPath)
+	if deletionCounterpartExistenceCheckError != nil {
 		return errorx.ExternalError.Wrap(
-			undeletedCounterpartExistenceCheckError,
+			deletionCounterpartExistenceCheckError,
 			"Failed to check if counterpart exists [case - deleted file]",
 		)
 	}
 
-	if existingCounterpartExists || undeletedCounterpartExists {
+	if (!isDeletedPath && existingCounterpartExists) || deletionCounterpartExists {
 		if options.BlockOverwrite {
-			return errorx.WithPayload(errMergeOverwriteBlock, struct {
-				sourcePath      string
-				conflictingPath string
-			}{sourcePath, conflictingPath})
+			return errorx.InternalError.Wrap(errMergeOverwriteBlock, "Failed to move path %s to %s", sourcePath, targetPath)
 		}
 
 		if !options.DryRun {

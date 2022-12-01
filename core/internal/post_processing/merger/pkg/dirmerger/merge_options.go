@@ -27,7 +27,7 @@ func NewMergeOptions() *MergeOptions {
 		DryRun: false,
 
 		BlockOverwrite:             false,
-		MergeMetaFilesFolder:       true,
+		MergeMetaFilesFolder:       false,
 		DeleteEmptyFolders:         false,
 		DeleteMarkedAsDeletedPaths: false,
 		CopyMode:                   false,
