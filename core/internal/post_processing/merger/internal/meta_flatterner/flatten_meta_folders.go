@@ -1,7 +1,6 @@
 package metaflatterner
 
 import (
-	"chast.io/core/internal/post_processing/merger/pkg/mergererrors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -11,6 +10,7 @@ import (
 	chastlog "chast.io/core/internal/logger"
 	pathutils "chast.io/core/internal/post_processing/merger/internal/path_utils"
 	"chast.io/core/internal/post_processing/merger/pkg/mergeoptions"
+	"chast.io/core/internal/post_processing/merger/pkg/mergererrors"
 	"github.com/joomcode/errorx"
 	"github.com/spf13/afero"
 )
@@ -110,7 +110,7 @@ func moveMetaFolder(
 
 		if !options.CopyMode {
 			if err := pathutils.CleanupPath(sourcePath); err != nil {
-				return err
+				return errorx.InternalError.Wrap(err, "Failed to cleanup folder")
 			}
 		}
 	}

@@ -107,7 +107,7 @@ func mergeSourceIntoTarget(sourceFolder string, targetFolder string, options *me
 
 	if !options.DryRun && sourceFolder != targetFolder && !options.CopyMode {
 		if err := pathutils.CleanupPath(sourceFolder); err != nil {
-			return err
+			return errorx.InternalError.Wrap(err, "failed to cleanup source folder")
 		}
 	}
 

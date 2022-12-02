@@ -58,7 +58,7 @@ func CollectPathsInFolder(targetFolder string) ([]string, error) {
 		return nil
 	})
 
-	return actualFileStructure, err
+	return actualFileStructure, err //nolint:wrapcheck // test helper
 }
 
 func FileStructureCreator(filesAndFolders []string, name string) string {

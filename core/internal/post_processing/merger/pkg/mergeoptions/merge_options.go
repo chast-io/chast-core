@@ -1,9 +1,10 @@
 package mergeoptions
 
 import (
-	wildcardstring "chast.io/core/internal/internal_util/wildcard_string"
 	"os"
 	"strings"
+
+	wildcardstring "chast.io/core/internal/internal_util/wildcard_string"
 )
 
 const unionFsMetaFolder = ".unionfs-fuse"

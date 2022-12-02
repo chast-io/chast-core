@@ -1,4 +1,4 @@
-package foldermover
+package foldermover //nolint: cyclop // refactor as soon as it makes sense
 
 import (
 	"fmt"
@@ -50,7 +50,7 @@ func MoveFolder(
 
 		if !options.CopyMode {
 			if err := pathutils.CleanupPath(sourcePath); err != nil {
-				return err
+				return errorx.InternalError.Wrap(err, "Failed to cleanup source path")
 			}
 		}
 	}

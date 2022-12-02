@@ -1,10 +1,10 @@
 package metaflatterner_test
 
 import (
-	wildcardstring "chast.io/core/internal/internal_util/wildcard_string"
 	"os"
 	"testing"
 
+	wildcardstring "chast.io/core/internal/internal_util/wildcard_string"
 	metaflatterner "chast.io/core/internal/post_processing/merger/internal/meta_flatterner"
 	testhelper "chast.io/core/internal/post_processing/merger/internal/test_helpers"
 	"chast.io/core/internal/post_processing/merger/pkg/mergeoptions"

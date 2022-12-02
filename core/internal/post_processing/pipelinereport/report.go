@@ -83,7 +83,12 @@ func (report *Report) ChangedFilesRelative() ([]string, error) {
 }
 
 func (report *Report) FileTreeToString(colorize bool) (string, error) {
-	return filetree.ToString(report.Pipeline.GetFinalChangeCaptureLocation(), report.ChangeDiff, false, colorize)
+	tree, err := filetree.ToString(report.Pipeline.GetFinalChangeCaptureLocation(), report.ChangeDiff, false, colorize)
+	if err != nil {
+		return "", errorx.InternalError.Wrap(err, "failed to build file tree")
+	}
+
+	return tree, nil
 }
 
 func (report *Report) PrintFileTree(colorize bool) {

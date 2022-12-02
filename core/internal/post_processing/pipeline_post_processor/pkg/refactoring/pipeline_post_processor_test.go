@@ -396,15 +396,6 @@ func TestProcess(t *testing.T) {
 
 // endregion
 
-// region CleanupStep
-
-func TestUnionFSCleanupStep(t *testing.T) {
-	t.Parallel()
-	// TODO cases where meta folders are not initially merged
-}
-
-// endregion
-
 // region Test Helpers
 
 func checkFolderEquality(t *testing.T, expectedFileStructure []string, checkFolder string) {

@@ -1,10 +1,10 @@
 package dirmerger_test
 
 import (
-	testhelper "chast.io/core/internal/post_processing/merger/internal/test_helpers"
 	"os"
 	"testing"
 
+	testhelper "chast.io/core/internal/post_processing/merger/internal/test_helpers"
 	"chast.io/core/internal/post_processing/merger/pkg/dirmerger"
 	"chast.io/core/internal/post_processing/merger/pkg/mergeoptions"
 )
@@ -332,7 +332,7 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 		t.Run("Should copy folders", func(t *testing.T) {
 			t.Parallel()
 
-			testId := "copyFolders"
+			testID := "copyFolders"
 
 			options := mergeoptions.NewMergeOptions()
 			options.CopyMode = true
@@ -348,8 +348,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 				"/folder1/folder1/",
 			}
 
-			sourceFolder := testhelper.FileStructureCreator(sourceFileStructure, "MergeFoldersTest"+testId)
-			targetFolder := testhelper.FileStructureCreator(targetFileStructure, "MergeFoldersTest"+testId)
+			sourceFolder := testhelper.FileStructureCreator(sourceFileStructure, "MergeFoldersTest"+testID)
+			targetFolder := testhelper.FileStructureCreator(targetFileStructure, "MergeFoldersTest"+testID)
 
 			t.Cleanup(func() {
 				_ = os.RemoveAll(sourceFolder)
@@ -368,7 +368,7 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 		t.Run("Should copy files", func(t *testing.T) {
 			t.Parallel()
 
-			testId := "ShouldCopyFiles"
+			testID := "ShouldCopyFiles"
 
 			options := mergeoptions.NewMergeOptions()
 			options.CopyMode = true
@@ -384,8 +384,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 				"/folder1/folder1/file",
 			}
 
-			sourceFolder := testhelper.FileStructureCreator(sourceFileStructure, "MergeFoldersTest"+testId)
-			targetFolder := testhelper.FileStructureCreator(targetFileStructure, "MergeFoldersTest"+testId)
+			sourceFolder := testhelper.FileStructureCreator(sourceFileStructure, "MergeFoldersTest"+testID)
+			targetFolder := testhelper.FileStructureCreator(targetFileStructure, "MergeFoldersTest"+testID)
 
 			t.Cleanup(func() {
 				_ = os.RemoveAll(sourceFolder)
@@ -591,11 +591,11 @@ func TestAreMergeable(t *testing.T) {
 	}
 
 	t.Run("Check if options are not modified", func(t *testing.T) {
-		testId := "TestCheckIfOptionsAreNotModified"
+		testID := "TestCheckIfOptionsAreNotModified"
 		t.Parallel()
 
-		sourceFolder := testhelper.FileStructureCreator([]string{"folder1/file1"}, "MergeFoldersTest"+testId)
-		targetFolder := testhelper.FileStructureCreator([]string{"folder1/file2"}, "MergeFoldersTest"+testId)
+		sourceFolder := testhelper.FileStructureCreator([]string{"folder1/file1"}, "MergeFoldersTest"+testID)
+		targetFolder := testhelper.FileStructureCreator([]string{"folder1/file2"}, "MergeFoldersTest"+testID)
 
 		t.Cleanup(func() {
 			_ = os.RemoveAll(sourceFolder)
