@@ -135,7 +135,7 @@ func validatePrimaryParameter(parameter *recipemodel.Parameter, supportedExtensi
 	}
 
 	// TODO make this configurable
-	options := []string{"filePath", "folderPath", "wildcardPath", "string", "int", "boolean"}
+	options := []string{"Path", "filePath", "folderPath", "wildcardPath", "string", "int", "boolean"}
 	if parameter.TypeExtension.Type == "" {
 		return errorx.IllegalFormat.New(fmt.Sprintf("Primary parameter type is required. Options: %s", options))
 	}

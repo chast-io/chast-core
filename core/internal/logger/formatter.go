@@ -87,7 +87,7 @@ func compileColorScheme(scheme *ColorScheme) *compiledColorScheme {
 	}
 }
 
-// Formatter implements logrus.Formatter interface.
+// TextFormatter implements logrus.Formatter interface.
 type TextFormatter struct {
 	colorScheme *compiledColorScheme
 }

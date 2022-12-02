@@ -8,14 +8,18 @@ import (
 	"github.com/joomcode/errorx"
 )
 
-func absolutizePath(flagValue string, typeExtension recipemodel.TypeExtension, wordingDir string) (string, error) {
-	if strings.HasSuffix(typeExtension.Type, "Path") && !strings.HasPrefix(flagValue, "/") {
-		abs, err := filepath.Abs(filepath.Join(wordingDir, flagValue))
+func absolutizePath(path string, typeExtension recipemodel.TypeExtension, wordingDir string) (string, error) {
+	if strings.HasSuffix(typeExtension.Type, "Path") && !strings.HasPrefix(path, "/") {
+		abs, err := filepath.Abs(filepath.Join(wordingDir, path))
 
-		return abs, errorx.ExternalError.Wrap(err, "Could not absolutize path")
+		if err != nil {
+			return path, errorx.ExternalError.Wrap(err, "Could not absolutize path")
+		}
+
+		return abs, nil
 	}
 
-	return flagValue, nil
+	return path, nil
 }
 
 func verifyPathExtension(value string, extensions []string) error {

@@ -51,7 +51,7 @@ func (changeIsolator *IsolatorContext) Initialize() error {
 }
 
 func (changeIsolator *IsolatorContext) setupFolders() error {
-	chastlog.Log.Printf(
+	chastlog.Log.Debugf(
 		"Setting up folders: %s, %s",
 		changeIsolator.ChangeCaptureFolder,
 		changeIsolator.OperationDirectory,
@@ -77,7 +77,9 @@ func (changeIsolator *IsolatorContext) CleanupInsideNS() error {
 func (changeIsolator *IsolatorContext) CleanupOutsideNS() error {
 	chastlog.Log.Tracef("[Outside NS] Cleaning up change isolator")
 
+	chastlog.Log.Tracef("Cleaning up folders: %s", changeIsolator.OperationDirectory)
 	isEmpty, isFolderEmptyError := folder.IsFolderEmpty(changeIsolator.OperationDirectory)
+
 	if isFolderEmptyError != nil {
 		return errorx.InternalError.Wrap(isFolderEmptyError, "Error checking if operation directory is empty")
 	}

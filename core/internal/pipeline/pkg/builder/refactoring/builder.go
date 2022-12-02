@@ -1,8 +1,6 @@
 package refactoringpipelinebuilder
 
 import (
-	"strconv"
-
 	"chast.io/core/internal/internal_util/collection"
 	dependencygraph "chast.io/core/internal/pipeline/internal/dependency_graph"
 	refactoringpipelinemodel "chast.io/core/internal/pipeline/pkg/model/refactoring"
@@ -21,15 +19,23 @@ func BuildRunPipeline(runModel *refactoring.RunModel) (*refactoringpipelinemodel
 	// TODO make configurable
 	pipeline := refactoringpipelinemodel.NewPipeline("/tmp/chast/", "/tmp/chast-changes/", "/")
 
-	for i, runModelsInStage := range isolatedExecutionOrder {
-		stage := refactoringpipelinemodel.NewStage(strconv.Itoa(i + 1))
+	stepsLookup := make(map[*refactoring.Run]*refactoringpipelinemodel.Step)
+
+	for _, runModelsInStage := range isolatedExecutionOrder {
+		executionGroup := refactoringpipelinemodel.NewExecutionGroup()
 
 		for _, runModel := range runModelsInStage {
 			step := refactoringpipelinemodel.NewStep(runModel)
-			stage.AddStep(step)
+			stepsLookup[runModel.Run] = step
+
+			for _, dependency := range runModel.Run.Dependencies {
+				step.AddDependency(stepsLookup[dependency])
+			}
+
+			executionGroup.AddStep(step)
 		}
 
-		pipeline.AddStage(stage)
+		pipeline.AddExecutionGroup(executionGroup)
 	}
 
 	return pipeline, nil

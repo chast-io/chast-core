@@ -49,25 +49,22 @@ run:
           checkCmd: java -version
     script:
       - java -jar ./rearrange_class_members-1.0-SNAPSHOT-all.jar $inputFile $configFile > ${inputFile}.out
-    changeLocations:
-      - $inputFile
   - id: mv_files
     dependencies:
       - rearrange_class_members
     script:
       - mv ${inputFile}.out $inputFile
-      #      - /bin/bash
-      - rm -rf ../../../core/
-    changeLocations:
+#      - rm -rf ../../../core/
+    includeChangeLocations:
       - $inputFile
-  - id: test1
-    dependencies:
-      - mv_files
-    script:
-      - echo "test" > ${inputFile}.out
-      - mkdir ../../../core/
-    changeLocations:
-      - $inputFile
+#  - id: test1
+#    dependencies:
+#      - mv_files
+#    script:
+#      - echo "test" > ${inputFile}.out
+#      - mkdir ../../../core/
+#    includeChangeLocations:
+#      - $inputFile
 
   - id: rearrange_class_members_cs
     supportedExtensions:
@@ -75,6 +72,8 @@ run:
     script:
       - java -jar ./rearrange_class_members-1.0-SNAPSHOT-all.jar $inputFile $configFile > ${inputFile}.out
       - mv ${inputFile}.out $inputFile
+    includeChangeLocations:
+      - $inputFile
 
 tests:
 

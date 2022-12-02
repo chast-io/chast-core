@@ -1,12 +1,15 @@
 package local
 
 import (
+	"os"
+
 	changeisolator "chast.io/core/internal/changeisolator/pkg"
 	"chast.io/core/internal/changeisolator/pkg/namespace"
 	"chast.io/core/internal/changeisolator/pkg/strategy"
 	chastlog "chast.io/core/internal/logger"
 	refactoringPipelineModel "chast.io/core/internal/pipeline/pkg/model/refactoring"
-	refactoringpipelinecleanup "chast.io/core/internal/post_processing/cleanup/refactoring"
+	pipelinepostprocessor "chast.io/core/internal/post_processing/pipeline_post_processor/pkg/refactoring"
+	steppostprocessor "chast.io/core/internal/post_processing/step_post_processor/pkg/refactoring"
 	"github.com/joomcode/errorx"
 )
 
@@ -33,20 +36,20 @@ func (r *Runner) Run(pipeline *refactoringPipelineModel.Pipeline) error {
 }
 
 func sequentialRun(pipeline *refactoringPipelineModel.Pipeline) error {
-	for _, stage := range pipeline.Stages {
+	for _, stage := range pipeline.ExecutionGroups {
 		for _, step := range stage.Steps {
-			if err := runIsolated(step, stage, pipeline); err != nil {
+			chastlog.Log.Printf("Running step %s", step.UUID)
+
+			if err := runIsolated(step); err != nil {
 				return errorx.InternalError.Wrap(err, "Error running isolated")
 			}
 		}
-
-		if err := refactoringpipelinecleanup.CleanupStage(stage); err != nil {
-			return errorx.InternalError.Wrap(err, "Error cleaning up stage")
-		}
 	}
 
-	if err := refactoringpipelinecleanup.CleanupPipeline(pipeline); err != nil {
-		return errorx.InternalError.Wrap(err, "Failed to cleanup pipeline")
+	chastlog.Log.Printf("Running pipeline post processing")
+
+	if err := pipelinepostprocessor.Process(pipeline); err != nil {
+		return errorx.InternalError.Wrap(err, "Error running post processing")
 	}
 
 	return nil
@@ -54,12 +57,14 @@ func sequentialRun(pipeline *refactoringPipelineModel.Pipeline) error {
 
 func runIsolated(
 	step *refactoringPipelineModel.Step,
-	stage *refactoringPipelineModel.Stage,
-	pipeline *refactoringPipelineModel.Pipeline,
 ) error {
+	if err := os.MkdirAll(step.GetMergedPreviousChangesLocation(), os.ModePerm); err != nil {
+		return errorx.ExternalError.Wrap(err, "Failed to create previous changes directory")
+	}
+
 	var nsContext = namespace.NewContext(
-		pipeline.RootFileSystemLocation,
-		stage.GetPrevChangeCaptureLocations(),
+		step.Pipeline.RootFileSystemLocation,
+		step.GetPreviousChangeCaptureLocations(),
 		step.ChangeCaptureLocation,
 		step.OperationLocation,
 		step.RunModel.Run.Command.WorkingDirectory,
@@ -69,6 +74,10 @@ func runIsolated(
 
 	if err := changeisolator.RunCommandInIsolatedEnvironment(nsContext); err != nil {
 		return errorx.InternalError.New("Error running command in isolated environment - %s", err)
+	}
+
+	if err := steppostprocessor.Process(step); err != nil {
+		return errorx.InternalError.Wrap(err, "Error running post processing")
 	}
 
 	return nil

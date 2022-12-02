@@ -42,8 +42,11 @@ func BuildRunModel(
 	}
 
 	runModel, runModelBuildError := runModelBuilder.BuildRunModel(parsedRecipe, variables, arguments, flags)
+	if runModelBuildError != nil {
+		return nil, errorx.InternalError.Wrap(runModelBuildError, "Failed to build run model")
+	}
 
-	return runModel, errorx.InternalError.Wrap(runModelBuildError, "Failed to build run model")
+	return runModel, nil
 }
 
 func getBuilder(parsedRecipe *recipemodel.Recipe) (RunModelBuilder, *recipemodel.BaseRecipe, error) { //nolint:lll,ireturn // This is a factory function that returns a builder for generating a run model

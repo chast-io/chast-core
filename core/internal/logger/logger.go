@@ -9,13 +9,13 @@ var (
 )
 
 const (
-	PanicLevel logrus.Level = logrus.PanicLevel
-	FatalLevel              = logrus.FatalLevel
-	ErrorLevel              = logrus.ErrorLevel
-	WarnLevel               = logrus.WarnLevel
-	InfoLevel               = logrus.InfoLevel
-	DebugLevel              = logrus.DebugLevel
-	TraceLevel              = logrus.TraceLevel
+	PanicLevel = logrus.PanicLevel
+	FatalLevel = logrus.FatalLevel
+	ErrorLevel = logrus.ErrorLevel
+	WarnLevel  = logrus.WarnLevel
+	InfoLevel  = logrus.InfoLevel
+	DebugLevel = logrus.DebugLevel
+	TraceLevel = logrus.TraceLevel
 )
 
 //nolint:gochecknoinits // Preconfigured logging settings
@@ -25,5 +25,5 @@ func init() {
 	formatter := TextFormatter{} //nolint:exhaustruct // using defaults
 	Log.SetFormatter(&formatter)
 
-	Log.SetLevel(TraceLevel)
+	Log.SetLevel(DebugLevel)
 }

@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	chastlog "chast.io/core/internal/logger"
 	"github.com/joomcode/errorx"
 	"github.com/spf13/afero"
 )
@@ -17,6 +18,8 @@ type Extension struct {
 
 func DetectExtensions(rootPath string) (map[string]*Extension, error) {
 	extensions := make(map[string]*Extension)
+
+	chastlog.Log.Tracef("Detecting extensions of files in path: %s", rootPath)
 
 	osFs := afero.NewOsFs()
 	if err := afero.Walk(osFs, rootPath, func(path string, info os.FileInfo, err error) error {

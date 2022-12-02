@@ -39,12 +39,18 @@ func (parser *RunModelBuilder) buildRunModel(
 	unparsedArguments []string,
 	unparsedFlags []runmodel.UnparsedFlag,
 ) (*runmodel.RunModel, error) {
-	if err := builder.HandlePrimaryArgument(recipeModel.PrimaryParameter, variables, unparsedArguments[0]); err != nil {
-		return nil, errorx.InternalError.Wrap(err, "Failed to handle primary argument")
-	}
+	if len(unparsedArguments) > 0 {
+		if err := builder.HandlePrimaryArgument(recipeModel.PrimaryParameter, variables, unparsedArguments[0]); err != nil {
+			return nil, errorx.InternalError.Wrap(err, "Failed to handle primary argument")
+		}
 
-	if err := builder.HandlePositionalArguments(recipeModel, variables, unparsedArguments[1:]); err != nil {
-		return nil, errorx.InternalError.Wrap(err, "Failed to handle positional arguments")
+		if err := builder.HandlePositionalArguments(recipeModel, variables, unparsedArguments[1:]); err != nil {
+			return nil, errorx.InternalError.Wrap(err, "Failed to handle positional arguments")
+		}
+	} else {
+		if err := builder.HandlePrimaryArgument(recipeModel.PrimaryParameter, variables, ""); err != nil {
+			return nil, errorx.InternalError.Wrap(err, "Failed to handle positional arguments")
+		}
 	}
 
 	if err := builder.HandleFlags(recipeModel, variables, unparsedFlags); err != nil {
@@ -109,6 +115,7 @@ func convertRun(
 	newRun.Command = convertCommand(run.Script, variables)
 	newRun.Docker = convertDocker(run.Docker)
 	newRun.Local = convertLocal(run.Local)
+	newRun.ChangeLocations = convertChangeLocations(run, variables)
 
 	return newRun
 }
@@ -196,5 +203,20 @@ func convertRequiredTool(requiredTool recipemodel.RequiredTool) refactoring.Requ
 	return refactoring.RequiredTool{
 		Description: requiredTool.Description,
 		CheckCmd:    requiredTool.CheckCmd,
+	}
+}
+
+func convertChangeLocations(run recipemodel.Run, variables *runmodel.Variables) *refactoring.ChangeLocations {
+	includeLocations := collection.Map(run.IncludeChangeLocations, func(changeLocation string) string {
+		return replaceVariablesWithValues(changeLocation, variables.Map)
+	})
+
+	excludeLocations := collection.Map(run.ExcludeChangeLocations, func(changeLocation string) string {
+		return replaceVariablesWithValues(changeLocation, variables.Map)
+	})
+
+	return &refactoring.ChangeLocations{
+		Include: includeLocations,
+		Exclude: excludeLocations,
 	}
 }

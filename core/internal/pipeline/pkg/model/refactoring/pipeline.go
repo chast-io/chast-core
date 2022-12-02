@@ -8,7 +8,7 @@ import (
 
 type Pipeline struct {
 	OperationLocation      string
-	Stages                 []*Stage
+	ExecutionGroups        []*ExecutionGroup
 	ChangeCaptureLocation  string
 	RootFileSystemLocation string
 	UUID                   string
@@ -27,20 +27,41 @@ func NewPipeline(
 
 	return &Pipeline{
 		UUID:                   pipelineUUID,
-		Stages:                 make([]*Stage, 1),
+		ExecutionGroups:        make([]*ExecutionGroup, 1),
 		OperationLocation:      absOperationLocation,
 		ChangeCaptureLocation:  filepath.Join(absChangeCaptureLocation, pipelineUUID),
 		RootFileSystemLocation: absRootFileSystemLocation,
 	}
 }
 
-func (p *Pipeline) AddStage(stage *Stage) {
-	stage.withPipeline(p)
+func (p *Pipeline) GetTempChangeCaptureLocation() string {
+	return filepath.Join(p.ChangeCaptureLocation, "tmp")
+}
 
-	if p.Stages[0] == nil {
-		p.Stages[0] = stage
+func (p *Pipeline) GetFinalChangeCaptureLocation() string {
+	return filepath.Join(p.ChangeCaptureLocation, "final")
+}
+
+func (p *Pipeline) AddExecutionGroup(executionGroup *ExecutionGroup) {
+	executionGroup.withPipeline(p)
+
+	if p.ExecutionGroups[0] == nil {
+		p.ExecutionGroups[0] = executionGroup
 	} else {
-		stage.prev = p.Stages[len(p.Stages)-1]
-		p.Stages = append(p.Stages, stage)
+		p.ExecutionGroups = append(p.ExecutionGroups, executionGroup)
 	}
+}
+
+func (p *Pipeline) GetFinalSteps() []*Step {
+	finalSteps := make([]*Step, 0)
+
+	for _, executionGroup := range p.ExecutionGroups {
+		for _, step := range executionGroup.Steps {
+			if step.IsFinalStep() {
+				finalSteps = append(finalSteps, step)
+			}
+		}
+	}
+
+	return finalSteps
 }

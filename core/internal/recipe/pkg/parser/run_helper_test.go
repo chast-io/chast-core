@@ -25,7 +25,7 @@ func testRun(t *testing.T,
 		}
 	})
 
-	// Dependencies, SupportedExtensions, Flags, (Docker, Local,) Script, ChangeLocations
+	// Dependencies, SupportedExtensions, Flags, (Docker, Local,) Script, ChangeFilteringLocations
 
 	t.Run("Dependencies", func(t *testing.T) {
 		t.Parallel()
@@ -93,16 +93,30 @@ func testRun(t *testing.T,
 		}
 	})
 
-	t.Run("ChangeLocations", func(t *testing.T) {
+	t.Run("IncludeChangeLocations", func(t *testing.T) {
 		t.Parallel()
 
-		if len(run.ChangeLocations) != len(expectedRun.ChangeLocations) {
-			t.Fatalf("Expected run change locations to be '%v', but was '%v'", expectedRun.ChangeLocations, run.ChangeLocations)
+		if len(run.IncludeChangeLocations) != len(expectedRun.IncludeChangeLocations) {
+			t.Fatalf("Expected included run change locations to be '%v', but was '%v'", expectedRun.IncludeChangeLocations, run.IncludeChangeLocations)
 		}
 
-		for i, changeLocation := range run.ChangeLocations {
-			if !reflect.DeepEqual(changeLocation, expectedRun.ChangeLocations[i]) {
-				t.Errorf("Expected run change location to be '%v', but was '%v'", expectedRun.ChangeLocations[i], changeLocation)
+		for i, changeLocation := range run.IncludeChangeLocations {
+			if !reflect.DeepEqual(changeLocation, expectedRun.IncludeChangeLocations[i]) {
+				t.Errorf("Expected included run change location to be '%v', but was '%v'", expectedRun.IncludeChangeLocations[i], changeLocation)
+			}
+		}
+	})
+
+	t.Run("ExcludeChangeLocations", func(t *testing.T) {
+		t.Parallel()
+
+		if len(run.ExcludeChangeLocations) != len(expectedRun.ExcludeChangeLocations) {
+			t.Fatalf("Expected excluded run change locations to be '%v', but was '%v'", expectedRun.ExcludeChangeLocations, run.ExcludeChangeLocations)
+		}
+
+		for i, changeLocation := range run.ExcludeChangeLocations {
+			if !reflect.DeepEqual(changeLocation, expectedRun.ExcludeChangeLocations[i]) {
+				t.Errorf("Expected excluded run change location to be '%v', but was '%v'", expectedRun.ExcludeChangeLocations[i], changeLocation)
 			}
 		}
 	})

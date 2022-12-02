@@ -16,7 +16,7 @@ const unionFsHiddenPathSuffix = "_HIDDEN~"
 
 func BuildDiff(pipeline *refactoringpipelinemodel.Pipeline, changedFiles []string) (*ChangeDiff, error) {
 	changeDiff := ChangeDiff{
-		BaseFolder:   pipeline.ChangeCaptureLocation,
+		BaseFolder:   pipeline.GetFinalChangeCaptureLocation(),
 		ChangedFiles: changedFiles,
 		Diffs:        make(map[string]FsDiff),
 	}
@@ -24,7 +24,7 @@ func BuildDiff(pipeline *refactoringpipelinemodel.Pipeline, changedFiles []strin
 	osFileSystem := afero.NewOsFs()
 
 	for _, originalFilePath := range changedFiles {
-		newFilePath := filepath.Join(pipeline.ChangeCaptureLocation, originalFilePath)
+		newFilePath := filepath.Join(pipeline.GetFinalChangeCaptureLocation(), originalFilePath)
 
 		if strings.HasSuffix(originalFilePath, unionFsHiddenPathSuffix) {
 			changeDiff.Diffs[newFilePath] = FsDiff{FileStatus: Deleted, Diffs: nil}

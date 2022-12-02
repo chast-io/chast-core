@@ -12,14 +12,15 @@ func (recipe *RefactoringRecipe) GetRecipeType() ChastOperationType {
 }
 
 type Run struct {
-	ID                  string   `yaml:"id,omitempty"`
-	Dependencies        []string `yaml:"dependencies,omitempty"`
-	SupportedExtensions []string `yaml:"supportedExtensions,omitempty"`
-	Flags               []Flag   `yaml:"flags,omitempty"`
-	Docker              *Docker  `yaml:"docker"`
-	Local               *Local   `yaml:"local"`
-	Script              []string `yaml:"script"`
-	ChangeLocations     []string `yaml:"changeLocations"` // TODO check concrete definition
+	ID                     string   `yaml:"id,omitempty"`
+	Dependencies           []string `yaml:"dependencies,omitempty"`
+	SupportedExtensions    []string `yaml:"supportedExtensions,omitempty"`
+	Flags                  []Flag   `yaml:"flags,omitempty"`
+	Docker                 *Docker  `yaml:"docker"`
+	Local                  *Local   `yaml:"local"`
+	Script                 []string `yaml:"script"`
+	IncludeChangeLocations []string `yaml:"includeChangeLocations,omitempty"`
+	ExcludeChangeLocations []string `yaml:"excludeChangeLocations,omitempty"`
 }
 
 func (run *Run) GetFlags() []Flag {
