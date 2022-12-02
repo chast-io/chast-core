@@ -5,6 +5,7 @@ import (
 	refactoringpipelinemodel "chast.io/core/internal/pipeline/pkg/model/refactoring"
 	refactoringpipelinecleanup "chast.io/core/internal/post_processing/cleanup/pkg/refactoring"
 	"chast.io/core/internal/post_processing/merger/pkg/dirmerger"
+	"chast.io/core/internal/post_processing/merger/pkg/mergeoptions"
 	"github.com/joomcode/errorx"
 )
 
@@ -15,14 +16,14 @@ func Process(pipeline *refactoringpipelinemodel.Pipeline) error {
 
 	// Merge all changes from the final steps into the change capture location of the pipeline.
 	// No overwrites must happen
-	options := dirmerger.NewMergeOptions()
+	options := mergeoptions.NewMergeOptions()
 	options.BlockOverwrite = true
 	options.CopyMode = false
 	options.MergeMetaFilesFolder = true
 	options.DeleteMarkedAsDeletedPaths = false
 	options.DeleteEmptyFolders = false
 
-	targetFolder := pipeline.ChangeCaptureLocation
+	targetFolder := pipeline.GetFinalChangeCaptureLocation()
 
 	cumulatedErrors := make([]error, 0)
 

@@ -4,6 +4,7 @@ import (
 	refactoringpipelinemodel "chast.io/core/internal/pipeline/pkg/model/refactoring"
 	refactoringpipelinecleanup "chast.io/core/internal/post_processing/cleanup/pkg/refactoring"
 	"chast.io/core/internal/post_processing/merger/pkg/dirmerger"
+	"chast.io/core/internal/post_processing/merger/pkg/mergeoptions"
 	"github.com/joomcode/errorx"
 )
 
@@ -40,7 +41,7 @@ func createCopyOfChangesAndFlattenMetaFiles(step *refactoringpipelinemodel.Step)
 	// The original files remain untouched for the unionfs to work correctly.
 	// During this operation, overwrites can take place due to the order of moving/copying the files.
 	// Empty folders are kept until the end, because they may be intended
-	options := dirmerger.NewMergeOptions()
+	options := mergeoptions.NewMergeOptions()
 	options.BlockOverwrite = false
 	options.CopyMode = true
 	options.MergeMetaFilesFolder = true
@@ -65,7 +66,7 @@ func createCopyOfChangesAndFlattenMetaFiles(step *refactoringpipelinemodel.Step)
 func filterAndMovePreviousChangesToFinalLocation(step *refactoringpipelinemodel.Step) error {
 	// The changes are filtered and moved to the final location
 	// The files should be written to a new location so no files should be overwritten.
-	options := dirmerger.NewMergeOptions()
+	options := mergeoptions.NewMergeOptions()
 	options.BlockOverwrite = true
 	options.CopyMode = false
 	options.DeleteMarkedAsDeletedPaths = false
@@ -89,7 +90,7 @@ func filterAndMovePreviousChangesToFinalLocation(step *refactoringpipelinemodel.
 func mergeChangedWithPreviousChanges(step *refactoringpipelinemodel.Step) error {
 	// The changes are filtered and moved to the final location
 	// Here files can be overwritten, as the later step has precedence over the previous step.
-	options := dirmerger.NewMergeOptions()
+	options := mergeoptions.NewMergeOptions()
 	options.BlockOverwrite = false
 	options.CopyMode = false
 	options.DeleteMarkedAsDeletedPaths = false
@@ -120,7 +121,7 @@ func publishChangesToDependents(step *refactoringpipelinemodel.Step) error {
 	// The changes are moved to the dependent location
 	// (if there exist multiple, files are copied for all of them but the last one)
 	// Files should never overwrite existing files, which can happen if the dependent has multiple dependencies.
-	baseOptions := dirmerger.NewMergeOptions()
+	baseOptions := mergeoptions.NewMergeOptions()
 	baseOptions.BlockOverwrite = true
 	baseOptions.DeleteEmptyFolders = false
 	baseOptions.DeleteMarkedAsDeletedPaths = false

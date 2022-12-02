@@ -1,4 +1,4 @@
-package dirmerger
+package wildcardstring
 
 import (
 	"regexp"

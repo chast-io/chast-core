@@ -1,9 +1,9 @@
 package refactoringpipelinemodel
 
 import (
-	"chast.io/core/internal/internal_util/collection"
 	"path/filepath"
 
+	"chast.io/core/internal/internal_util/collection"
 	"chast.io/core/internal/run_model/pkg/model/refactoring"
 )
 
@@ -55,7 +55,7 @@ func (s *Step) GetMergedPreviousChangesLocation() string {
 	return s.ChangeCaptureLocation + "-prev"
 }
 
-func (s *Step) GetPreviousChangesLocations() []string {
+func (s *Step) GetPreviousChangeCaptureLocations() []string {
 	locations := make([]string, 0)
 	steps := make([]*Step, 0)
 

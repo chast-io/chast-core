@@ -1,14 +1,12 @@
 package dirmerger_test
 
 import (
+	testhelper "chast.io/core/internal/post_processing/merger/internal/test_helpers"
 	"os"
-	"path/filepath"
-	"sort"
-	"strings"
 	"testing"
 
 	"chast.io/core/internal/post_processing/merger/pkg/dirmerger"
-	"github.com/spf13/afero"
+	"chast.io/core/internal/post_processing/merger/pkg/mergeoptions"
 )
 
 type mergeFoldersTestCase struct {
@@ -21,7 +19,7 @@ type mergeFoldersTestCase struct {
 }
 
 type mergeFoldersArgs struct {
-	getMergeOptions func() *dirmerger.MergeOptions
+	getMergeOptions func() *mergeoptions.MergeOptions
 }
 
 const unionFsHiddenPathSuffix = "_HIDDEN~"
@@ -31,8 +29,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 		{
 			name: "Merge two empty folders",
 			args: mergeFoldersArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 
 					return options
 				},
@@ -44,8 +42,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 		{
 			name: "Merge two folders with one file each [non conflicting]",
 			args: mergeFoldersArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 
 					return options
 				},
@@ -58,8 +56,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 		{
 			name: "Merge two folders with one file each [conflicting - blockOverwrite = false]",
 			args: mergeFoldersArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.BlockOverwrite = false
 
 					return options
@@ -73,8 +71,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 		{
 			name: "Merge two folders with one file each [conflicting - blockOverwrite = true]",
 			args: mergeFoldersArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.BlockOverwrite = true
 
 					return options
@@ -88,8 +86,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 		{
 			name: "Merge deleted file with file [blockOverwrite = false]",
 			args: mergeFoldersArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.BlockOverwrite = false
 
 					return options
@@ -103,8 +101,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 		{
 			name: "Merge file with deleted file [blockOverwrite = false]",
 			args: mergeFoldersArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.BlockOverwrite = false
 
 					return options
@@ -118,8 +116,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 		{
 			name: "Merge deleted file with file [blockOverwrite = true]",
 			args: mergeFoldersArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.BlockOverwrite = true
 
 					return options
@@ -133,8 +131,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 		{
 			name: "Merge file with deleted file [blockOverwrite = true]",
 			args: mergeFoldersArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.BlockOverwrite = true
 
 					return options
@@ -148,8 +146,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 		{
 			name: "Merge deleted folder with folder [blockOverwrite = false]",
 			args: mergeFoldersArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.BlockOverwrite = false
 
 					return options
@@ -163,8 +161,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 		{
 			name: "Merge folder with deleted folder [blockOverwrite = false]",
 			args: mergeFoldersArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.BlockOverwrite = false
 
 					return options
@@ -178,8 +176,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 		{
 			name: "Merge deleted folder with folder [blockOverwrite = true]",
 			args: mergeFoldersArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.BlockOverwrite = true
 
 					return options
@@ -193,8 +191,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 		{
 			name: "Merge folder with deleted folder [blockOverwrite = true]",
 			args: mergeFoldersArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.BlockOverwrite = true
 
 					return options
@@ -208,8 +206,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 		{
 			name: "Delete folders that are marked as deleted after merge",
 			args: mergeFoldersArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.DeleteMarkedAsDeletedPaths = true
 
 					return options
@@ -223,8 +221,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 		{
 			name: "Delete files that are marked as deleted after merge",
 			args: mergeFoldersArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.DeleteMarkedAsDeletedPaths = true
 
 					return options
@@ -238,8 +236,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 		{
 			name: "Delete empty folders",
 			args: mergeFoldersArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.DeleteEmptyFolders = true
 
 					return options
@@ -259,8 +257,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 		{
 			name: "Delete empty folders except root",
 			args: mergeFoldersArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.DeleteEmptyFolders = true
 
 					return options
@@ -278,8 +276,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 		{
 			name: "Delete folders that are marked as deleted after merge and delete empty folders",
 			args: mergeFoldersArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.DeleteMarkedAsDeletedPaths = true
 					options.DeleteEmptyFolders = true
 
@@ -310,8 +308,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			sourceFolder := fileStructureCreator(testCase.sourceFileStructure)
-			targetFolder := fileStructureCreator(testCase.targetFileStructure)
+			sourceFolder := testhelper.FileStructureCreator(testCase.sourceFileStructure, testCase.name)
+			targetFolder := testhelper.FileStructureCreator(testCase.targetFileStructure, testCase.name)
 
 			t.Cleanup(func() {
 				_ = os.RemoveAll(sourceFolder)
@@ -324,7 +322,7 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 				t.Errorf("MergeFolders() error = %v, wantErr %v", err, testCase.wantErr)
 			}
 
-			checkFolderEquality(t, testCase.expectedFileStructure, targetFolder)
+			testhelper.CheckFolderEquality(t, testCase.expectedFileStructure, targetFolder)
 		})
 	}
 
@@ -333,7 +331,10 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 
 		t.Run("Should copy folders", func(t *testing.T) {
 			t.Parallel()
-			options := dirmerger.NewMergeOptions()
+
+			testId := "copyFolders"
+
+			options := mergeoptions.NewMergeOptions()
 			options.CopyMode = true
 
 			sourceFileStructure := []string{
@@ -347,8 +348,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 				"/folder1/folder1/",
 			}
 
-			sourceFolder := fileStructureCreator(sourceFileStructure)
-			targetFolder := fileStructureCreator(targetFileStructure)
+			sourceFolder := testhelper.FileStructureCreator(sourceFileStructure, "MergeFoldersTest"+testId)
+			targetFolder := testhelper.FileStructureCreator(targetFileStructure, "MergeFoldersTest"+testId)
 
 			t.Cleanup(func() {
 				_ = os.RemoveAll(sourceFolder)
@@ -361,12 +362,15 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 				t.Errorf("MergeFolders() error = %v, wantErr %v", err, false)
 			}
 
-			checkFolderEquality(t, expectedSourceFileStructure, sourceFolder)
-			checkFolderEquality(t, expectedFileStructure, targetFolder)
+			testhelper.CheckFolderEquality(t, expectedSourceFileStructure, sourceFolder)
+			testhelper.CheckFolderEquality(t, expectedFileStructure, targetFolder)
 		})
 		t.Run("Should copy files", func(t *testing.T) {
 			t.Parallel()
-			options := dirmerger.NewMergeOptions()
+
+			testId := "ShouldCopyFiles"
+
+			options := mergeoptions.NewMergeOptions()
 			options.CopyMode = true
 
 			sourceFileStructure := []string{
@@ -380,8 +384,8 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 				"/folder1/folder1/file",
 			}
 
-			sourceFolder := fileStructureCreator(sourceFileStructure)
-			targetFolder := fileStructureCreator(targetFileStructure)
+			sourceFolder := testhelper.FileStructureCreator(sourceFileStructure, "MergeFoldersTest"+testId)
+			targetFolder := testhelper.FileStructureCreator(targetFileStructure, "MergeFoldersTest"+testId)
 
 			t.Cleanup(func() {
 				_ = os.RemoveAll(sourceFolder)
@@ -394,75 +398,10 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 				t.Errorf("MergeFolders() error = %v, wantErr %v", err, false)
 			}
 
-			checkFolderEquality(t, expectedSourceFileStructure, sourceFolder)
-			checkFolderEquality(t, expectedFileStructure, targetFolder)
+			testhelper.CheckFolderEquality(t, expectedSourceFileStructure, sourceFolder)
+			testhelper.CheckFolderEquality(t, expectedFileStructure, targetFolder)
 		})
 	})
-}
-
-func checkFolderEquality(t *testing.T, expectedFileStructure []string, checkFolder string) {
-	t.Helper()
-
-	t.Run("Check file structure equality", func(t *testing.T) {
-		t.Parallel()
-
-		actualFileStructure, err := collectPathsInFolder(checkFolder)
-		if err != nil {
-			t.Fatalf("Could not collect paths in folder %s: %v", checkFolder, err)
-		}
-
-		if len(expectedFileStructure) != len(actualFileStructure) {
-			t.Fatalf("MergeFolders() expected %v, got %v", expectedFileStructure, actualFileStructure)
-		}
-
-		sort.Strings(expectedFileStructure)
-		sort.Strings(actualFileStructure)
-
-		for i := range expectedFileStructure {
-			if expectedFileStructure[i] != actualFileStructure[i] {
-				t.Errorf("MergeFolders() expected %v, got %v", expectedFileStructure, actualFileStructure)
-			}
-		}
-	})
-}
-
-func collectPathsInFolder(targetFolder string) ([]string, error) {
-	actualFileStructure := make([]string, 0)
-	err := filepath.Walk(targetFolder, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if !info.IsDir() {
-			actualFileStructure = append(actualFileStructure, strings.TrimPrefix(path, targetFolder))
-		} else {
-			if empty, _ := afero.IsEmpty(afero.NewOsFs(), path); empty {
-				folder := strings.TrimPrefix(path, targetFolder) + "/"
-				if folder != "/" {
-					actualFileStructure = append(actualFileStructure, folder)
-				}
-			}
-		}
-
-		return nil
-	})
-
-	return actualFileStructure, err
-}
-
-func fileStructureCreator(filesAndFolders []string) string {
-	targetFolder, _ := os.MkdirTemp("", "TestMergeFolders")
-
-	for _, fileOrFolder := range filesAndFolders {
-		_ = os.MkdirAll(filepath.Join(targetFolder, filepath.Dir(fileOrFolder)), os.ModePerm)
-		if strings.HasSuffix(fileOrFolder, "/") {
-			_ = os.MkdirAll(filepath.Join(targetFolder, fileOrFolder), os.ModePerm)
-		} else {
-			_, _ = os.Create(filepath.Join(targetFolder, fileOrFolder))
-		}
-	}
-
-	return targetFolder
 }
 
 type areMergeableTestCase struct {
@@ -474,7 +413,7 @@ type areMergeableTestCase struct {
 	wantErr             bool
 }
 type areMergeableArgs struct {
-	getMergeOptions func() *dirmerger.MergeOptions
+	getMergeOptions func() *mergeoptions.MergeOptions
 }
 
 func TestAreMergeable(t *testing.T) {
@@ -486,8 +425,8 @@ func TestAreMergeable(t *testing.T) {
 			expectedMergeable:   true,
 			wantErr:             false,
 			args: areMergeableArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.BlockOverwrite = false
 
 					return options
@@ -501,8 +440,8 @@ func TestAreMergeable(t *testing.T) {
 			expectedMergeable:   true,
 			wantErr:             false,
 			args: areMergeableArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.BlockOverwrite = false
 
 					return options
@@ -516,8 +455,8 @@ func TestAreMergeable(t *testing.T) {
 			expectedMergeable:   true,
 			wantErr:             false,
 			args: areMergeableArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.BlockOverwrite = false
 
 					return options
@@ -531,8 +470,8 @@ func TestAreMergeable(t *testing.T) {
 			expectedMergeable:   true,
 			wantErr:             false,
 			args: areMergeableArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.BlockOverwrite = false
 
 					return options
@@ -547,8 +486,8 @@ func TestAreMergeable(t *testing.T) {
 			expectedMergeable:   true,
 			wantErr:             false,
 			args: areMergeableArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.BlockOverwrite = true
 
 					return options
@@ -562,8 +501,8 @@ func TestAreMergeable(t *testing.T) {
 			expectedMergeable:   false,
 			wantErr:             false,
 			args: areMergeableArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.BlockOverwrite = true
 
 					return options
@@ -577,8 +516,8 @@ func TestAreMergeable(t *testing.T) {
 			expectedMergeable:   false,
 			wantErr:             false,
 			args: areMergeableArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.BlockOverwrite = true
 
 					return options
@@ -592,8 +531,8 @@ func TestAreMergeable(t *testing.T) {
 			expectedMergeable:   false,
 			wantErr:             false,
 			args: areMergeableArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.BlockOverwrite = true
 
 					return options
@@ -607,8 +546,8 @@ func TestAreMergeable(t *testing.T) {
 			expectedMergeable:   true,
 			wantErr:             false,
 			args: areMergeableArgs{
-				getMergeOptions: func() *dirmerger.MergeOptions {
-					options := dirmerger.NewMergeOptions()
+				getMergeOptions: func() *mergeoptions.MergeOptions {
+					options := mergeoptions.NewMergeOptions()
 					options.DryRun = false
 
 					return options
@@ -624,11 +563,11 @@ func TestAreMergeable(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			sourceFolder := fileStructureCreator(testCase.sourceFileStructure)
-			targetFolder := fileStructureCreator(testCase.targetFileStructure)
+			sourceFolder := testhelper.FileStructureCreator(testCase.sourceFileStructure, testCase.name)
+			targetFolder := testhelper.FileStructureCreator(testCase.targetFileStructure, testCase.name)
 
-			sourceFileStructure, _ := collectPathsInFolder(sourceFolder)
-			targetFileStructure, _ := collectPathsInFolder(targetFolder)
+			sourceFileStructure, _ := testhelper.CollectPathsInFolder(sourceFolder)
+			targetFileStructure, _ := testhelper.CollectPathsInFolder(targetFolder)
 
 			t.Cleanup(func() {
 				_ = os.RemoveAll(sourceFolder)
@@ -646,23 +585,24 @@ func TestAreMergeable(t *testing.T) {
 				t.Errorf("MergeFolders() expected %v, got %v", testCase.expectedMergeable, mergeable)
 			}
 
-			checkFolderEquality(t, sourceFileStructure, sourceFolder)
-			checkFolderEquality(t, targetFileStructure, targetFolder)
+			testhelper.CheckFolderEquality(t, sourceFileStructure, sourceFolder)
+			testhelper.CheckFolderEquality(t, targetFileStructure, targetFolder)
 		})
 	}
 
 	t.Run("Check if options are not modified", func(t *testing.T) {
+		testId := "TestCheckIfOptionsAreNotModified"
 		t.Parallel()
 
-		sourceFolder := fileStructureCreator([]string{"folder1/file1"})
-		targetFolder := fileStructureCreator([]string{"folder1/file2"})
+		sourceFolder := testhelper.FileStructureCreator([]string{"folder1/file1"}, "MergeFoldersTest"+testId)
+		targetFolder := testhelper.FileStructureCreator([]string{"folder1/file2"}, "MergeFoldersTest"+testId)
 
 		t.Cleanup(func() {
 			_ = os.RemoveAll(sourceFolder)
 			_ = os.RemoveAll(targetFolder)
 		})
 
-		options := dirmerger.NewMergeOptions()
+		options := mergeoptions.NewMergeOptions()
 		options.DryRun = false
 		options.BlockOverwrite = true
 		options.DeleteMarkedAsDeletedPaths = true

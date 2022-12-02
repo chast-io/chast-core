@@ -1,11 +1,11 @@
 package extensionsdetection
 
 import (
-	chastlog "chast.io/core/internal/logger"
 	"os"
 	"path/filepath"
 	"strings"
 
+	chastlog "chast.io/core/internal/logger"
 	"github.com/joomcode/errorx"
 	"github.com/spf13/afero"
 )

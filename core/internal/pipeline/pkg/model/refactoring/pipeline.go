@@ -38,6 +38,10 @@ func (p *Pipeline) GetTempChangeCaptureLocation() string {
 	return filepath.Join(p.ChangeCaptureLocation, "tmp")
 }
 
+func (p *Pipeline) GetFinalChangeCaptureLocation() string {
+	return filepath.Join(p.ChangeCaptureLocation, "final")
+}
+
 func (p *Pipeline) AddExecutionGroup(executionGroup *ExecutionGroup) {
 	executionGroup.withPipeline(p)
 

@@ -4,11 +4,13 @@ import (
 	"io/fs"
 	"strings"
 
+	"chast.io/core/internal/post_processing/merger/pkg/mergeoptions"
+	"chast.io/core/internal/post_processing/merger/pkg/mergererrors"
 	"github.com/joomcode/errorx"
 	"github.com/spf13/afero"
 )
 
-func removeMarkedAsDeletedPaths(targetFolder string, options *MergeOptions) error {
+func RemoveMarkedAsDeletedPaths(targetFolder string, options *mergeoptions.MergeOptions) error {
 	osFileSystem := afero.NewOsFs()
 
 	targetExists, targetExistsError := afero.Exists(osFileSystem, targetFolder)
@@ -43,7 +45,7 @@ func removeMarkedAsDeletedPaths(targetFolder string, options *MergeOptions) erro
 func removeMarkedAsDeletedPath(
 	path string,
 	osFileSystem afero.Fs,
-	options *MergeOptions,
+	options *mergeoptions.MergeOptions,
 ) error {
 	exists, existsError := afero.Exists(osFileSystem, path)
 	if existsError != nil {
@@ -52,7 +54,8 @@ func removeMarkedAsDeletedPath(
 
 	if exists {
 		if options.BlockOverwrite {
-			return errorx.InternalError.Wrap(errMergeOverwriteBlock, "Failed to remove marked as deleted path: %s", path)
+			return errorx.InternalError.Wrap(mergererrors.ErrMergeOverwriteBlock,
+				"Failed to remove marked as deleted path: %s", path)
 		}
 
 		if !options.DryRun {

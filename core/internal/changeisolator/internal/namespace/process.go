@@ -2,7 +2,6 @@ package namespace
 
 import (
 	"encoding/json"
-	"github.com/ttacon/chalk"
 	"io"
 	"os"
 	"os/exec"
@@ -11,6 +10,7 @@ import (
 	"chast.io/core/internal/changeisolator/pkg/namespace"
 	chastlog "chast.io/core/internal/logger"
 	"github.com/containers/storage/pkg/reexec"
+	"github.com/ttacon/chalk"
 )
 
 func init() { //nolint:gochecknoinits // This function needs to register the function used for reexec

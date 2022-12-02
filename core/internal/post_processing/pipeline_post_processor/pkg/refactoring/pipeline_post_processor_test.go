@@ -1,7 +1,6 @@
 package pipelinepostprocessor_test
 
 import (
-	steppostprocessor "chast.io/core/internal/post_processing/step_post_processor/pkg/refactoring"
 	"os"
 	"path/filepath"
 	"sort"
@@ -12,6 +11,7 @@ import (
 	chastlog "chast.io/core/internal/logger"
 	refactoringpipelinemodel "chast.io/core/internal/pipeline/pkg/model/refactoring"
 	uut "chast.io/core/internal/post_processing/pipeline_post_processor/pkg/refactoring"
+	steppostprocessor "chast.io/core/internal/post_processing/step_post_processor/pkg/refactoring"
 	"chast.io/core/internal/run_model/pkg/model/refactoring"
 	"github.com/spf13/afero"
 )
@@ -138,7 +138,7 @@ func collectPathsInFolder(targetFolder string) ([]string, error) {
 // region CleanupPipeline
 
 //nolint:gocognit
-func TestProcess(t *testing.T) { //nolint:maintidx // nested test cases
+func TestProcess(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
@@ -385,7 +385,7 @@ func TestProcess(t *testing.T) { //nolint:maintidx // nested test cases
 			}
 
 			if testCase.expectedFileStructure != nil {
-				checkFolderEquality(t, testCase.expectedFileStructure, pipeline.ChangeCaptureLocation)
+				checkFolderEquality(t, testCase.expectedFileStructure, pipeline.GetFinalChangeCaptureLocation())
 			}
 
 			operationLocationsShouldBeEmpty(t, pipeline)

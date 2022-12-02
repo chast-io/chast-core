@@ -6,13 +6,14 @@ import (
 	"strings"
 
 	chastlog "chast.io/core/internal/logger"
+	"chast.io/core/internal/post_processing/merger/pkg/mergeoptions"
 	"github.com/joomcode/errorx"
 	"github.com/spf13/afero"
 )
 
-func removeEmptyFolders(
+func RemoveEmptyFolders(
 	folderPath string,
-	options *MergeOptions,
+	options *mergeoptions.MergeOptions,
 ) error {
 	if options.DryRun {
 		return nil
@@ -41,7 +42,7 @@ func removeEmptyFolders(
 	return nil
 }
 
-func removeFolderAndParentsIfEmpty(path string, rootPath string, options *MergeOptions) error {
+func removeFolderAndParentsIfEmpty(path string, rootPath string, options *mergeoptions.MergeOptions) error {
 	if path == rootPath {
 		return nil
 	}

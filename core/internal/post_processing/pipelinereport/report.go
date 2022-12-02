@@ -24,7 +24,7 @@ func BuildReport(pipeline *refactoringpipelinemodel.Pipeline) (*Report, error) {
 	changedPaths := make([]string, 0)
 
 	osFileSystem := afero.NewOsFs()
-	if walkError := afero.Walk(osFileSystem, pipeline.ChangeCaptureLocation,
+	if walkError := afero.Walk(osFileSystem, pipeline.GetFinalChangeCaptureLocation(),
 		func(path string, info fs.FileInfo, _ error) error {
 			if info == nil {
 				return nil
@@ -36,11 +36,11 @@ func BuildReport(pipeline *refactoringpipelinemodel.Pipeline) (*Report, error) {
 					return errorx.ExternalError.Wrap(isEmptyCheckError, "failed to check if folder is empty")
 				}
 				if folderIsEmpty {
-					correctedPath := strings.TrimPrefix(path, pipeline.ChangeCaptureLocation)
+					correctedPath := strings.TrimPrefix(path, pipeline.GetFinalChangeCaptureLocation())
 					changedPaths = append(changedPaths, correctedPath)
 				}
 			} else {
-				correctedPath := strings.TrimPrefix(path, pipeline.ChangeCaptureLocation)
+				correctedPath := strings.TrimPrefix(path, pipeline.GetFinalChangeCaptureLocation())
 				changedPaths = append(changedPaths, correctedPath)
 			}
 
@@ -83,7 +83,7 @@ func (report *Report) ChangedFilesRelative() ([]string, error) {
 }
 
 func (report *Report) FileTreeToString(colorize bool) (string, error) {
-	return filetree.ToString(report.Pipeline.ChangeCaptureLocation, report.ChangeDiff, false, colorize)
+	return filetree.ToString(report.Pipeline.GetFinalChangeCaptureLocation(), report.ChangeDiff, false, colorize)
 }
 
 func (report *Report) PrintFileTree(colorize bool) {

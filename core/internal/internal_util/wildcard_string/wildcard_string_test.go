@@ -1,9 +1,10 @@
-package dirmerger_test
+package wildcardstring_test
 
 import (
-	uut "chast.io/core/internal/post_processing/merger/pkg/dirmerger"
 	"reflect"
 	"testing"
+
+	uut "chast.io/core/internal/internal_util/wildcard_string"
 )
 
 func TestNewWildcardString(t *testing.T) {
@@ -51,7 +52,7 @@ func TestNewWildcardString(t *testing.T) {
 	}
 }
 
-func TestWildcardString_Matches(t *testing.T) {
+func TestWildcardString_Matches(t *testing.T) { //nolint:maintidx // nested test case
 	t.Parallel()
 
 	type fields struct {

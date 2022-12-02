@@ -1,7 +1,9 @@
-package dirmerger
+package mergeoptions
 
 import (
+	wildcardstring "chast.io/core/internal/internal_util/wildcard_string"
 	"os"
+	"strings"
 )
 
 const unionFsMetaFolder = ".unionfs-fuse"
@@ -18,8 +20,8 @@ type MergeOptions struct {
 	MetaFilesLocation          string
 	MetaFilesDeletedExtension  string
 	FolderPermission           os.FileMode
-	Exclusions                 []*WildcardString
-	Inclusions                 []*WildcardString
+	Exclusions                 []*wildcardstring.WildcardString
+	Inclusions                 []*wildcardstring.WildcardString
 }
 
 func NewMergeOptions() *MergeOptions {
@@ -36,17 +38,20 @@ func NewMergeOptions() *MergeOptions {
 		MetaFilesDeletedExtension: unionFsHiddenPathSuffix,
 		FolderPermission:          defaultFolderPermission,
 
-		Exclusions: []*WildcardString{},
-		Inclusions: []*WildcardString{},
+		Exclusions: []*wildcardstring.WildcardString{},
+		Inclusions: []*wildcardstring.WildcardString{},
 	}
 }
 
 func (o *MergeOptions) ShouldSkip(location string) bool {
+	// TODO add test
+	cleanedLocation := strings.ReplaceAll(location, o.MetaFilesDeletedExtension, "")
+
 	if len(o.Inclusions) > 0 {
 		hasMatch := false
 
 		for _, includeLocation := range o.Inclusions {
-			if includeLocation.Matches(location) {
+			if includeLocation.Matches(cleanedLocation) {
 				hasMatch = true
 
 				break
@@ -61,7 +66,7 @@ func (o *MergeOptions) ShouldSkip(location string) bool {
 	// continue to check if it is excluded
 
 	for _, skipLocation := range o.Exclusions {
-		if skipLocation.MatchesPath(location) {
+		if skipLocation.MatchesPath(cleanedLocation) {
 			return true
 		}
 	}

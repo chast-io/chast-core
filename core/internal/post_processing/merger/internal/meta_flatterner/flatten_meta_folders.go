@@ -1,6 +1,7 @@
-package dirmerger
+package metaflatterner
 
 import (
+	"chast.io/core/internal/post_processing/merger/pkg/mergererrors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -8,18 +9,20 @@ import (
 	"strings"
 
 	chastlog "chast.io/core/internal/logger"
+	pathutils "chast.io/core/internal/post_processing/merger/internal/path_utils"
+	"chast.io/core/internal/post_processing/merger/pkg/mergeoptions"
 	"github.com/joomcode/errorx"
 	"github.com/spf13/afero"
 )
 
-func flattenMetaFolder(sourceFolder string, options *MergeOptions) error {
+func FlattenMetaFolder(sourceFolder string, options *mergeoptions.MergeOptions) error {
 	metaSourceFolder := filepath.Join(sourceFolder, options.MetaFilesLocation)
 
-	metaFolderOptions := *options
-	metaFolderOptions.BlockOverwrite = true
-	metaFolderOptions.CopyMode = false
-
 	osFileSystem := afero.NewOsFs()
+
+	if err := sanitizeMetaFolder(options, metaSourceFolder); err != nil {
+		return err
+	}
 
 	if walkError := afero.Walk(osFileSystem, metaSourceFolder, func(path string, info fs.FileInfo, _ error) error {
 		if info == nil {
@@ -31,18 +34,18 @@ func flattenMetaFolder(sourceFolder string, options *MergeOptions) error {
 		}
 
 		sanitizedPath := strings.TrimPrefix(path, metaSourceFolder)
-		if metaFolderOptions.ShouldSkip(sanitizedPath) {
+		if options.ShouldSkip(sanitizedPath) {
 			chastlog.Log.Tracef("Skipping path \"%s\" due to being excluded or not included", path)
 
 			return nil // exit if the path is to be skipped
 		}
 
 		if info.IsDir() {
-			if err := moveMetaFolder(path, metaSourceFolder, sourceFolder, osFileSystem, &metaFolderOptions); err != nil {
+			if err := moveMetaFolder(path, metaSourceFolder, sourceFolder, osFileSystem, options); err != nil {
 				return errorx.InternalError.Wrap(err, "Failed to move folder")
 			}
 		} else {
-			if err := moveMetaFile(path, metaSourceFolder, sourceFolder, osFileSystem, &metaFolderOptions); err != nil {
+			if err := moveMetaFile(path, metaSourceFolder, sourceFolder, osFileSystem, options); err != nil {
 				return errorx.InternalError.Wrap(err, "Failed to move file")
 			}
 		}
@@ -53,13 +56,25 @@ func flattenMetaFolder(sourceFolder string, options *MergeOptions) error {
 	}
 
 	if !options.DryRun {
-		if err := cleanupPath(metaSourceFolder, osFileSystem, options); err != nil {
-			return err
+		if err := pathutils.CleanupPath(metaSourceFolder); err != nil {
+			return errorx.InternalError.Wrap(err, "Failed to cleanup meta folder")
 		}
 	}
 
-	if err := sanitizeMovedMetaPaths(sourceFolder, options); err != nil {
+	if err := sanitizeMetaPaths(sourceFolder, options); err != nil {
 		return errorx.InternalError.Wrap(err, "Failed to sanitize moved meta paths")
+	}
+
+	return nil
+}
+
+func sanitizeMetaFolder(options *mergeoptions.MergeOptions, metaSourceFolder string) error {
+	metaFolderInternalMergeOptions := *options
+	metaFolderInternalMergeOptions.CopyMode = false
+	metaFolderInternalMergeOptions.BlockOverwrite = false
+
+	if err := sanitizeMetaPaths(metaSourceFolder, &metaFolderInternalMergeOptions); err != nil {
+		return errorx.InternalError.Wrap(err, "Failed to sanitize meta paths")
 	}
 
 	return nil
@@ -70,7 +85,7 @@ func moveMetaFolder(
 	sourceRootFolder string,
 	targetRootFolder string,
 	osFileSystem afero.Fs,
-	options *MergeOptions) error {
+	options *mergeoptions.MergeOptions) error {
 	if exists, err := afero.Exists(osFileSystem, sourcePath); err != nil || !exists {
 		return nil //nolint:nilerr // If the folder does not exist, ignore it and continue
 	}
@@ -86,7 +101,7 @@ func moveMetaFolder(
 		return nil
 	}
 
-	targetPath := targetPath(sourcePath, sourceRootFolder, targetRootFolder)
+	targetPath := pathutils.TargetPath(sourcePath, sourceRootFolder, targetRootFolder)
 
 	if !options.DryRun {
 		if err := osFileSystem.MkdirAll(targetPath, options.FolderPermission); err != nil {
@@ -94,7 +109,7 @@ func moveMetaFolder(
 		}
 
 		if !options.CopyMode {
-			if err := cleanupPath(sourcePath, osFileSystem, options); err != nil {
+			if err := pathutils.CleanupPath(sourcePath); err != nil {
 				return err
 			}
 		}
@@ -108,13 +123,13 @@ func moveMetaFile(
 	sourceRootFolder string,
 	targetRootFolder string,
 	osFileSystem afero.Fs,
-	options *MergeOptions,
+	options *mergeoptions.MergeOptions,
 ) error {
 	if exists, err := afero.Exists(osFileSystem, sourcePath); err != nil || !exists {
 		return nil //nolint:nilerr // If the folder does not exist, ignore it and continue
 	}
 
-	targetPath := targetPath(sourcePath, sourceRootFolder, targetRootFolder)
+	targetPath := pathutils.TargetPath(sourcePath, sourceRootFolder, targetRootFolder)
 
 	if options.DryRun {
 		return nil
@@ -131,7 +146,7 @@ func moveMetaFile(
 	return nil
 }
 
-func sanitizeMovedMetaPaths(sourcePath string, options *MergeOptions) error {
+func sanitizeMetaPaths(sourcePath string, options *mergeoptions.MergeOptions) error {
 	osFileSystem := afero.NewOsFs()
 
 	if walkError := afero.Walk(osFileSystem, sourcePath, func(path string, info fs.FileInfo, _ error) error {
@@ -141,26 +156,8 @@ func sanitizeMovedMetaPaths(sourcePath string, options *MergeOptions) error {
 
 		if info.IsDir() {
 			if strings.HasSuffix(path, options.MetaFilesDeletedExtension) {
-				correspondingFolder := strings.TrimSuffix(path, options.MetaFilesDeletedExtension)
-				if exists, err := afero.Exists(osFileSystem, correspondingFolder); err != nil || !exists {
-					return nil //nolint:nilerr // If the folder does not exist, ignore it and continue
-				}
-
-				isEmpty, isEmptyCheckError := afero.IsEmpty(osFileSystem, path)
-				if isEmptyCheckError != nil {
-					return errorx.ExternalError.Wrap(isEmptyCheckError, "Failed to check if folder is empty")
-				}
-
-				if !isEmpty {
-					return errorx.InternalError.New("Meta folder is not empty. This should not happen!")
-				}
-
-				if err := os.RemoveAll(path); err != nil {
-					return errorx.ExternalError.Wrap(err, "Failed to remove folder")
-				}
-
-				if err := os.Rename(correspondingFolder, path); err != nil {
-					return errorx.ExternalError.Wrap(err, "Failed to rename folder")
+				if err := sanitizeMarkedAsDeletedFolder(path, options, osFileSystem); err != nil {
+					return err
 				}
 			}
 		}
@@ -168,6 +165,41 @@ func sanitizeMovedMetaPaths(sourcePath string, options *MergeOptions) error {
 		return nil
 	}); walkError != nil {
 		return errorx.ExternalError.Wrap(walkError, "Failed to walk through source folder")
+	}
+
+	return nil
+}
+
+func sanitizeMarkedAsDeletedFolder(path string, options *mergeoptions.MergeOptions, osFileSystem afero.Fs) error {
+	correspondingFolder := strings.TrimSuffix(path, options.MetaFilesDeletedExtension)
+	if exists, err := afero.Exists(osFileSystem, correspondingFolder); err != nil || !exists {
+		return nil //nolint:nilerr // If the folder does not exist, ignore it and continue
+	}
+
+	isEmpty, isEmptyCheckError := afero.IsEmpty(osFileSystem, path)
+	if isEmptyCheckError != nil {
+		return errorx.ExternalError.Wrap(isEmptyCheckError, "Failed to check if folder is empty")
+	}
+
+	if !isEmpty {
+		return errorx.InternalError.New("Meta folder is not empty. This should not happen!")
+	}
+
+	if options.BlockOverwrite {
+		return errorx.InternalError.Wrap(mergererrors.ErrMergeOverwriteBlock,
+			"Folder \"%s\" is marked as deleted, but the corresponding folder exists", path)
+	}
+
+	if options.DryRun {
+		return nil
+	}
+
+	if err := os.RemoveAll(path); err != nil {
+		return errorx.ExternalError.Wrap(err, "Failed to remove folder")
+	}
+
+	if err := os.Rename(correspondingFolder, path); err != nil {
+		return errorx.ExternalError.Wrap(err, "Failed to rename folder")
 	}
 
 	return nil
