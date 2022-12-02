@@ -25,7 +25,6 @@ func AreMergeable(mergeEntities []MergeEntity, targetFolder string, options *mer
 	augmentedMergeOptions := *options
 	augmentedMergeOptions.DryRun = true
 	augmentedMergeOptions.DeleteEmptyFolders = false
-	augmentedMergeOptions.DeleteMarkedAsDeletedPaths = false
 
 	mergeError := MergeFolders(mergeEntities, targetFolder, &augmentedMergeOptions)
 
@@ -84,12 +83,6 @@ func mergeFolders(mergeEntity MergeEntity, targetFolder string, options *mergeop
 	if entityMergeOptions.DeleteEmptyFolders {
 		if err := dirmerger.RemoveEmptyFolders(targetFolder, &entityMergeOptions); err != nil {
 			return errorx.InternalError.Wrap(err, "failed to remove empty folders")
-		}
-	}
-
-	if entityMergeOptions.DeleteMarkedAsDeletedPaths {
-		if err := dirmerger.RemoveMarkedAsDeletedPaths(targetFolder, &entityMergeOptions); err != nil {
-			return errorx.InternalError.Wrap(err, "failed to remove marked as deleted paths")
 		}
 	}
 

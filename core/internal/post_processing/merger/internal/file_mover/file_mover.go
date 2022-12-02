@@ -2,9 +2,11 @@ package filemover
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
+	chastlog "chast.io/core/internal/logger"
 	pathutils "chast.io/core/internal/post_processing/merger/internal/path_utils"
 	"chast.io/core/internal/post_processing/merger/pkg/mergeoptions"
 	"chast.io/core/internal/post_processing/merger/pkg/mergererrors"
@@ -42,7 +44,10 @@ func MoveFile(
 			return errorx.ExternalError.Wrap(err, "Failed to link file")
 		}
 	} else {
-		if err := osFileSystem.Rename(sourcePath, targetPath); err != nil {
+		// if err := osFileSystem.Rename(sourcePath, targetPath); err != nil {
+		// 	return errorx.ExternalError.Wrap(err, "Failed to move file")
+		// }
+		if err := osMoveFile(sourcePath, targetPath); err != nil {
 			return errorx.ExternalError.Wrap(err, "Failed to move file")
 		}
 	}
@@ -92,6 +97,18 @@ func handleConflictingFile(
 				return errorx.ExternalError.Wrap(err, "Failed to remove original path")
 			}
 		}
+	}
+
+	return nil
+}
+
+// osMoveFile temporary solution - "invalid cross-device link" error
+func osMoveFile(sourcePath, destPath string) error {
+	chastlog.Log.Debugf("osMoveFile(%s, %s)", sourcePath, destPath)
+	output, err := exec.Command("mv", sourcePath, destPath).CombinedOutput()
+
+	if err != nil {
+		return errorx.ExternalError.Wrap(err, "Failed to move file: %s", string(output))
 	}
 
 	return nil

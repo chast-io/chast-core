@@ -20,7 +20,6 @@ func Process(pipeline *refactoringpipelinemodel.Pipeline) error {
 	options.BlockOverwrite = true
 	options.CopyMode = false
 	options.MergeMetaFilesFolder = true
-	options.DeleteMarkedAsDeletedPaths = false
 	options.DeleteEmptyFolders = false
 
 	targetFolder := pipeline.GetFinalChangeCaptureLocation()

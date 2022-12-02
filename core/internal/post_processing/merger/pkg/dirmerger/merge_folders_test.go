@@ -204,36 +204,6 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 			wantErr:               true,
 		},
 		{
-			name: "Delete folders that are marked as deleted after merge",
-			args: mergeFoldersArgs{
-				getMergeOptions: func() *mergeoptions.MergeOptions {
-					options := mergeoptions.NewMergeOptions()
-					options.DeleteMarkedAsDeletedPaths = true
-
-					return options
-				},
-			},
-			sourceFileStructure:   []string{"/folder1" + unionFsHiddenPathSuffix + "/"},
-			targetFileStructure:   []string{"/folder1/"},
-			expectedFileStructure: []string{},
-			wantErr:               false,
-		},
-		{
-			name: "Delete files that are marked as deleted after merge",
-			args: mergeFoldersArgs{
-				getMergeOptions: func() *mergeoptions.MergeOptions {
-					options := mergeoptions.NewMergeOptions()
-					options.DeleteMarkedAsDeletedPaths = true
-
-					return options
-				},
-			},
-			sourceFileStructure:   []string{"/folder1/file1" + unionFsHiddenPathSuffix},
-			targetFileStructure:   []string{"/folder1/file1"},
-			expectedFileStructure: []string{"/folder1/"},
-			wantErr:               false,
-		},
-		{
 			name: "Delete empty folders",
 			args: mergeFoldersArgs{
 				getMergeOptions: func() *mergeoptions.MergeOptions {
@@ -273,31 +243,6 @@ func TestMergeFolders(t *testing.T) { //nolint:maintidx // Test function
 			expectedFileStructure: make([]string, 0),
 			wantErr:               false,
 		},
-		{
-			name: "Delete folders that are marked as deleted after merge and delete empty folders",
-			args: mergeFoldersArgs{
-				getMergeOptions: func() *mergeoptions.MergeOptions {
-					options := mergeoptions.NewMergeOptions()
-					options.DeleteMarkedAsDeletedPaths = true
-					options.DeleteEmptyFolders = true
-
-					return options
-				},
-			},
-			sourceFileStructure: []string{
-				"/folder1/folder1/",
-				"/folder1/folder2" + unionFsHiddenPathSuffix + "/",
-				"/folder1/folder3/file1",
-			},
-			targetFileStructure: []string{
-				"/folder1/folder2/file1",
-			},
-			expectedFileStructure: []string{
-				"/folder1/folder3/file1",
-			},
-			wantErr: false,
-		},
-
 		// TODO: Skip locations
 	}
 
@@ -605,13 +550,12 @@ func TestAreMergeable(t *testing.T) {
 		options := mergeoptions.NewMergeOptions()
 		options.DryRun = false
 		options.BlockOverwrite = true
-		options.DeleteMarkedAsDeletedPaths = true
 
 		mergeEntities := dirmerger.NewMergeEntity(sourceFolder, nil)
 
 		_, _ = dirmerger.AreMergeable([]dirmerger.MergeEntity{mergeEntities}, targetFolder, options)
 
-		if options.DryRun != false || options.BlockOverwrite != true || options.DeleteMarkedAsDeletedPaths != true {
+		if options.DryRun != false || options.BlockOverwrite != true {
 			t.Errorf("MergeFolders() options were modified")
 		}
 	})

@@ -12,28 +12,26 @@ const unionFsHiddenPathSuffix = "_HIDDEN~"
 const defaultFolderPermission = 0755
 
 type MergeOptions struct {
-	DryRun                     bool
-	BlockOverwrite             bool
-	MergeMetaFilesFolder       bool
-	DeleteEmptyFolders         bool
-	DeleteMarkedAsDeletedPaths bool
-	CopyMode                   bool
-	MetaFilesLocation          string
-	MetaFilesDeletedExtension  string
-	FolderPermission           os.FileMode
-	Exclusions                 []*wildcardstring.WildcardString
-	Inclusions                 []*wildcardstring.WildcardString
+	DryRun                    bool
+	BlockOverwrite            bool
+	MergeMetaFilesFolder      bool
+	DeleteEmptyFolders        bool
+	CopyMode                  bool
+	MetaFilesLocation         string
+	MetaFilesDeletedExtension string
+	FolderPermission          os.FileMode
+	Exclusions                []*wildcardstring.WildcardString
+	Inclusions                []*wildcardstring.WildcardString
 }
 
 func NewMergeOptions() *MergeOptions {
 	return &MergeOptions{
 		DryRun: false,
 
-		BlockOverwrite:             false,
-		MergeMetaFilesFolder:       false,
-		DeleteEmptyFolders:         false,
-		DeleteMarkedAsDeletedPaths: false,
-		CopyMode:                   false,
+		BlockOverwrite:       false,
+		MergeMetaFilesFolder: false,
+		DeleteEmptyFolders:   false,
+		CopyMode:             false,
 
 		MetaFilesLocation:         unionFsMetaFolder,
 		MetaFilesDeletedExtension: unionFsHiddenPathSuffix,

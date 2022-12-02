@@ -45,7 +45,6 @@ func createCopyOfChangesAndFlattenMetaFiles(step *refactoringpipelinemodel.Step)
 	options.BlockOverwrite = false
 	options.CopyMode = true
 	options.MergeMetaFilesFolder = true
-	options.DeleteMarkedAsDeletedPaths = false
 	options.DeleteEmptyFolders = false
 
 	mergeEntities := []dirmerger.MergeEntity{
@@ -69,7 +68,6 @@ func filterAndMovePreviousChangesToFinalLocation(step *refactoringpipelinemodel.
 	options := mergeoptions.NewMergeOptions()
 	options.BlockOverwrite = true
 	options.CopyMode = false
-	options.DeleteMarkedAsDeletedPaths = false
 	options.DeleteEmptyFolders = false
 
 	mergeEntities := []dirmerger.MergeEntity{
@@ -93,7 +91,6 @@ func mergeChangedWithPreviousChanges(step *refactoringpipelinemodel.Step) error 
 	options := mergeoptions.NewMergeOptions()
 	options.BlockOverwrite = false
 	options.CopyMode = false
-	options.DeleteMarkedAsDeletedPaths = false
 	options.DeleteEmptyFolders = false
 
 	mergeEntities := []dirmerger.MergeEntity{
@@ -124,7 +121,6 @@ func publishChangesToDependents(step *refactoringpipelinemodel.Step) error {
 	baseOptions := mergeoptions.NewMergeOptions()
 	baseOptions.BlockOverwrite = true
 	baseOptions.DeleteEmptyFolders = false
-	baseOptions.DeleteMarkedAsDeletedPaths = false
 
 	for index, dependent := range step.Dependents {
 		options := *baseOptions

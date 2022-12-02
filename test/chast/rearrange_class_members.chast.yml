@@ -54,15 +54,15 @@ run:
       - rearrange_class_members
     script:
       - mv ${inputFile}.out $inputFile
-      - rm -rf ../../../core/
-#    includeChangeLocations:
-#      - $inputFile
-  - id: test1
-    dependencies:
-      - mv_files
-    script:
-      - echo "test" > ${inputFile}.out
-      - mkdir ../../../core/
+#      - rm -rf ../../../core/
+    includeChangeLocations:
+      - $inputFile
+#  - id: test1
+#    dependencies:
+#      - mv_files
+#    script:
+#      - echo "test" > ${inputFile}.out
+#      - mkdir ../../../core/
 #    includeChangeLocations:
 #      - $inputFile
 

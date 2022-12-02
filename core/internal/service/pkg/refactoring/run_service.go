@@ -4,6 +4,8 @@ import (
 	"chast.io/core/internal/internal_util/collection"
 	refactoringPipelineBuilder "chast.io/core/internal/pipeline/pkg/builder/refactoring"
 	refactoringpipelinemodel "chast.io/core/internal/pipeline/pkg/model/refactoring"
+	"chast.io/core/internal/post_processing/merger/pkg/dirmerger"
+	"chast.io/core/internal/post_processing/merger/pkg/mergeoptions"
 	"chast.io/core/internal/post_processing/pipelinereport"
 	"chast.io/core/internal/recipe/pkg/parser"
 	"chast.io/core/internal/run_model/pkg/builder"
@@ -21,7 +23,7 @@ func Run(
 		name  string
 		value string
 	},
-) error {
+) (*refactoringpipelinemodel.Pipeline, error) {
 	parsedRecipe, recipeParseError := parser.ParseRecipe(recipeFile)
 	if recipeParseError != nil {
 		panic(recipeParseError)
@@ -29,7 +31,7 @@ func Run(
 
 	runModel, runModelBuildError := builder.BuildRunModel(parsedRecipe, args, mapFlags(flags), recipeFile.ParentDirectory)
 	if runModelBuildError != nil {
-		return errorx.InternalError.Wrap(runModelBuildError, "Failed to build run model")
+		return nil, errorx.InternalError.Wrap(runModelBuildError, "Failed to build run model")
 	}
 
 	var pipeline *refactoringpipelinemodel.Pipeline
@@ -40,17 +42,21 @@ func Run(
 	case refactoring.RunModel:
 		pipeline, pipelineBuildError = refactoringPipelineBuilder.BuildRunPipeline(&m)
 	default:
-		return errorx.InternalError.New("Provided recipe is not a refactoring recipe")
+		return nil, errorx.InternalError.New("Provided recipe is not a refactoring recipe")
 	}
 
 	if pipelineBuildError != nil {
-		return errorx.InternalError.Wrap(pipelineBuildError, "Failed to build pipeline")
+		return nil, errorx.InternalError.Wrap(pipelineBuildError, "Failed to build pipeline")
 	}
 
 	if err := local.NewRunner(true, false).Run(pipeline); err != nil {
-		return errorx.InternalError.Wrap(err, "Failed to run pipeline")
+		return nil, errorx.InternalError.Wrap(err, "Failed to run pipeline")
 	}
 
+	return pipeline, nil
+}
+
+func ShowReport(pipeline *refactoringpipelinemodel.Pipeline) error {
 	report, reportError := pipelinereport.BuildReport(pipeline)
 	if reportError != nil {
 		return errorx.InternalError.Wrap(reportError, "Failed to generate report")
@@ -58,6 +64,33 @@ func Run(
 
 	report.PrintFileTree(true)
 	report.PrintChanges(true)
+
+	return nil
+}
+
+func ApplyChanges(pipeline *refactoringpipelinemodel.Pipeline) error {
+	report, reportBuildError := pipelinereport.BuildReport(pipeline)
+	if reportBuildError != nil {
+		return errorx.InternalError.Wrap(reportBuildError, "Failed to generate report")
+	}
+
+	mergeEntities := []dirmerger.MergeEntity{
+		dirmerger.NewMergeEntity(
+			pipeline.GetFinalChangeCaptureLocation(),
+			nil,
+		),
+	}
+
+	options := mergeoptions.NewMergeOptions()
+	options.BlockOverwrite = false
+
+	if err := dirmerger.MergeFolders(mergeEntities, "/", options); err != nil {
+		return errorx.InternalError.Wrap(err, "Failed to merge folders")
+	}
+
+	if err := dirmerger.RemoveMarkedAsDeletedPaths(report.ChangedPaths, options); err != nil {
+		return errorx.InternalError.Wrap(err, "failed to remove marked as deleted paths")
+	}
 
 	return nil
 }
