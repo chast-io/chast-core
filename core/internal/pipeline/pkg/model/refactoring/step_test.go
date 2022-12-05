@@ -148,10 +148,11 @@ func TestStep_WithPipeline(t *testing.T) {
 func TestStep_AddDependency(t *testing.T) {
 	t.Parallel()
 
-	step := stepDummyStep(1)
-
 	t.Run("should add dependency", func(t *testing.T) {
 		t.Parallel()
+
+		step := stepDummyStep(1)
+
 		dependency := stepDummyStep(2)
 		step.AddDependency(dependency)
 
@@ -166,6 +167,9 @@ func TestStep_AddDependency(t *testing.T) {
 
 	t.Run("should add dependent", func(t *testing.T) {
 		t.Parallel()
+
+		step := stepDummyStep(1)
+
 		dependency := stepDummyStep(2)
 		step.AddDependency(dependency)
 
