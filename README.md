@@ -17,6 +17,15 @@ language.
 
 > This project is in its early stages of development so no further information is currently available.
 
+## Why CHAST?
+
+Ever did a refactoring and you had the feeling "I've done this several times now, there should be an automation for it!". Sometimes you are in luck and there is indeed a refactoring, but where do you find it? And when you have found it, how do you make sure it really does what is should and does not affect your system negatively? Furthermore, there should be instructions on how to use it and some kind of check for you to verify the quality.
+On the other hand,  a developer of such a refactoring faces similar problems. "I need a CLI, there should be tests and documentation, and where do I release it?".
+
+CHAST, short for Change Stuff, tries to solve this problem. It creates a framework for creating refactoring tools, builds a platform to release it and defines a unified way to test and document the tool. It also is not limited to refactorings of a single language and includes several ways to handle dependencies and versioning of the tools. But CHAST should not stop at refactorings; CHAST can be used to run tools and installation independent of the underlying operating system. Soon the age of numerous different installation scripts ends and all you have to do is to run a single command which does all the necessary steps for you.
+
+So what are you waiting for? Let's CHAnge STuff!
+
 ## Required tools
 
 - **General**
