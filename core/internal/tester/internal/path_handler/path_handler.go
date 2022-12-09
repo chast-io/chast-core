@@ -1,11 +1,12 @@
 package pathhandler
 
 import (
+	"path/filepath"
+	"strings"
+
 	recipemodel "chast.io/core/internal/recipe/pkg/model"
 	refactoringservice "chast.io/core/internal/service/pkg/refactoring"
 	"github.com/joomcode/errorx"
-	"path/filepath"
-	"strings"
 )
 
 func AbsolutizePathArgs(recipe *recipemodel.RefactoringRecipe, args []string, workingDir string) []string {

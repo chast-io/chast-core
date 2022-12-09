@@ -50,16 +50,16 @@ func checkFolderEquality(checkFolder string, expectedOutputFolder string, inputF
 	sort.Strings(expectedFileStructure)
 	sort.Strings(actualFileStructure)
 
-	for i := range expectedFileStructure {
-		if expectedFileStructure[i] != strings.TrimPrefix(actualFileStructure[i], inputFolderPath) {
-			chastlog.Log.Errorf("Expected %v, got %v", expectedFileStructure[i], actualFileStructure[i])
+	for index := range expectedFileStructure {
+		if expectedFileStructure[index] != strings.TrimPrefix(actualFileStructure[index], inputFolderPath) {
+			chastlog.Log.Errorf("Expected %v, got %v", expectedFileStructure[index], actualFileStructure[index])
 
 			return false
 		}
 
 		if !compareFiles(
-			filepath.Join(expectedOutputFolder, expectedFileStructure[i]),
-			filepath.Join(checkFolder, actualFileStructure[i])) {
+			filepath.Join(expectedOutputFolder, expectedFileStructure[index]),
+			filepath.Join(checkFolder, actualFileStructure[index])) {
 			chastlog.Log.Errorf("File does not match the expected.")
 
 			return false

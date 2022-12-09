@@ -1,8 +1,6 @@
 package tester
 
 import (
-	"chast.io/core/internal/tester/internal/comparer"
-	pathhandler "chast.io/core/internal/tester/internal/path_handler"
 	"path/filepath"
 	"strings"
 
@@ -11,6 +9,8 @@ import (
 	recipemodel "chast.io/core/internal/recipe/pkg/model"
 	"chast.io/core/internal/recipe/pkg/parser"
 	refactoringservice "chast.io/core/internal/service/pkg/refactoring"
+	"chast.io/core/internal/tester/internal/comparer"
+	pathhandler "chast.io/core/internal/tester/internal/path_handler"
 	util "chast.io/core/pkg/util/fs/file"
 	"github.com/joomcode/errorx"
 )
