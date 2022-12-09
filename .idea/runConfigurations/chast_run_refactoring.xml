@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="go build chast.io/cli" type="GoApplicationRunConfiguration" factoryName="Go Application" nameIsGenerated="true">
+  <configuration default="false" name="chast run refactoring" type="GoApplicationRunConfiguration" factoryName="Go Application">
     <module name="chast" />
     <working_directory value="$PROJECT_DIR$/cli" />
     <parameters value="run refactoring ../test/chast/rearrange_class_members.chast.yml ../test/chast/TestFile.java ../test/chast/default_config.yaml" />

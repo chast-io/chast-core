@@ -53,6 +53,6 @@ type Test struct {
 	ID          string   `yaml:"id"`
 	Description string   `yaml:"description"`
 	Args        []string `yaml:"args"`
-	Flags       []string `yaml:"flags"`
-	ExpectError bool     `yaml:"expectError"`
+	Flags       []string `yaml:"flags,omitempty"`
+	ExpectError bool     `yaml:"expectError,omitempty"`
 }

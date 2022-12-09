@@ -3,15 +3,15 @@ import java.util.Stack;
 
 abstract class CSharpLexerBase extends Lexer
 {
+    protected int interpolatedStringLevel;
+
+    protected Stack<Boolean> interpolatedVerbatiums = new Stack<Boolean>();
+    protected Stack<Integer> curlyLevels = new Stack<Integer>();
+    protected boolean verbatium;
     protected CSharpLexerBase(CharStream input)
     {
         super(input);
     }
-
-    protected int interpolatedStringLevel;
-    protected Stack<Boolean> interpolatedVerbatiums = new Stack<Boolean>();
-    protected Stack<Integer> curlyLevels = new Stack<Integer>();
-    protected boolean verbatium;
 
     protected void OnInterpolatedRegularStringStart()
     {
@@ -100,3 +100,4 @@ abstract class CSharpLexerBase extends Lexer
         return verbatium;
     }
 }
+
