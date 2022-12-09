@@ -4,7 +4,7 @@ type RefactoringRecipe struct {
 	BaseRecipe       `yaml:",inline"`
 	PrimaryParameter *Parameter `yaml:"primaryParameter"`
 	Runs             []Run      `yaml:"run"`
-	Tests            []string   `yaml:"tests"` // TODO placeholder for tests
+	Tests            []Test     `yaml:"tests"`
 }
 
 func (recipe *RefactoringRecipe) GetRecipeType() ChastOperationType {
@@ -47,4 +47,12 @@ type RequiredTool struct {
 type ChangeLocation struct {
 	Location          string   `yaml:"location"`
 	AllowedOperations []string `yaml:"allowedOperations"` // modify, delete, insert
+}
+
+type Test struct {
+	ID          string   `yaml:"id"`
+	Description string   `yaml:"description"`
+	Args        []string `yaml:"args"`
+	Flags       []string `yaml:"flags,omitempty"`
+	ExpectError bool     `yaml:"expectError,omitempty"`
 }

@@ -16,13 +16,15 @@ import (
 	"github.com/joomcode/errorx"
 )
 
+type FlagParameter struct {
+	Name  string
+	Value string
+}
+
 func Run(
 	recipeFile *util.File,
 	args []string,
-	flags []struct {
-		name  string
-		value string
-	},
+	flags []FlagParameter,
 ) (*refactoringpipelinemodel.Pipeline, error) {
 	parsedRecipe, recipeParseError := parser.ParseRecipe(recipeFile)
 	if recipeParseError != nil {
@@ -95,17 +97,11 @@ func ApplyChanges(pipeline *refactoringpipelinemodel.Pipeline) error {
 	return nil
 }
 
-func mapFlags(flags []struct {
-	name  string
-	value string
-}) []runmodel.UnparsedFlag {
-	return collection.Map(flags, func(flag struct {
-		name  string
-		value string
-	}) runmodel.UnparsedFlag {
+func mapFlags(flags []FlagParameter) []runmodel.UnparsedFlag {
+	return collection.Map(flags, func(flag FlagParameter) runmodel.UnparsedFlag {
 		return runmodel.UnparsedFlag{
-			Name:  flag.name,
-			Value: flag.value,
+			Name:  flag.Name,
+			Value: flag.Value,
 		}
 	})
 }

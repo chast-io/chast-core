@@ -7,8 +7,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// refactoringCmd represents the refactoring command.
-var refactoringCmd = &cobra.Command{ //nolint:exhaustruct // Only defining required fields
+// runRefactoringCmd represents the refactoring command.
+var runRefactoringCmd = &cobra.Command{ //nolint:exhaustruct // Only defining required fields
 	Use:   "refactoring <chastConfigFile>",
 	Short: "A brief description of your command", // TODO
 	Long:  ``,                                    // TODO
@@ -25,10 +25,10 @@ var refactoringCmd = &cobra.Command{ //nolint:exhaustruct // Only defining requi
 }
 
 func init() { //nolint:gochecknoinits // This is the way cobra wants it.
-	runCmd.AddCommand(refactoringCmd)
+	runCmd.AddCommand(runRefactoringCmd)
 
-	defaultHelpFunction := refactoringCmd.HelpFunc()
-	refactoringCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) { helpFunction(cmd, args, defaultHelpFunction) })
+	defaultHelpFunction := runRefactoringCmd.HelpFunc()
+	runRefactoringCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) { helpFunction(cmd, args, defaultHelpFunction) })
 
 	// Here you will define your flags and configuration settings.
 
@@ -37,7 +37,7 @@ func init() { //nolint:gochecknoinits // This is the way cobra wants it.
 
 	// Cobra supports local flags which will only refactoring when this command
 	// is called directly, e.g.:
-	// refactoringCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// runRefactoringCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func helpFunction(cmd *cobra.Command, args []string, defaultHelpFunction func(*cobra.Command, []string)) {

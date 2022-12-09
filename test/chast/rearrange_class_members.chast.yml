@@ -76,6 +76,11 @@ run:
       - $inputFile
 
 tests:
+  - id: "java"
+    description: "Test for java"
+    args:
+      - "TestFile.java"
+      - "default_config.yaml"
 
 
 documentation:
