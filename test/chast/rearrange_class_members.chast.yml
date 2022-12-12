@@ -17,36 +17,10 @@ positionalParameters:
     description: Config file defining the order of the class members.
     longDescription: ./configFile.md
 
-flags:
-  - name: test
-    shortName: test
-    required: false
-    defaultValue: false
-    type: boolean
-    description: Test flag
-    longDescription: Test flag description
-
 run:
   - id: rearrange_class_members
     supportedExtensions:
       - java
-    flags:
-      - name: configFile
-        shortName: c
-        type: filePath
-        extensions:
-          - yaml
-          - yml
-        description: Config file defining the order of the class members.
-        longDescription: ./configFile.md
-    #    nix:
-    #      - ....
-    docker:
-      dockerImage: java:17
-    local:
-      requiredTools:
-        - description: java
-          checkCmd: java -version
     script:
       - java -jar ./rearrange_class_members-1.0-SNAPSHOT-all.jar $inputFile $configFile > ${inputFile}.out
   - id: mv_files
@@ -80,6 +54,11 @@ tests:
     description: "Test for java"
     args:
       - "TestFile.java"
+      - "default_config.yaml"
+  - id: "csharp"
+    description: "Test for c sharp"
+    args:
+      - "TestFile.cs"
       - "default_config.yaml"
 
 
