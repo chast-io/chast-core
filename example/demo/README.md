@@ -2,6 +2,15 @@
 
 [![GitHub](https://img.shields.io/badge/DockerHub-0db7ed?logo=Docker\&logoColor=white)](https://hub.docker.com/r/rjenni/chast-demo)
 
+<!-- TOC -->
+* [CHAST Demo](#chast-demo)
+  * [Run](#run)
+  * [Recipies](#recipies)
+    * [Rearrange Class Memebers](#rearrange-class-memebers)
+  * [Build](#build)
+    * [Push](#push)
+<!-- TOC -->
+
 ## Run
 ```bash
 docker run --rm -it --privileged rjenni/chast-demo:latest

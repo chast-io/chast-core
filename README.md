@@ -24,6 +24,21 @@ language.
 > * The project is not tested on all operating systems.
 > * Available recipies are prove of concept and not production ready.
 
+<!-- TOC -->
+* [CHAST](#chast)
+  * [Why CHAST?](#why-chast)
+  * [Demo](#demo)
+  * [Required tools](#required-tools)
+  * [Installation](#installation)
+  * [Feature Status](#feature-status)
+  * [Development](#development)
+    * [Build](#build)
+    * [Structure](#structure)
+      * [Repositories](#repositories)
+    * [Architecture](#architecture)
+    * [Testing](#testing)
+<!-- TOC -->
+
 ## Why CHAST?
 
 Ever did a refactoring and you had the feeling "I've done this several times now, there should be an automation for it!". Sometimes you are in luck and there is indeed a refactoring, but where do you find it? And when you have found it, how do you make sure it really does what is should and does not affect your system negatively? Furthermore, there should be instructions on how to use it and some kind of check for you to verify the quality.
