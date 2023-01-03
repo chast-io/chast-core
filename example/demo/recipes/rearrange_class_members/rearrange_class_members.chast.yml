@@ -1,0 +1,53 @@
+version: 1
+type: refactoring
+name: RearrangeClassMembers
+maintainer: Raphael Jenni
+
+primaryParameter:
+  id: inputFile
+  type: filePath
+  description: The file to be refactored.
+
+positionalParameters:
+  - id: configFile
+    type: filePath
+    extensions:
+      - .yaml
+      - .yml
+    description: Config file defining the order of the class members.
+    longDescription: ./configFile.md
+
+run:
+  - id: rearrange_class_members
+    supportedExtensions:
+      - java
+    script:
+      - java -jar ./rearrange_class_members-1.0-SNAPSHOT-all.jar $inputFile $configFile > ${inputFile}.out
+#      - /bin/bash # This can be used to enter a shell inside the isolated environment for debugging
+  - id: mv_files
+    dependencies:
+      - rearrange_class_members
+    script:
+      - mv ${inputFile}.out $inputFile
+    includeChangeLocations:
+      - $inputFile
+  - id: rearrange_class_members_cs
+    supportedExtensions:
+      - cs
+    script:
+      - java -jar ./rearrange_class_members-1.0-SNAPSHOT-all.jar $inputFile $configFile > ${inputFile}.out
+      - mv ${inputFile}.out $inputFile
+    includeChangeLocations:
+      - $inputFile
+
+tests:
+  - id: "java"
+    description: "Test for java"
+    args:
+      - "TestFile.java"
+      - "default_config.yaml"
+  - id: "csharp"
+    description: "Test for c sharp"
+    args:
+      - "TestFile.cs"
+      - "default_config.yaml"

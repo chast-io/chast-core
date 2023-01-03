@@ -4,7 +4,7 @@
 
 [//]: # ([![CI]&#40;https://github.com/tj-actions/coverage-badge-go/workflows/CI/badge.svg&#41;]&#40;https://github.com/chast-io/chast-core/actions&#41;)
 ![Coverage](https://img.shields.io/badge/Coverage-38.1%25-yellow)
-![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)
+![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)
 
 [![Ubuntu](https://img.shields.io/badge/Ubuntu%20(Tested)-E95420?logo=ubuntu\&logoColor=white)](https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on)
 [![Ubuntu](https://img.shields.io/badge/Other%20Linux%20(Untested)-white?logo=linux\&logoColor=black)](https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on)
@@ -12,10 +12,17 @@
 [![Windows](https://img.shields.io/badge/Windows%20(Planned)-0078D6?logo=windows\&logoColor=white)](https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on)
 
 This is the core of chast.
-Run refactorings and other commands through a unified system no matter which operating system, installer or programming
+Run refactorings and other commands through an unified system no matter which operating system, installer or programming
 language.
 
-> This project is in its early stages of development so no further information is currently available.
+> :warning: **Work in progress!** :construction:
+> 
+> This project is in its early stages of development.
+> 
+> * The API is not stable and may change at any time. 
+> * Documentation is not complete.
+> * The project is not tested on all operating systems.
+> * Available recipies are prove of concept and not production ready.
 
 ## Why CHAST?
 
@@ -26,12 +33,94 @@ CHAST, short for Change Stuff, tries to solve this problem. It creates a framewo
 
 So what are you waiting for? Let's CHAnge STuff!
 
+## Demo
+
+* Demo Docker Container: [CHAST Demo](example/demo/README.md)
+
 ## Required tools
 
 - **General**
   - [unionfs-fuse](https://github.com/rpodgorny/unionfs-fuse) (Linux only, for Apple see MacOS support section in their README)
   - user namespace support required
   - (For OverlayFs-MergerFs-Isolation-Strategy: OverlayFs, Fuse, MergerFs required)
-- **For development:**
-  - [Go](https://golang.org/doc/install) (1.19.2 or higher)
-  - [GolangCI-Lint](https://golangci-lint.run/usage/install/)
+
+## Installation
+
+No installation candidates available yet. Need to be built from source.
+
+
+
+## Feature Status
+
+> For additional feature ideas, add them to [Feature Proposal](https://github.com/chast-io/chast-core/discussions/17)
+
+* Change Isolator :white_check_mark:
+* Reporting :white_check_mark: (basic)
+* Change Merging :white_check_mark:
+* File Detection and Run Filtering :white_check_mark:
+* Dependency Resolution :white_check_mark:
+* Runner :construction:
+  * Sequential Runner :white_check_mark:
+  * Parallel Runner :construction:
+  * Docker/Podman Support
+  * Nix Support
+* Test Runner :white_check_mark:
+* Recipe Packager
+* Recipe Registry
+  * Registry Web Interface
+* Dedicated CHAST Language
+* Documentation Parser
+* Functionality Extension
+  * Unified Installation
+  * Linting
+  * Formatter
+* Operatig Systems
+  * Linux :construction:
+    * Ubuntu :white_check_mark:
+    * Other
+  * Windows
+  * MacOS
+
+
+
+## Development
+
+- [Go](https://golang.org/doc/install) (1.19.2 or higher)
+- [GolangCI-Lint](https://golangci-lint.run/usage/install/)
+- See: [Required tools](#required-tools)
+
+### Build
+
+Build with `go build -o chast ./main.go` in the `cli` directory.
+
+Run it with `./chast`
+
+### Structure
+
+* cli - The command line interface. 
+  * This is the entry point for the user. See [Build](#build)
+* core - The core of CHAST. 
+  * This is the main package of CHAST. It contains the core functionality and the API for the other packages.
+* example - Example implementations of CHAST.
+  * This package contains example implementations of CHAST. It is used for testing and demonstration purposes.
+  * A corresponding docker image is available. See [Demo](#demo).
+* test - Testing recipe implementation of CHAST.
+    * The provided IntelliJ IDEA run configurations are configured to run with those examples.
+* *registry*, *repository*: Placeholder packages for the registry and repository implementations.
+* .github/workflows - GitHub Actions workflows.
+  * This directory contains the GitHub Actions workflows for the project.
+
+#### Repositories
+
+* [chast-io](https://github.com/chast-io?type=source)/**[chast-refactoring-java](https://github.com/chast-io/chast-refactoring-java)** - Refactorings specifically to Java.
+* [chast-io](https://github.com/chast-io?type=source)/**[chast-refactoring-antlr](https://github.com/chast-io/chast-refactoring-antlr)** - Refactorings based on the parser generator ANTLR. Those refactorings are intended to support multiple languages.
+
+### Architecture
+
+![archtiecture](README.assets/archtiecture.svg)
+
+### Testing
+
+The project aims to reach a high test coverage to ensure correctness. Currently only the most essential and non trivial parts of the code have unit tests.
+
+Integration tests should later be included through running CHAST against the tests specified in recipes.
