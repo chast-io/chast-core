@@ -10,9 +10,10 @@ import (
 // runRefactoringCmd represents the refactoring command.
 var runRefactoringCmd = &cobra.Command{ //nolint:exhaustruct // Only defining required fields
 	Use:   "refactoring <chastConfigFile>",
-	Short: "A brief description of your command", // TODO
-	Long:  ``,                                    // TODO
-	Args:  cobra.MatchAll(cobra.MinimumNArgs(1)),
+	Short: "Run a refactoring recipe",
+	Long: `Run a refactoring recipe. 
+The available flags and parameters are available by calling it with the --help flag [TODO].`,
+	Args: cobra.MatchAll(cobra.MinimumNArgs(1)),
 	Run: func(cmd *cobra.Command, args []string) {
 		recipeFileArg := args[0]
 
@@ -28,21 +29,12 @@ func init() { //nolint:gochecknoinits // This is the way cobra wants it.
 	runCmd.AddCommand(runRefactoringCmd)
 
 	defaultHelpFunction := runRefactoringCmd.HelpFunc()
-	runRefactoringCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) { helpFunction(cmd, args, defaultHelpFunction) })
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-
-	// Cobra supports local flags which will only refactoring when this command
-	// is called directly, e.g.:
-	// runRefactoringCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	runRefactoringCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) { runRefactoringHelpFunction(cmd, args, defaultHelpFunction) })
 }
 
-func helpFunction(cmd *cobra.Command, args []string, defaultHelpFunction func(*cobra.Command, []string)) {
+func runRefactoringHelpFunction(cmd *cobra.Command, args []string, defaultHelpFunction func(*cobra.Command, []string)) {
 	if len(cmd.ValidArgs) > 0 {
-		helpFunction(cmd, args, defaultHelpFunction)
+		runRefactoringHelpFunction(cmd, args, defaultHelpFunction)
 	} else {
 		defaultHelpFunction(cmd, args)
 	}

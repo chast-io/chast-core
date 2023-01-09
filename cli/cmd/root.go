@@ -8,21 +8,28 @@ import (
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
+var cfgFile string // config file currently not used
 
 // rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{ //nolint:exhaustruct // Only defining required fields
 	Use:   "chast",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+	Short: "CHAnge STuff - A CLI for unifying tools and automating changes",
+	Long: `
+ $$$$$$\  $$\   $$\  $$$$$$\   $$$$$$\ $$$$$$$$\ 
+$$  __$$\ $$ |  $$ |$$  __$$\ $$  __$$\\__$$  __|
+$$ /  \__|$$ |  $$ |$$ /  $$ |$$ /  \__|  $$ |   
+$$ |      $$$$$$$$ |$$$$$$$$ |\$$$$$$\    $$ |   
+$$ |      $$  __$$ |$$  __$$ | \____$$\   $$ |   
+$$ |  $$\ $$ |  $$ |$$ |  $$ |$$\   $$ |  $$ |   
+\$$$$$$  |$$ |  $$ |$$ |  $$ |\$$$$$$  |  $$ |   
+ \______/ \__|  \__|\__|  \__| \______/   \__|
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+Run refactorings and other commands through an unified system no matter which operating system, installer or programming language.
+
+Required tools: 
+- unionfs-fuse (Linux only, for Apple see MacOS support section in their README)
+- user namespace support required
+- (For OverlayFs-MergerFs-Isolation-Strategy: OverlayFs, Fuse, MergerFs required)`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
