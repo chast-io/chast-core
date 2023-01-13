@@ -3,7 +3,7 @@
 *CHAST* short for *Change Stuff!*
 
 [//]: # ([![CI]&#40;https://github.com/tj-actions/coverage-badge-go/workflows/CI/badge.svg&#41;]&#40;https://github.com/chast-io/chast-core/actions&#41;)
-![Coverage](https://img.shields.io/badge/Coverage-38.1%25-yellow)
+![Coverage](https://img.shields.io/badge/Coverage-38.0%25-yellow)
 ![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)
 
 [![Ubuntu](https://img.shields.io/badge/Ubuntu%20(Tested)-E95420?logo=ubuntu\&logoColor=white)](https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on)
