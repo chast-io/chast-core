@@ -58,10 +58,10 @@ func checkFolderEquality(checkFolder string, expectedOutputFolder string, inputF
 		}
 
 		if !compareFiles(
+			filepath.Join(checkFolder, actualFileStructure[index]),
 			filepath.Join(expectedOutputFolder, expectedFileStructure[index]),
-			filepath.Join(checkFolder, actualFileStructure[index])) {
+		) {
 			chastlog.Log.Errorf("File does not match the expected.")
-
 			return false
 		}
 	}
@@ -118,6 +118,8 @@ func compareFiles(actualFilePath string, expectedFilePath string) bool {
 		return false
 	}
 
+	actualFileContent = bytes.TrimSpace(actualFileContent)
+
 	expectedFileContent, expectedFileReadError := io.ReadAll(expectedFile)
 	if expectedFileReadError != nil {
 		chastlog.Log.Errorf("Could not read file %s: %v", expectedFilePath, expectedFileReadError)
@@ -125,5 +127,13 @@ func compareFiles(actualFilePath string, expectedFilePath string) bool {
 		return false
 	}
 
-	return bytes.Equal(actualFileContent, expectedFileContent)
+	expectedFileContent = bytes.TrimSpace(expectedFileContent)
+
+	isEqual := bytes.Equal(actualFileContent, expectedFileContent)
+
+	if !isEqual {
+		chastlog.Log.Debugf("Expected: \n%s\n\nGot: \n%s\n", expectedFileContent, actualFileContent)
+	}
+
+	return isEqual
 }

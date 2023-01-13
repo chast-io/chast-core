@@ -1,0 +1,32 @@
+version: 1
+type: refactoring
+name: ClassToRecord
+maintainer: Raphael Jenni
+
+primaryParameter:
+  id: inputFile
+  type: filePath
+  description: The file to be refactored.
+
+run:
+  - id: class_to_record
+    supportedExtensions:
+      - java
+    script:
+      - java -jar ./class_to_record-1.0-SNAPSHOT-all.jar $inputFile
+    includeChangeLocations:
+      - $inputFile
+
+tests:
+  - id: "additional_methods"
+    description: "Test for conversion of class with additional methods"
+    args:
+      - "additional_methods.java"
+  - id: "multiple_constructors"
+    description: "Test for conversion of class with multiple constructors"
+    args:
+      - "multiple_constructors.java"
+  - id: "complex"
+    description: "A complex class with multiple constructors, methods and fields"
+    args:
+      - "complex_class.java"

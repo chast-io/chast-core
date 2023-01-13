@@ -1,0 +1,26 @@
+version: 1
+type: refactoring
+name: Python2To3
+maintainer: Raphael Jenni
+
+primaryParameter:
+  id: inputFile
+  type: filePath
+  description: The file to be refactored.
+
+
+run:
+  - id: python2_to_python3
+    supportedExtensions:
+      - py
+    script:
+      # Example based on https://comby.dev/
+      - comby 'failUnlessEqual(:[a],:[b])' 'assertEqual(:[a],:[b])' $inputFile -in-place
+    includeChangeLocations:
+      - $inputFile
+
+tests:
+  - id: "failUnlessEqual"
+    description: "Test for python"
+    args:
+      - "failUnlessEqual.py"

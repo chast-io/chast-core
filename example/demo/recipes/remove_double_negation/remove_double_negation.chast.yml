@@ -1,0 +1,31 @@
+version: 1
+type: refactoring
+name: RemoveDoubleNegation
+maintainer: Raphael Jenni
+
+primaryParameter:
+  id: inputFile
+  type: filePath
+  description: The file to be refactored.
+
+
+run:
+  - id: remove_double_negation
+    supportedExtensions:
+      - java
+      - py
+    script:
+      - java -jar ./remove_double_negation-1.0-SNAPSHOT-all.jar $inputFile > ${inputFile}.out
+      - mv ${inputFile}.out $inputFile
+    includeChangeLocations:
+      - $inputFile
+
+tests:
+  - id: "java"
+    description: "Test for java"
+    args:
+      - "in_expression.java"
+  - id: "python"
+    description: "Test for python"
+    args:
+      - "in_expression.py"

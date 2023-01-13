@@ -2,7 +2,7 @@
   <configuration default="false" name="chast run refactoring" type="GoApplicationRunConfiguration" factoryName="Go Application">
     <module name="chast" />
     <working_directory value="$PROJECT_DIR$/cli" />
-    <parameters value="run refactoring ../test/chast/rearrange_class_members.chast.yml ../test/chast/tests/csharp/input/TestFile.cs ../test/chast/tests/csharp/input/default_config.yaml" />
+    <parameters value="run refactoring ../test/chast/rearrange_class_members.chast.yml ../test/chast/tests/java/input/TestFile.java ../test/chast/tests/java/input/default_config.yaml" />
     <kind value="PACKAGE" />
     <package value="chast.io/cli" />
     <directory value="$PROJECT_DIR$" />

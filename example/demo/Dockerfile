@@ -5,12 +5,15 @@ MAINTAINER chast.io <Raphael Jenni>
 # Linux Kernel > v4.18.0 is required
 # ================================================================
 
-RUN apt-get update && apt-get install -y unionfs-fuse mergerfs libfuse3-dev fuse-overlayfs tree
+RUN apt-get update && apt-get install -y unionfs-fuse mergerfs libfuse3-dev fuse-overlayfs tree curl
 
 RUN apt-get install -y openjdk-17-jdk openjdk-17-jre
 
+RUN apt-get install -y sudo libev-dev
+RUN curl -sL get-comby.netlify.app | bash
+
 # Run go build main.go in the cli folder first
-COPY main /usr/local/bin/chast
+COPY chast /usr/local/bin/chast
 
 COPY recipes /recipes
 
