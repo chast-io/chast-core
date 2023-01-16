@@ -1,0 +1,74 @@
+languages:
+  - language: java
+    membersOrder:
+      - member: field
+        visibilityOrder:
+          - public
+          - protected
+          - package_private
+          - private
+      - member: static_block
+        visibilityOrder:
+          - public
+          - protected
+          - package_private
+          - private
+      - member: constructor
+        visibilityOrder:
+          - public
+          - protected
+          - package_private
+          - private
+      - member: method
+        visibilityOrder:
+          - public
+          - protected
+          - package_private
+          - private
+  - language: c#
+    membersOrder:
+      - member: constructor
+        visibilityOrder:
+          - public
+      - member: property
+      - member: constructor
+        visibilityOrder:
+          - public
+          - protected
+          - private
+      - member: event
+        visibilityOrder:
+          - public
+          - protected
+          - private
+      - member: composite_nested_type
+        visibilityOrder:
+          - public
+          - protected
+          - private
+  - language: kotlin
+    membersOrder:
+      - member: property
+        visibilityOrder:
+          - public
+          - protected
+          - internal
+          - private
+      - member: anonymousInitializer
+        visibilityOrder:
+          - public
+          - protected
+          - internal
+          - private
+      - member: secondaryConstructor
+        visibilityOrder:
+          - public
+          - protected
+          - internal
+          - private
+      - member: function
+        visibilityOrder:
+          - public
+          - protected
+          - internal
+          - private

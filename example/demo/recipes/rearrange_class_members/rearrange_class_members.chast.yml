@@ -31,9 +31,10 @@ run:
       - mv ${inputFile}.out $inputFile
     includeChangeLocations:
       - $inputFile
-  - id: rearrange_class_members_cs
+  - id: rearrange_class_members_others
     supportedExtensions:
       - cs
+      - kt
     script:
       - java -jar ./rearrange_class_members-1.0-SNAPSHOT-all.jar $inputFile $configFile > ${inputFile}.out
       - mv ${inputFile}.out $inputFile
@@ -50,4 +51,9 @@ tests:
     description: "Test for c sharp"
     args:
       - "TestFile.cs"
+      - "default_config.yaml"
+  - id: "kotlin"
+    description: "Test for kotlin"
+    args:
+      - "TestFile.kt"
       - "default_config.yaml"
