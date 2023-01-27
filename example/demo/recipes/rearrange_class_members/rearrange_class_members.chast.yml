@@ -34,7 +34,6 @@ run:
   - id: rearrange_class_members_others
     supportedExtensions:
       - cs
-      - kt
     script:
       - java -jar ./rearrange_class_members-1.0-SNAPSHOT-all.jar $inputFile $configFile > ${inputFile}.out
       - mv ${inputFile}.out $inputFile
