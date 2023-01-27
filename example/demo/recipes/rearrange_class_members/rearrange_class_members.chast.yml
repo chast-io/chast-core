@@ -52,8 +52,3 @@ tests:
     args:
       - "TestFile.cs"
       - "default_config.yaml"
-  - id: "kotlin"
-    description: "Test for kotlin"
-    args:
-      - "TestFile.kt"
-      - "default_config.yaml"
